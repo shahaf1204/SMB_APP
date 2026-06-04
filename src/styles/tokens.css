@@ -1,0 +1,16 @@
+:root {
+  --color-primary: #687cd4;
+  --color-primary-dark: #5568b8;
+  --color-bg: #f7f8fa;
+  --color-text: #111827;
+  --color-text-secondary: #6b7280;
+  --color-success: #16a34a;
+  --color-error: #dc2626;
+  --color-card: #ffffff;
+  --radius-card: 16px;
+  --radius-button: 14px;
+  --shadow-card: 0 2px 12px rgba(17, 24, 39, 0.06);
+  --nav-height: 64px;
+  --touch-min: 44px;
+  --font: 'Heebo', system-ui, sans-serif;
+}
