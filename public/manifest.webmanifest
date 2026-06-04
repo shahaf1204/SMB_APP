@@ -1,6 +1,6 @@
 {
   "name": "ניהול עסק",
-  "short_name": "עסק",
+  "short_name": "SMB-APP",
   "description": "ניהול אירועים, לידים וחשבוניות לעסק קטן",
   "start_url": "/dashboard",
   "display": "standalone",
