@@ -68,6 +68,7 @@ export interface Invoice {
   eventId?: string;
   invoiceNumber: number;
   clientName: string;
+  clientEmail?: string;
   amount: number;
   issuedAt: string;
   dueDate: string;
@@ -107,6 +108,8 @@ export interface Event {
   eventDate: string;
   location: string;
   notes: string;
+  clientEmail?: string;
+  clientPhone?: string;
 }
 
 export interface EventValue {

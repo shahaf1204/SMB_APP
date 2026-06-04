@@ -1,6 +1,31 @@
 import { applyValueToEventValue } from './events';
 import { createId } from './ids';
-import type { Category, EventValue } from '../types/models';
+import type { Category, Event, EventValue } from '../types/models';
+
+export interface EventFormValues {
+  title: string;
+  eventDate: string;
+  location: string;
+  notes: string;
+  clientEmail: string;
+  clientPhone: string;
+  categoryInputs: Record<string, string>;
+}
+
+export function eventFormToEventPayload(
+  form: EventFormValues,
+): Omit<Event, 'id' | 'businessId' | 'userId'> {
+  const email = form.clientEmail.trim();
+  const phone = form.clientPhone.trim();
+  return {
+    title: form.title,
+    eventDate: form.eventDate,
+    location: form.location,
+    notes: form.notes,
+    ...(email ? { clientEmail: email } : {}),
+    ...(phone ? { clientPhone: phone } : {}),
+  };
+}
 
 export function eventValueToInput(ev: EventValue | undefined, cat: Category): string {
   if (!ev) return '';

@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
 import { EventForm, type EventFormValues } from '../components/EventForm';
-import { buildEventValuesFromInputs } from '../lib/eventForm';
+import { buildEventValuesFromInputs, eventFormToEventPayload } from '../lib/eventForm';
 import { confirmEventSaveDespiteWarnings, getEventSaveWarnings } from '../lib/eventWarnings';
 import { afterEventSaved } from '../lib/postEventSave';
 import { useAppStore } from '../store/useAppStore';
@@ -33,15 +33,7 @@ export function AddEventPage() {
       form.categoryInputs,
       [],
     );
-    const eventId = addEvent(
-      {
-        title: form.title,
-        eventDate: form.eventDate,
-        location: form.location,
-        notes: form.notes,
-      },
-      values,
-    );
+    const eventId = addEvent(eventFormToEventPayload(form), values);
     if (!eventId) return;
 
     const state = useAppStore.getState();

@@ -48,9 +48,15 @@ export function InvoicesPage() {
 
   const handleCreateFromEvent = () => {
     if (!pickEventId) return;
+    const event = events.find((e) => e.id === pickEventId);
     const client = getClientName(pickEventId, categories, eventValues) ?? 'לקוח';
     const amount = getEventRevenueTotal(pickEventId, eventValues);
-    const id = createInvoice({ clientName: client, amount, eventId: pickEventId });
+    const id = createInvoice({
+      clientName: client,
+      clientEmail: event?.clientEmail,
+      amount,
+      eventId: pickEventId,
+    });
     if (id) navigate(`/invoices/${id}`);
   };
 

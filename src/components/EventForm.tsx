@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { LEAD_SOURCE_OPTIONS } from '../data/leadSources';
-import { eventValueToInput } from '../lib/eventForm';
+import { eventValueToInput, type EventFormValues } from '../lib/eventForm';
 import { isSourceCategory } from '../lib/sources';
 import { getEventSaveWarnings } from '../lib/eventWarnings';
 import type { Category, Event, EventTemplate, EventValue, ValueType } from '../types/models';
@@ -12,13 +12,7 @@ const VALUE_TYPE_LABELS: Record<ValueType, string> = {
   duration: 'שעה (דקות)',
 };
 
-export interface EventFormValues {
-  title: string;
-  eventDate: string;
-  location: string;
-  notes: string;
-  categoryInputs: Record<string, string>;
-}
+export type { EventFormValues };
 
 interface EventFormProps {
   categories: Category[];
@@ -59,6 +53,8 @@ export function EventForm({
   const [eventDate, setEventDate] = useState(initial?.eventDate ?? '');
   const [location, setLocation] = useState(initial?.location ?? '');
   const [notes, setNotes] = useState(initial?.notes ?? '');
+  const [clientEmail, setClientEmail] = useState(initial?.clientEmail ?? '');
+  const [clientPhone, setClientPhone] = useState(initial?.clientPhone ?? '');
   const [categoryInputs, setCategoryInputs] = useState(buildInitialInputs);
 
   const saveWarnings = useMemo(
@@ -79,6 +75,8 @@ export function EventForm({
       setEventDate(initial.eventDate ?? '');
       setLocation(initial.location ?? '');
       setNotes(initial.notes ?? '');
+      setClientEmail(initial.clientEmail ?? '');
+      setClientPhone(initial.clientPhone ?? '');
       setCategoryInputs(buildInitialInputs());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -101,6 +99,8 @@ export function EventForm({
       eventDate,
       location: location.trim(),
       notes: notes.trim(),
+      clientEmail: clientEmail.trim(),
+      clientPhone: clientPhone.trim(),
       categoryInputs,
     });
   };
@@ -157,6 +157,33 @@ export function EventForm({
           placeholder="אופציונלי"
         />
       </div>
+
+      <p style={{ fontWeight: 600, margin: '0.5rem 0 0.25rem', fontSize: '0.9rem' }}>פרטי לקוח</p>
+      <div className="field">
+        <label htmlFor="client-email">אימייל לקוח</label>
+        <input
+          id="client-email"
+          type="email"
+          value={clientEmail}
+          onChange={(e) => setClientEmail(e.target.value)}
+          placeholder="לדוגמה: client@example.com"
+          dir="ltr"
+          autoComplete="email"
+        />
+      </div>
+      <div className="field">
+        <label htmlFor="client-phone">טלפון לקוח</label>
+        <input
+          id="client-phone"
+          type="tel"
+          value={clientPhone}
+          onChange={(e) => setClientPhone(e.target.value)}
+          placeholder="לדוגמה: 050-1234567"
+          dir="ltr"
+          autoComplete="tel"
+        />
+      </div>
+
       <div className="field">
         <label htmlFor="notes">הערות</label>
         <textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} />

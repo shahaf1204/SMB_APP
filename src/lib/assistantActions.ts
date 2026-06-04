@@ -19,6 +19,7 @@ export interface AssistantActionStore {
   }) => void;
   createInvoice: (params: {
     clientName: string;
+    clientEmail?: string;
     amount: number;
     eventId?: string;
     notes?: string;

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
 import { EventForm, type EventFormValues } from '../components/EventForm';
+import { eventFormToEventPayload } from '../lib/eventForm';
 import { confirmEventSaveDespiteWarnings, getEventSaveWarnings } from '../lib/eventWarnings';
 import { afterEventSaved } from '../lib/postEventSave';
 import { useAppStore } from '../store/useAppStore';
@@ -38,7 +39,7 @@ export function EditEventPage() {
     const warnings = getEventSaveWarnings(events, form, event.id);
     if (!confirmEventSaveDespiteWarnings(warnings)) return;
 
-    updateEvent(event.id, form, form.categoryInputs);
+    updateEvent(event.id, eventFormToEventPayload(form), form.categoryInputs);
     const state = useAppStore.getState();
     const updated = state.events.find((e) => e.id === event.id);
     const calendarExport = updated
@@ -73,6 +74,8 @@ export function EditEventPage() {
             eventDate: event.eventDate,
             location: event.location,
             notes: event.notes,
+            clientEmail: event.clientEmail ?? '',
+            clientPhone: event.clientPhone ?? '',
           }}
           submitLabel="שמור שינויים"
           onSubmit={(form) => void handleSubmit(form)}

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { AddToCalendarButton } from './AddToCalendarButton';
+import { LeadContactActions } from './LeadContactActions';
 import { getEventDetailFields } from '../lib/eventDetails';
 import { eventStatus } from '../lib/eventStatus';
 import { getEventRevenueTotal } from '../lib/events';
@@ -55,6 +56,14 @@ export function EventDetailPanel({
           </div>
         ))}
       </dl>
+
+      {(event.clientPhone?.trim() || event.clientEmail?.trim()) && (
+        <LeadContactActions
+          name={event.title}
+          phone={event.clientPhone?.trim() || undefined}
+          email={event.clientEmail?.trim() || undefined}
+        />
+      )}
 
       <div className="event-detail-actions">
         <Link to={`/events/${event.id}/edit`} className="btn btn-primary">

@@ -56,6 +56,7 @@ interface AppActions {
   linkLeadToEvent: (leadId: string, eventId: string) => void;
   createInvoice: (params: {
     clientName: string;
+    clientEmail?: string;
     amount: number;
     eventId?: string;
     notes?: string;
@@ -424,18 +425,20 @@ export const useAppStore = create<Store>()(
         });
       },
 
-      createInvoice: ({ clientName, amount, eventId, notes = '' }) => {
+      createInvoice: ({ clientName, clientEmail, amount, eventId, notes = '' }) => {
         const business = get().business;
         const user = get().user;
         if (!business || !user) return '';
         const num = get().nextInvoiceNumber;
         const issuedAt = new Date().toISOString().slice(0, 10);
+        const email = clientEmail?.trim();
         const invoice: Invoice = {
           id: createId(),
           businessId: business.id,
           userId: user.id,
           invoiceNumber: num,
           clientName,
+          ...(email ? { clientEmail: email } : {}),
           amount,
           eventId,
           issuedAt,

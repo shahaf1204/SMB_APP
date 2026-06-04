@@ -62,6 +62,13 @@ export function getEventDetailFields(
     fields.push({ label: 'מיקום', value: event.location.trim() });
   }
 
+  if (event.clientEmail?.trim()) {
+    fields.push({ label: 'אימייל לקוח', value: event.clientEmail.trim() });
+  }
+  if (event.clientPhone?.trim()) {
+    fields.push({ label: 'טלפון לקוח', value: event.clientPhone.trim() });
+  }
+
   const activeCats = categories.filter((c) => c.isActive);
   for (const cat of activeCats) {
     const val = eventValues.find(
