@@ -13,3 +13,20 @@ export function whatsAppLink(phone: string, message?: string): string {
 export function emailLink(email: string): string {
   return `mailto:${email}`;
 }
+
+/** mailto עם subject/body — encodeURIComponent (לא URLSearchParams) כדי שלא יופיעו + במקום רווחים */
+export function mailtoWithBody(
+  to: string,
+  options: { subject?: string; body?: string },
+): string {
+  const parts: string[] = [];
+  if (options.subject) {
+    parts.push(`subject=${encodeURIComponent(options.subject)}`);
+  }
+  if (options.body) {
+    const normalizedBody = options.body.replace(/\n/g, '\r\n');
+    parts.push(`body=${encodeURIComponent(normalizedBody)}`);
+  }
+  const query = parts.length ? `?${parts.join('&')}` : '';
+  return `mailto:${to}${query}`;
+}

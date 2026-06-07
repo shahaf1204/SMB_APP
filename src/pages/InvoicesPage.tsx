@@ -4,6 +4,15 @@ import { BottomNav } from '../components/BottomNav';
 import { formatCurrency } from '../lib/finance';
 import { getClientName, getEventRevenueTotal } from '../lib/events';
 import { isInvoiceOverdue } from '../lib/invoices';
+import {
+  availableInvoiceReportYears,
+  downloadInvoiceReport,
+  filterInvoicesByRange,
+  formatInvoiceReportPeriodLabel,
+  invoiceReportMailtoHref,
+  summarizeInvoices,
+  type InvoiceReportRange,
+} from '../lib/invoiceReport';
 import { useAppStore } from '../store/useAppStore';
 import type { InvoiceStatus } from '../types/models';
 
@@ -26,6 +35,14 @@ export function InvoicesPage() {
 
   const [pickEventId, setPickEventId] = useState('');
   const [filter, setFilter] = useState<InvoiceFilter>('all');
+  const [reportKind, setReportKind] = useState<'month' | 'year'>('month');
+  const [reportMonth, setReportMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
+  const [reportYear, setReportYear] = useState(() => String(new Date().getFullYear()));
+
+  const business = useAppStore((s) => s.business)!;
 
   useEffect(() => {
     const fromEventId = (location.state as { fromEventId?: string } | null)?.fromEventId;
@@ -45,6 +62,34 @@ export function InvoicesPage() {
     if (filter === 'overdue') return invoices.filter(isInvoiceOverdue);
     return invoices.filter((i) => i.status !== 'paid');
   }, [invoices, filter]);
+
+  const reportRange = useMemo((): InvoiceReportRange => {
+    if (reportKind === 'year') {
+      return { kind: 'year', year: Number(reportYear) };
+    }
+    const [y, m] = reportMonth.split('-').map(Number);
+    return { kind: 'month', year: y, month: m };
+  }, [reportKind, reportMonth, reportYear]);
+
+  const reportYears = useMemo(() => availableInvoiceReportYears(invoices), [invoices]);
+
+  const reportPreview = useMemo(() => {
+    const inRange = filterInvoicesByRange(invoices, reportRange);
+    return {
+      invoices: inRange,
+      summary: summarizeInvoices(inRange),
+      label: formatInvoiceReportPeriodLabel(reportRange),
+    };
+  }, [invoices, reportRange]);
+
+  const reportMailto = useMemo(
+    () => invoiceReportMailtoHref(invoices, business, reportRange),
+    [invoices, business, reportRange],
+  );
+
+  const handleDownloadReport = () => {
+    downloadInvoiceReport(invoices, business, reportRange);
+  };
 
   const handleCreateFromEvent = () => {
     if (!pickEventId) return;
@@ -135,6 +180,117 @@ export function InvoicesPage() {
             })}
           </ul>
         )}
+
+        <section className="card invoice-report-card">
+          <h2 style={{ margin: '0 0 0.35rem', fontSize: '0.95rem' }}>דוח לרואה חשבון</h2>
+          <p className="page-subtitle" style={{ margin: '0 0 0.75rem' }}>
+            ייצוא CSV חודשי או שנתי — להורדה ושליחה במייל
+          </p>
+
+          <div className="chip-row" style={{ marginBottom: '0.75rem' }}>
+            <button
+              type="button"
+              className={`chip ${reportKind === 'month' ? 'active' : ''}`}
+              onClick={() => setReportKind('month')}
+            >
+              דוח חודשי
+            </button>
+            <button
+              type="button"
+              className={`chip ${reportKind === 'year' ? 'active' : ''}`}
+              onClick={() => setReportKind('year')}
+            >
+              דוח שנתי
+            </button>
+          </div>
+
+          {reportKind === 'month' ? (
+            <div className="field">
+              <label htmlFor="report-month">חודש</label>
+              <input
+                id="report-month"
+                type="month"
+                value={reportMonth}
+                onChange={(e) => setReportMonth(e.target.value)}
+              />
+            </div>
+          ) : (
+            <div className="field">
+              <label htmlFor="report-year">שנה</label>
+              <select
+                id="report-year"
+                value={reportYear}
+                onChange={(e) => setReportYear(e.target.value)}
+              >
+                {reportYears.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div className="invoice-report-summary">
+            <p style={{ margin: '0 0 0.35rem', fontWeight: 600 }}>{reportPreview.label}</p>
+            {reportPreview.summary.count === 0 ? (
+              <p className="empty-state" style={{ margin: 0, fontSize: '0.85rem' }}>
+                אין חשבוניות בתקופה זו
+              </p>
+            ) : (
+              <ul className="invoice-report-stats">
+                <li>
+                  {reportPreview.summary.count} חשבוניות ·{' '}
+                  {formatCurrency(reportPreview.summary.totalAmount)}
+                </li>
+                <li>
+                  שולמו: {reportPreview.summary.paidCount} (
+                  {formatCurrency(reportPreview.summary.paidAmount)})
+                </li>
+                <li>
+                  ממתין: {reportPreview.summary.unpaidCount} (
+                  {formatCurrency(reportPreview.summary.unpaidAmount)})
+                </li>
+                {reportPreview.summary.overdueCount > 0 && (
+                  <li className="invoice-report-overdue">
+                    באיחור: {reportPreview.summary.overdueCount} (
+                    {formatCurrency(reportPreview.summary.overdueAmount)})
+                  </li>
+                )}
+              </ul>
+            )}
+          </div>
+
+          <button
+            type="button"
+            className="btn btn-primary"
+            style={{ width: '100%', marginTop: '0.75rem' }}
+            disabled={reportPreview.summary.count === 0}
+            onClick={handleDownloadReport}
+          >
+            הורדת דוח CSV
+          </button>
+          <a
+            href={reportMailto}
+            className="btn btn-ghost"
+            style={{
+              width: '100%',
+              marginTop: '0.5rem',
+              display: 'inline-flex',
+              pointerEvents: reportPreview.summary.count === 0 ? 'none' : undefined,
+              opacity: reportPreview.summary.count === 0 ? 0.5 : 1,
+            }}
+            aria-disabled={reportPreview.summary.count === 0}
+            onClick={(e) => {
+              if (reportPreview.summary.count === 0) e.preventDefault();
+            }}
+          >
+            שליחה לרואה חשבון (מייל)
+          </a>
+          <p className="field-hint" style={{ marginTop: '0.5rem', marginBottom: 0 }}>
+            הורידי קודם את ה-CSV, ואז צרפי אותו למייל שנפתח
+          </p>
+        </section>
       </div>
       <BottomNav />
     </div>

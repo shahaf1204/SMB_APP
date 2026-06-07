@@ -1,3 +1,4 @@
+import { mailtoWithBody } from './contact';
 import { formatCurrency } from './finance';
 import type { Business, Event, Invoice } from '../types/models';
 
@@ -46,6 +47,5 @@ export function invoiceMailtoHref(
   if (!to) return null;
   const subject = `חשבונית מס׳ ${invoice.invoiceNumber} — ${business.name}`;
   const body = buildInvoiceEmailBody(invoice, business);
-  const params = new URLSearchParams({ subject, body });
-  return `mailto:${to}?${params.toString()}`;
+  return mailtoWithBody(to, { subject, body });
 }

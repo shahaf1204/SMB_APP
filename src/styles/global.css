@@ -986,6 +986,33 @@ a {
   color: var(--color-text-secondary);
 }
 
+.invoice-report-card {
+  margin-top: 1.25rem;
+}
+
+.invoice-report-summary {
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  border-radius: var(--radius-card);
+  background: var(--color-bg);
+}
+
+.invoice-report-stats {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.invoice-report-overdue {
+  color: var(--color-error);
+  font-weight: 600;
+}
+
 .invoice-print-amount {
   font-size: 1.25rem;
   font-weight: 700;
