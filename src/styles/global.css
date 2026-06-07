@@ -1485,6 +1485,17 @@ a {
   border-color: #c7d2fe;
 }
 
+.auth-error-hint {
+  margin-bottom: 0.75rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.auth-mode-row {
+  margin-bottom: 0.75rem;
+}
+
 .auto-save-indicator {
   display: flex;
   align-items: center;

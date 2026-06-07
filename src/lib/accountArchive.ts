@@ -103,8 +103,6 @@ export function saveAccountSnapshot(
   email: string | undefined,
   state: AppState,
 ): void {
-  if (!state.business && state.events.length === 0) return;
-
   const payload = JSON.stringify(snapshotFromState(state));
   const keys = accountKeysForUser(displayName, email);
   if (keys.length === 0) return;
@@ -116,4 +114,9 @@ export function saveAccountSnapshot(
   } catch (e) {
     console.warn('לא ניתן לגבות חשבון מקומי:', e);
   }
+}
+
+export function flushAccountSnapshot(state: AppState): void {
+  if (!state.user) return;
+  saveAccountSnapshot(state.user.displayName, state.user.email, state);
 }

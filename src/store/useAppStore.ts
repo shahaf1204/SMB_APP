@@ -1,6 +1,12 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { findAccountSnapshot, saveAccountSnapshot } from '../lib/accountArchive';
+import { findAccountSnapshot, flushAccountSnapshot } from '../lib/accountArchive';
+import {
+  ensureAccountInRegistry,
+  findAccountByEmail,
+  registerAccount,
+  updateAccountDisplayName,
+} from '../lib/accountsRegistry';
 import { clearAppStorage, safeJsonStorage, STORAGE_KEY } from '../lib/safeStorage';
 import {
   buildCategoriesFromPreset,
@@ -29,6 +35,14 @@ import type {
 } from '../types/models';
 
 interface AppActions {
+  register: (
+    displayName: string,
+    email: string,
+  ) => { ok: true } | { ok: false; reason: 'invalid' | 'exists' };
+  loginExisting: (
+    email: string,
+    displayName?: string,
+  ) => { ok: true } | { ok: false; reason: 'invalid' | 'not_found' };
   login: (displayName: string, email?: string) => void;
   logout: () => void;
   createBusiness: (params: {
@@ -112,46 +126,26 @@ export const useAppStore = create<Store>()(
 
       login: (displayName, email) => {
         const trimmedName = displayName.trim();
-        const trimmedEmail = email?.trim();
+        const trimmedEmail = email?.trim().toLowerCase();
+        if (trimmedEmail) {
+          get().loginExisting(trimmedEmail, trimmedName);
+          return;
+        }
         const saved = findAccountSnapshot(trimmedName, trimmedEmail);
-        const current = get();
-
-        if (saved?.user && (saved.business || saved.events.length > 0)) {
+        if (saved?.user) {
           set({
             ...saved,
             user: {
               id: saved.user.id,
               displayName: trimmedName,
-              email: trimmedEmail || saved.user.email,
+              email: saved.user.email,
             },
           });
+          flushAccountSnapshot(get());
           return;
         }
-
-        if (current.user && (current.business || current.events.length > 0)) {
-          set({
-            user: {
-              ...current.user,
-              displayName: trimmedName,
-              email: trimmedEmail || current.user.email,
-            },
-          });
-          return;
-        }
-
-        if (current.events.length > 0 && current.business) {
-          set({
-            ...current,
-            user: current.user ?? {
-              id: createId(),
-              displayName: trimmedName,
-              email: trimmedEmail,
-            },
-          });
-          return;
-        }
-
         set({
+          ...initialState,
           user: {
             id: createId(),
             displayName: trimmedName,
@@ -160,10 +154,89 @@ export const useAppStore = create<Store>()(
         });
       },
 
+      register: (displayName, email) => {
+        const trimmedName = displayName.trim();
+        const trimmedEmail = email.trim().toLowerCase();
+        if (!trimmedName || !trimmedEmail) {
+          return { ok: false as const, reason: 'invalid' as const };
+        }
+        if (findAccountByEmail(trimmedEmail)) {
+          return { ok: false as const, reason: 'exists' as const };
+        }
+
+        const userId = createId();
+        registerAccount({
+          email: trimmedEmail,
+          displayName: trimmedName,
+          userId,
+        });
+
+        set({
+          ...initialState,
+          user: {
+            id: userId,
+            displayName: trimmedName,
+            email: trimmedEmail,
+          },
+        });
+        flushAccountSnapshot(get());
+        return { ok: true as const };
+      },
+
+      loginExisting: (email, displayName) => {
+        const trimmedEmail = email.trim().toLowerCase();
+        if (!trimmedEmail) {
+          return { ok: false as const, reason: 'invalid' as const };
+        }
+
+        const record = findAccountByEmail(trimmedEmail);
+        const nameHint = displayName?.trim() || record?.displayName || '';
+        const saved = findAccountSnapshot(nameHint, trimmedEmail);
+
+        if (!record && !saved) {
+          return { ok: false as const, reason: 'not_found' as const };
+        }
+
+        const resolvedName =
+          nameHint || saved?.user?.displayName || record?.displayName || trimmedEmail;
+        const userId = saved?.user?.id ?? record?.userId ?? createId();
+
+        if (saved) {
+          set({
+            ...saved,
+            user: {
+              id: userId,
+              displayName: resolvedName,
+              email: trimmedEmail,
+            },
+          });
+        } else {
+          set({
+            ...initialState,
+            user: {
+              id: userId,
+              displayName: resolvedName,
+              email: trimmedEmail,
+            },
+          });
+        }
+
+        ensureAccountInRegistry({
+          id: userId,
+          displayName: resolvedName,
+          email: trimmedEmail,
+        });
+        if (record && record.displayName !== resolvedName) {
+          updateAccountDisplayName(trimmedEmail, resolvedName);
+        }
+        flushAccountSnapshot(get());
+        return { ok: true as const };
+      },
+
       logout: () => {
         const state = get();
         if (state.user) {
-          saveAccountSnapshot(state.user.displayName, state.user.email, state);
+          flushAccountSnapshot(state);
         }
         set({ ...initialState });
       },
