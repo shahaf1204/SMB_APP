@@ -34,6 +34,7 @@ export function InvoicesPage() {
   const createInvoice = useAppStore((s) => s.createInvoice);
 
   const [pickEventId, setPickEventId] = useState('');
+  const [clientEmail, setClientEmail] = useState('');
   const [filter, setFilter] = useState<InvoiceFilter>('all');
   const [reportKind, setReportKind] = useState<'month' | 'year'>('month');
   const [reportMonth, setReportMonth] = useState(() => {
@@ -48,6 +49,15 @@ export function InvoicesPage() {
     const fromEventId = (location.state as { fromEventId?: string } | null)?.fromEventId;
     if (fromEventId) setPickEventId(fromEventId);
   }, [location.state]);
+
+  useEffect(() => {
+    if (!pickEventId) {
+      setClientEmail('');
+      return;
+    }
+    const event = events.find((e) => e.id === pickEventId);
+    setClientEmail(event?.clientEmail ?? '');
+  }, [pickEventId, events]);
 
   const recentEvents = useMemo(
     () =>
@@ -98,7 +108,7 @@ export function InvoicesPage() {
     const amount = getEventRevenueTotal(pickEventId, eventValues);
     const id = createInvoice({
       clientName: client,
-      clientEmail: event?.clientEmail,
+      clientEmail: clientEmail.trim() || event?.clientEmail,
       amount,
       eventId: pickEventId,
     });
@@ -122,6 +132,22 @@ export function InvoicesPage() {
                 </option>
               ))}
             </select>
+          </div>
+          <div className="field">
+            <label htmlFor="inv-email">אימייל לקוח</label>
+            <input
+              id="inv-email"
+              type="email"
+              value={clientEmail}
+              onChange={(e) => setClientEmail(e.target.value)}
+              placeholder="לדוגמה: client@example.com"
+              autoComplete="email"
+            />
+            <p className="field-hint">
+              {clientEmail.trim()
+                ? 'יישמר בחשבונית וישמש לשליחה במייל'
+                : 'אופציונלי — ניתן להוסיף כאן אם לא הוזן באירוע'}
+            </p>
           </div>
           <button
             type="button"

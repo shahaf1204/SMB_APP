@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
+import { useLeadSheetAutoSync } from '../hooks/useLeadSheetAutoSync';
 import { runEventReminderCheck } from '../lib/eventReminders';
 import { useAppStore } from '../store/useAppStore';
 import { AutoSaveIndicator } from './AutoSaveIndicator';
@@ -7,6 +8,8 @@ import { AutoSaveIndicator } from './AutoSaveIndicator';
 export function BusinessLayout() {
   const events = useAppStore((s) => s.events);
   const business = useAppStore((s) => s.business);
+
+  useLeadSheetAutoSync();
 
   useEffect(() => {
     if (!business || events.length === 0) return;

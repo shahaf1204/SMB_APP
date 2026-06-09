@@ -65,7 +65,11 @@ interface AppActions {
     categoryInputs: Record<string, string>,
   ) => void;
   deleteEvent: (id: string) => void;
-  addLead: (lead: Omit<Lead, 'id' | 'businessId' | 'userId' | 'createdAt' | 'status'>) => void;
+  addLead: (
+    lead: Omit<Lead, 'id' | 'businessId' | 'userId' | 'createdAt' | 'status'> & {
+      createdAt?: string;
+    },
+  ) => void;
   updateLead: (id: string, patch: Partial<Pick<Lead, 'status' | 'notes' | 'phone' | 'email' | 'name'>>) => void;
   linkLeadToEvent: (leadId: string, eventId: string) => void;
   createInvoice: (params: {
@@ -76,6 +80,10 @@ interface AppActions {
     notes?: string;
   }) => string;
   updateInvoiceStatus: (id: string, status: Invoice['status']) => void;
+  updateInvoice: (
+    id: string,
+    patch: Partial<Pick<Invoice, 'clientEmail' | 'notes'>>,
+  ) => void;
   addEventTemplate: (template: Omit<EventTemplate, 'id' | 'businessId'>) => void;
   deleteEventTemplate: (id: string) => void;
   addTask: (title: string, dueDate: string) => void;
@@ -478,8 +486,8 @@ export const useAppStore = create<Store>()(
           businessId: business.id,
           userId: user.id,
           status: 'new',
-          createdAt: new Date().toISOString(),
           ...partial,
+          createdAt: partial.createdAt ?? new Date().toISOString(),
         };
         set({ leads: [lead, ...get().leads] });
       },
@@ -531,6 +539,21 @@ export const useAppStore = create<Store>()(
           invoices: get().invoices.map((inv) =>
             inv.id === id ? { ...inv, status } : inv,
           ),
+        });
+      },
+
+      updateInvoice: (id, patch) => {
+        set({
+          invoices: get().invoices.map((inv) => {
+            if (inv.id !== id) return inv;
+            const next = { ...inv, ...patch };
+            if (patch.clientEmail !== undefined) {
+              const email = patch.clientEmail.trim();
+              if (email) next.clientEmail = email;
+              else delete next.clientEmail;
+            }
+            return next;
+          }),
         });
       },
 
