@@ -8,7 +8,12 @@ import {
   saveLeadSheetSettings,
   type LeadSheetSettings,
 } from '../lib/leadSheetSettings';
-import { resolveSheetSettingsFromInput, syncLeadsFromGoogleSheet } from '../lib/leadSheetSync';
+import {
+  previewSheetMapping,
+  resolveSheetSettingsFromInput,
+  syncLeadsFromGoogleSheet,
+  type SheetColumnMapping,
+} from '../lib/leadSheetSync';
 import { useAppStore } from '../store/useAppStore';
 import type { LeadSourceChannel, LeadStatus } from '../types/models';
 
@@ -20,6 +25,14 @@ const STATUS_LABELS: Record<LeadStatus, string> = {
   lost: 'לא רלוונטי',
 };
 
+const FIELD_LABELS: Record<keyof SheetColumnMapping['mapped'], string> = {
+  name: 'שם',
+  phone: 'טלפון',
+  email: 'אימייל',
+  date: 'תאריך',
+  source: 'מקור',
+};
+
 export function LeadsPage() {
   const leads = useAppStore((s) => s.leads);
   const addLead = useAppStore((s) => s.addLead);
@@ -29,6 +42,8 @@ export function LeadsPage() {
   const [sheetSettings, setSheetSettings] = useState<LeadSheetSettings>(() => loadLeadSheetSettings());
   const [syncMsg, setSyncMsg] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [previewing, setPreviewing] = useState(false);
+  const [sheetPreview, setSheetPreview] = useState<SheetColumnMapping | null>(null);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -41,23 +56,50 @@ export function LeadsPage() {
     setSheetSettings(loadLeadSheetSettings());
   }, []);
 
-  const handleSaveSheetSettings = (e: FormEvent) => {
+  const handleSaveSheetSettings = async (e: FormEvent) => {
     e.preventDefault();
     const resolved = resolveSheetSettingsFromInput(sheetSettings.sheetInput);
     if (!resolved.sheetId) {
-      setSyncMsg('לא נמצא מזהה גיליון — הדביקי קישור מלא ל-Google Sheets');
+      setSyncMsg('לא נמצא מזהה גיליון — יש להדביק קישור מלא לגיליון גוגל');
+      setSheetPreview(null);
       return;
     }
     const next = { ...sheetSettings, ...resolved };
     saveLeadSheetSettings(next);
     setSheetSettings(next);
-    setSyncMsg('הגדרות הגיליון נשמרו');
+    setSyncMsg('ההגדרות נשמרו. מומלץ ללחוץ «בדיקת גיליון» לפני הסנכרון הראשון.');
+    await runSheetPreview(next.sheetId, next.gid);
+  };
+
+  const runSheetPreview = async (sheetId: string, gid?: string) => {
+    setPreviewing(true);
+    setSheetPreview(null);
+    const result = await previewSheetMapping(sheetId, gid || undefined);
+    setPreviewing(false);
+    if (!result.ok) {
+      setSyncMsg(result.error);
+      return;
+    }
+    setSheetPreview(result.mapping);
+    if (!result.mapping.mapped.name) {
+      setSyncMsg('הגיליון נקרא, אך לא נמצאה עמודת שם. ודאו שיש עמודה «שם» או «full_name».');
+    }
+  };
+
+  const handlePreviewSheet = async () => {
+    const resolved = resolveSheetSettingsFromInput(sheetSettings.sheetInput);
+    if (!resolved.sheetId) {
+      setSyncMsg('יש להדביק קישור לגיליון לפני הבדיקה');
+      return;
+    }
+    setSyncMsg(null);
+    await runSheetPreview(resolved.sheetId, resolved.gid);
   };
 
   const handleSyncNow = async () => {
     const settings = loadLeadSheetSettings();
     if (!settings.sheetId) {
-      setSyncMsg('קודם הגדירי גיליון Google Sheets');
+      setSyncMsg('יש להגדיר גיליון גוגל לפני הסנכרון');
       setShowSyncSetup(true);
       return;
     }
@@ -75,7 +117,7 @@ export function LeadsPage() {
       return;
     }
     if (result.imported === 0) {
-      setSyncMsg(`אין לידים חדשים (${result.skipped} כבר ידועים)`);
+      setSyncMsg(`לא נמצאו לידים חדשים (${result.skipped} שורות כבר ידועות)`);
       return;
     }
     setSyncMsg(`יובאו ${result.imported} לידים חדשים`);
@@ -103,19 +145,19 @@ export function LeadsPage() {
       <div className="page">
         <h1 className="page-title">לידים</h1>
         <p className="page-subtitle">
-          סנכרון אוטומטי מ-Google Sheets — מתאים ללידים מאינסטagram Lead Ads ולאתר
+          ייבוא אוטומטי מגיליון גוגל — לידים ממודעות, מאינסטגרם, מפייסבוק או מאתר
         </p>
 
         <section className="card lead-sync-card">
           <div className="lead-sync-head">
             <div>
-              <h2 style={{ margin: 0, fontSize: '0.95rem' }}>ייבוא אוטומטי (חינם)</h2>
+              <h2 style={{ margin: 0, fontSize: '0.95rem' }}>ייבוא אוטומטי (ללא עלות)</h2>
               <p className="field-hint" style={{ margin: '0.25rem 0 0' }}>
                 {sheetSettings.sheetId
                   ? sheetSettings.autoSync
-                    ? 'סנכרון פעיל — לידים חדשים נכנסים בפתיחת האפליקציה'
-                    : 'גיליון מוגדר — סנכרון ידני בלבד'
-                  : 'טרם הוגדר גיליון'}
+                    ? 'פעיל — לידים חדשים נכנסים בכל פתיחה של האפליקציה'
+                    : 'גיליון מחובר — סנכרון ידני בלבד'
+                  : 'טרם חובר גיליון'}
               </p>
             </div>
             <button
@@ -123,7 +165,7 @@ export function LeadsPage() {
               className="btn btn-ghost btn-sm"
               onClick={() => setShowSyncSetup((v) => !v)}
             >
-              {showSyncSetup ? 'סגור הגדרות' : 'הגדרה'}
+              {showSyncSetup ? 'סגירה' : 'חיבור גיליון'}
             </button>
           </div>
 
@@ -144,25 +186,35 @@ export function LeadsPage() {
           )}
 
           {showSyncSetup && (
-            <form onSubmit={handleSaveSheetSettings} className="lead-sync-setup">
+            <form onSubmit={(e) => void handleSaveSheetSettings(e)} className="lead-sync-setup">
+              <p className="lead-sync-intro">
+                בעל העסק מחבר את גיליון הלידים שלו (ממטא או מאתר). האפליקציה קוראת את
+                הגיליון ומזהה אוטומטית עמודות נפוצות — גם אם לכל עסק יש פורמט שונה.
+              </p>
+
               <ol className="lead-sync-steps">
                 <li>
-                  <strong>אינסטagram / פייסבוק Lead Ads:</strong> Meta Business Suite →
-                  טפסי לידים → חיבור ל-Google Sheets (חינם)
+                  <strong>מודעות לידים (מטא):</strong> במערכת העסק של מטא ← טפסי לידים ←
+                  חיבור לגיליון גוגל
                 </li>
                 <li>
-                  <strong>אתר:</strong> Google Forms / טופס ששומר ל-Google Sheets
+                  <strong>אתר:</strong> טופס גוגל, או כל טופס שנשמר בגיליון גוגל
                 </li>
                 <li>
-                  שתפי את הגיליון: <em>כל מי שיש לו את הקישור — צופה</em>
+                  <strong>שיתוף:</strong> הגיליון חייב להיות «כל מי שיש לו את הקישור — צופה»
                 </li>
-                <li>הדביקי את הקישור למטה ושמרי</li>
+                <li>
+                  <strong>כאן:</strong> הדביקו את הקישור, שמרו, ולחצו «בדיקת גיליון»
+                </li>
               </ol>
+
               <div className="field">
-                <label htmlFor="sheet-url">קישור ל-Google Sheets</label>
+                <label htmlFor="sheet-url">קישור לגיליון גוגל</label>
                 <input
                   id="sheet-url"
                   type="url"
+                  className="ltr-input"
+                  dir="ltr"
                   value={sheetSettings.sheetInput}
                   onChange={(e) =>
                     setSheetSettings((s) => ({ ...s, sheetInput: e.target.value }))
@@ -170,6 +222,7 @@ export function LeadsPage() {
                   placeholder="https://docs.google.com/spreadsheets/d/..."
                 />
               </div>
+
               <label className="remember-row">
                 <input
                   type="checkbox"
@@ -180,9 +233,59 @@ export function LeadsPage() {
                 />
                 <span>סנכרון אוטומטי בפתיחת האפליקציה</span>
               </label>
-              <button type="submit" className="btn btn-primary">
-                שמירת הגדרות
-              </button>
+
+              <div className="lead-sync-actions">
+                <button type="submit" className="btn btn-primary">
+                  שמירת הגדרות
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  disabled={previewing}
+                  onClick={() => void handlePreviewSheet()}
+                >
+                  {previewing ? 'בודק…' : 'בדיקת גיליון'}
+                </button>
+              </div>
+
+              {sheetPreview && (
+                <div className="lead-sheet-preview">
+                  <p className="lead-sheet-preview-title">
+                    זיהוי עמודות ({sheetPreview.parseableRows} שורות עם שם מתוך{' '}
+                    {sheetPreview.totalRows})
+                  </p>
+                  <ul className="lead-sheet-preview-list">
+                    {(Object.keys(FIELD_LABELS) as Array<keyof SheetColumnMapping['mapped']>).map(
+                      (key) => (
+                        <li key={key}>
+                          <span>{FIELD_LABELS[key]}:</span>{' '}
+                          {sheetPreview.mapped[key] ? (
+                            <strong>{sheetPreview.mapped[key]}</strong>
+                          ) : (
+                            <span className="lead-sheet-missing">לא זוהתה</span>
+                          )}
+                        </li>
+                      ),
+                    )}
+                  </ul>
+                  {sheetPreview.headers.length > 0 && (
+                    <p className="field-hint" style={{ margin: '0.5rem 0 0' }}>
+                      עמודות בגיליון: {sheetPreview.headers.slice(0, 8).join(' · ')}
+                      {sheetPreview.headers.length > 8 ? ' …' : ''}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <details className="lead-sync-details">
+                <summary>אילו שמות עמודות נתמכים?</summary>
+                <p className="field-hint">
+                  שם: «שם», «שם מלא», full_name, first_name · טלפון: «טלפון», phone,
+                  phone_number · אימייל: «אימייל», email · תאריך: created_time, «תאריך» ·
+                  מקור: platform, ad_name, «מקור». שדות נוספים נשמרים בהערות.
+                </p>
+              </details>
+
               {sheetSettings.lastSyncAt && (
                 <p className="field-hint" style={{ margin: '0.5rem 0 0' }}>
                   סנכרון אחרון:{' '}
@@ -236,7 +339,7 @@ export function LeadsPage() {
           </form>
         ) : (
           <button type="button" className="btn btn-primary" onClick={() => setShowForm(true)}>
-            + ליד חדש מפרסום
+            + ליד חדש (הזנה ידנית)
           </button>
         )}
 

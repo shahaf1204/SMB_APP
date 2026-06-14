@@ -22,24 +22,105 @@ export type LeadSheetSyncResult =
   | { ok: true; imported: number; skipped: number; totalRows: number }
   | { ok: false; error: string };
 
-const NAME_KEYS = ['full_name', 'fullname', 'name', 'שם', 'שם מלא', 'lead name'];
+const NAME_KEYS = [
+  'full_name',
+  'fullname',
+  'name',
+  'lead_name',
+  'contact_name',
+  'שם',
+  'שם_מלא',
+  'שם מלא',
+  'שם_הלקוח',
+  'שם לקוח',
+  'first_name',
+  'שם_פרטי',
+  'שם פרטי',
+];
+const LAST_NAME_KEYS = ['last_name', 'שם_משפחה', 'שם משפחה'];
 const PHONE_KEYS = [
   'phone_number',
   'phone',
   'mobile',
+  'mobile_phone',
   'tel',
   'telephone',
+  'contact_phone',
   'טלפון',
   'נייד',
+  'מספר_טלפון',
   'מספר טלפון',
+  'פלאפון',
+  'סלולרי',
 ];
-const EMAIL_KEYS = ['email', 'email_address', 'e-mail', 'אימייל', 'דוא"ל', 'דואל'];
-const DATE_KEYS = ['created_time', 'timestamp', 'date', 'created', 'תאריך', 'זמן'];
-const PLATFORM_KEYS = ['platform', 'lead_status', 'source', 'מקור', 'פלטפורמה'];
-const AD_KEYS = ['ad_name', 'campaign_name', 'form_name', 'מודעה'];
+const EMAIL_KEYS = [
+  'email',
+  'email_address',
+  'e-mail',
+  'contact_email',
+  'אימייל',
+  'דוא"ל',
+  'דואל',
+  'מייל',
+];
+const DATE_KEYS = [
+  'created_time',
+  'timestamp',
+  'date',
+  'created',
+  'submitted_at',
+  'time',
+  'תאריך',
+  'זמן',
+  'חותמת_זמן',
+  'חותמת זמן',
+];
+const PLATFORM_KEYS = [
+  'platform',
+  'lead_status',
+  'source',
+  'channel',
+  'מקור',
+  'פלטפורמה',
+  'ערוץ',
+];
+const AD_KEYS = [
+  'ad_name',
+  'campaign_name',
+  'form_name',
+  'adset_name',
+  'מודעה',
+  'קמפיין',
+  'שם_הטופס',
+  'שם טופס',
+];
+
+export interface SheetColumnMapping {
+  headers: string[];
+  mapped: {
+    name?: string;
+    phone?: string;
+    email?: string;
+    date?: string;
+    source?: string;
+  };
+  totalRows: number;
+  parseableRows: number;
+}
 
 function normalizeHeader(header: string): string {
   return header.trim().toLowerCase().replace(/\s+/g, '_');
+}
+
+function findMatchingHeader(headers: string[], keys: string[]): string | undefined {
+  const normalizedKeys = keys.map(normalizeHeader);
+  for (const header of headers) {
+    const h = normalizeHeader(header);
+    if (!h) continue;
+    if (normalizedKeys.includes(h)) return header;
+    if (normalizedKeys.some((k) => h.includes(k) || k.includes(h))) return header;
+  }
+  return undefined;
 }
 
 function pickField(record: Record<string, string>, keys: string[]): string {
@@ -47,15 +128,26 @@ function pickField(record: Record<string, string>, keys: string[]): string {
     Object.entries(record).map(([k, v]) => [normalizeHeader(k), v]),
   );
   for (const key of keys) {
-    const val = normalized[normalizeHeader(key)];
-    if (val?.trim()) return val.trim();
+    const nk = normalizeHeader(key);
+    if (normalized[nk]?.trim()) return normalized[nk].trim();
+    for (const [h, val] of Object.entries(normalized)) {
+      if (val?.trim() && (h.includes(nk) || nk.includes(h))) return val.trim();
+    }
   }
   return '';
 }
 
+function resolveLeadName(record: Record<string, string>): string {
+  const full = pickField(record, NAME_KEYS);
+  if (full) return full;
+  const first = pickField(record, ['first_name', 'שם_פרטי', 'שם פרטי']);
+  const last = pickField(record, LAST_NAME_KEYS);
+  return [first, last].filter(Boolean).join(' ').trim();
+}
+
 function mapPlatformToSource(platform: string, adName: string): LeadSourceChannel {
   const text = `${platform} ${adName}`.toLowerCase();
-  if (text.includes('instagram') || text.includes('ig') || text.includes('insta')) {
+  if (text.includes('instagram') || text.includes('ig') || text.includes('insta') || text.includes('אינסט')) {
     return 'instagram';
   }
   if (text.includes('facebook') || text.includes('fb') || text.includes('meta')) {
@@ -82,13 +174,50 @@ function buildRowKey(name: string, phone: string, email: string, dateRaw: string
     .join('|');
 }
 
+export function analyzeSheetCsv(csv: string): SheetColumnMapping {
+  const rows = parseCsv(csv);
+  const records = rowsToRecords(rows);
+  const headers = rows[0]?.map((h) => h.trim()).filter(Boolean) ?? [];
+  let parseableRows = 0;
+  for (const record of records) {
+    if (resolveLeadName(record)) parseableRows += 1;
+  }
+  return {
+    headers,
+    mapped: {
+      name: findMatchingHeader(headers, [...NAME_KEYS, ...LAST_NAME_KEYS]),
+      phone: findMatchingHeader(headers, PHONE_KEYS),
+      email: findMatchingHeader(headers, EMAIL_KEYS),
+      date: findMatchingHeader(headers, DATE_KEYS),
+      source: findMatchingHeader(headers, [...PLATFORM_KEYS, ...AD_KEYS]),
+    },
+    totalRows: records.length,
+    parseableRows,
+  };
+}
+
+export async function previewSheetMapping(
+  sheetId: string,
+  gid?: string,
+): Promise<{ ok: true; mapping: SheetColumnMapping } | { ok: false; error: string }> {
+  try {
+    const csv = await fetchSheetCsv(sheetId, gid);
+    return { ok: true, mapping: analyzeSheetCsv(csv) };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : 'לא ניתן לקרוא את הגיליון',
+    };
+  }
+}
+
 export function parseLeadsFromSheetCsv(csv: string): ParsedExternalLead[] {
   const rows = parseCsv(csv);
   const records = rowsToRecords(rows);
   const leads: ParsedExternalLead[] = [];
 
   for (const record of records) {
-    const name = pickField(record, NAME_KEYS);
+    const name = resolveLeadName(record);
     if (!name) continue;
 
     const phone = pickField(record, PHONE_KEYS);

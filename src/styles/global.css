@@ -964,6 +964,68 @@ a {
   font-weight: 600;
 }
 
+.lead-sync-intro {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.lead-sync-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.lead-sync-actions .btn {
+  width: 100%;
+}
+
+.lead-sheet-preview {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border-radius: var(--radius-card);
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+}
+
+.lead-sheet-preview-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.lead-sheet-preview-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.82rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.lead-sheet-missing {
+  color: var(--color-error);
+}
+
+.lead-sync-details {
+  margin-top: 0.75rem;
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+}
+
+.lead-sync-details summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.ltr-input {
+  text-align: left;
+}
+
 .lead-meta {
   margin: 0.35rem 0 0;
   font-size: 0.82rem;
