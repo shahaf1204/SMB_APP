@@ -10,7 +10,7 @@ import {
 import { useAppStore } from '../store/useAppStore';
 
 export function EngagementsPage() {
-  const engagements = useAppStore((s) => s.engagements);
+  const engagements = useAppStore((s) => s.engagements ?? []);
   const active = activeEngagements(engagements);
   const completed = engagements.filter((e) => e.status !== 'active');
 

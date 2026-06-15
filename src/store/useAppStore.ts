@@ -140,6 +140,15 @@ function migrateInvoices(invoices: unknown): Invoice[] {
   });
 }
 
+function normalizeEngagementState(p: Partial<AppState>): Partial<AppState> {
+  return {
+    ...p,
+    engagements: Array.isArray(p.engagements) ? p.engagements : [],
+    milestones: Array.isArray(p.milestones) ? p.milestones : [],
+    engagementSessions: Array.isArray(p.engagementSessions) ? p.engagementSessions : [],
+  };
+}
+
 const initialState: AppState = {
   user: null,
   business: null,
@@ -172,7 +181,7 @@ export const useAppStore = create<Store>()(
         const saved = findAccountSnapshot(trimmedName, trimmedEmail);
         if (saved?.user) {
           set({
-            ...saved,
+            ...normalizeEngagementState(saved),
             user: {
               id: saved.user.id,
               displayName: trimmedName,
@@ -241,7 +250,7 @@ export const useAppStore = create<Store>()(
 
         if (saved) {
           set({
-            ...saved,
+            ...normalizeEngagementState(saved),
             user: {
               id: userId,
               displayName: resolvedName,
@@ -585,16 +594,17 @@ export const useAppStore = create<Store>()(
           status: 'active',
           usedSessions: 0,
           createdAt: new Date().toISOString(),
-          members: partial.members ?? [],
           ...partial,
+          members: partial.members ?? [],
+          notes: partial.notes ?? '',
         };
-        set({ engagements: [engagement, ...get().engagements] });
+        set({ engagements: [engagement, ...(get().engagements ?? [])] });
         return engagement.id;
       },
 
       updateEngagement: (id, patch) => {
         set({
-          engagements: get().engagements.map((e) => (e.id === id ? { ...e, ...patch } : e)),
+          engagements: (get().engagements ?? []).map((e) => (e.id === id ? { ...e, ...patch } : e)),
         });
       },
 
@@ -605,7 +615,7 @@ export const useAppStore = create<Store>()(
       addMilestone: (engagementId, partial) => {
         const business = get().business;
         if (!business) return '';
-        const sortOrder = get().milestones.filter((m) => m.engagementId === engagementId).length;
+        const sortOrder = (get().milestones ?? []).filter((m) => m.engagementId === engagementId).length;
         const milestone: Milestone = {
           id: createId(),
           engagementId,
@@ -615,23 +625,23 @@ export const useAppStore = create<Store>()(
           ...partial,
           notes: partial.notes ?? '',
         };
-        set({ milestones: [...get().milestones, milestone] });
+        set({ milestones: [...(get().milestones ?? []), milestone] });
         return milestone.id;
       },
 
       updateMilestone: (id, patch) => {
         set({
-          milestones: get().milestones.map((m) => (m.id === id ? { ...m, ...patch } : m)),
+          milestones: (get().milestones ?? []).map((m) => (m.id === id ? { ...m, ...patch } : m)),
         });
       },
 
       deleteMilestone: (id) => {
-        set({ milestones: get().milestones.filter((m) => m.id !== id) });
+        set({ milestones: (get().milestones ?? []).filter((m) => m.id !== id) });
       },
 
       createMilestoneInvoice: (milestoneId) => {
-        const milestone = get().milestones.find((m) => m.id === milestoneId);
-        const engagement = get().engagements.find((e) => e.id === milestone?.engagementId);
+        const milestone = (get().milestones ?? []).find((m) => m.id === milestoneId);
+        const engagement = (get().engagements ?? []).find((e) => e.id === milestone?.engagementId);
         if (!milestone || !engagement) return '';
         const invoiceId = get().createInvoice({
           clientName: engagement.clientName,
@@ -648,7 +658,7 @@ export const useAppStore = create<Store>()(
       logEngagementSession: (engagementId, partial) => {
         const business = get().business;
         if (!business) return '';
-        const engagement = get().engagements.find((e) => e.id === engagementId);
+        const engagement = (get().engagements ?? []).find((e) => e.id === engagementId);
         if (!engagement) return '';
 
         const session: EngagementSession = {
@@ -671,8 +681,8 @@ export const useAppStore = create<Store>()(
         }
 
         set({
-          engagementSessions: [session, ...get().engagementSessions],
-          engagements: get().engagements.map((e) =>
+          engagementSessions: [session, ...(get().engagementSessions ?? [])],
+          engagements: (get().engagements ?? []).map((e) =>
             e.id === engagementId ? { ...e, ...updates } : e,
           ),
         });
@@ -682,7 +692,7 @@ export const useAppStore = create<Store>()(
       addGroupMember: (engagementId, partial) => {
         const member: GroupMember = { id: createId(), ...partial };
         set({
-          engagements: get().engagements.map((e) =>
+          engagements: (get().engagements ?? []).map((e) =>
             e.id === engagementId
               ? { ...e, members: [...(e.members ?? []), member] }
               : e,
@@ -692,7 +702,7 @@ export const useAppStore = create<Store>()(
 
       removeGroupMember: (engagementId, memberId) => {
         set({
-          engagements: get().engagements.map((e) =>
+          engagements: (get().engagements ?? []).map((e) =>
             e.id === engagementId
               ? { ...e, members: (e.members ?? []).filter((m) => m.id !== memberId) }
               : e,
@@ -831,9 +841,10 @@ export const useAppStore = create<Store>()(
           clearAppStorage();
         }
       },
+      migrate: (persisted) => normalizeEngagementState(persisted as Partial<AppState>),
       merge: (persisted, current) => {
         try {
-          const p = (persisted ?? {}) as Partial<AppState>;
+          const p = normalizeEngagementState((persisted ?? {}) as Partial<AppState>);
           return {
             ...current,
             ...p,
@@ -845,11 +856,6 @@ export const useAppStore = create<Store>()(
             tasks: Array.isArray(p.tasks) ? p.tasks : [],
             dismissedAutoTasks: Array.isArray(p.dismissedAutoTasks)
               ? p.dismissedAutoTasks
-              : [],
-            engagements: Array.isArray(p.engagements) ? p.engagements : [],
-            milestones: Array.isArray(p.milestones) ? p.milestones : [],
-            engagementSessions: Array.isArray(p.engagementSessions)
-              ? p.engagementSessions
               : [],
             events: Array.isArray(p.events) ? p.events : [],
             eventValues: Array.isArray(p.eventValues) ? p.eventValues : [],

@@ -26,18 +26,18 @@ export function packProgress(e: Engagement): { used: number; total: number; rema
 
 export function engagementSessionsFor(
   engagementId: string,
-  sessions: EngagementSession[],
+  sessions: EngagementSession[] | undefined,
 ): EngagementSession[] {
-  return sessions
+  return (sessions ?? [])
     .filter((s) => s.engagementId === engagementId)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
 export function engagementRevenueTotal(
   engagementId: string,
-  sessions: EngagementSession[],
+  sessions: EngagementSession[] | undefined,
 ): number {
-  return sessions
+  return (sessions ?? [])
     .filter((s) => s.engagementId === engagementId)
     .reduce((sum, s) => sum + s.revenue, 0);
 }
@@ -51,6 +51,6 @@ export function isEngagementActive(e: Engagement): boolean {
   return e.status === 'active';
 }
 
-export function activeEngagements(engagements: Engagement[]): Engagement[] {
-  return engagements.filter(isEngagementActive);
+export function activeEngagements(engagements: Engagement[] | undefined): Engagement[] {
+  return (engagements ?? []).filter(isEngagementActive);
 }

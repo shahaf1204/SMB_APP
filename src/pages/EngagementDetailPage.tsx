@@ -23,11 +23,20 @@ const MS_STATUS: Record<MilestoneStatus, string> = {
 export function EngagementDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const business = useAppStore((s) => s.business)!;
-  const engagement = useAppStore((s) => s.engagements.find((e) => e.id === id));
-  const milestones = useAppStore((s) => s.milestones.filter((m) => m.engagementId === id));
-  const allSessions = useAppStore((s) => s.engagementSessions);
-  const invoices = useAppStore((s) => s.invoices);
+  const allEngagements = useAppStore((s) => s.engagements ?? []);
+  const allMilestones = useAppStore((s) => s.milestones ?? []);
+  const allSessions = useAppStore((s) => s.engagementSessions ?? []);
+  const invoices = useAppStore((s) => s.invoices ?? []);
+  const business = useAppStore((s) => s.business);
+
+  const engagement = useMemo(
+    () => allEngagements.find((e) => e.id === id),
+    [allEngagements, id],
+  );
+  const milestones = useMemo(
+    () => allMilestones.filter((m) => m.engagementId === id),
+    [allMilestones, id],
+  );
 
   const logEngagementSession = useAppStore((s) => s.logEngagementSession);
   const addMilestone = useAppStore((s) => s.addMilestone);
@@ -234,7 +243,7 @@ export function EngagementDetailPage() {
                     ? invoices.find((i) => i.id === m.invoiceId)
                     : undefined;
                   const mailto =
-                    inv && engagement.clientEmail
+                    inv && business && engagement.clientEmail
                       ? invoiceMailtoHref(inv, business, [])
                       : null;
                   return (
