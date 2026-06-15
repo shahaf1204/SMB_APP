@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
 import { EventForm, type EventFormValues } from '../components/EventForm';
 import { buildEventValuesFromInputs, eventFormToEventPayload } from '../lib/eventForm';
@@ -51,6 +51,9 @@ export function AddEventPage() {
   return (
     <div className="app-shell">
       <div className="page">
+        <Link to="/create" className="page-back">
+          ← חזרה
+        </Link>
         <h1 className="page-title">אירוע חדש</h1>
         <p className="page-subtitle">מילוי מהיר — פחות מדקה</p>
         <EventForm

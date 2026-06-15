@@ -8,6 +8,12 @@ import {
 } from './components/RouteGuards';
 import { AddEventPage } from './pages/AddEventPage';
 import { AuthPage } from './pages/AuthPage';
+import { CreateGroupPage } from './pages/CreateGroupPage';
+import { CreateHubPage } from './pages/CreateHubPage';
+import { CreatePackPage } from './pages/CreatePackPage';
+import { CreateProjectPage } from './pages/CreateProjectPage';
+import { EngagementDetailPage } from './pages/EngagementDetailPage';
+import { EngagementsPage } from './pages/EngagementsPage';
 import { CategoriesPage } from './pages/CategoriesPage';
 import { CustomerDetailPage } from './pages/CustomerDetailPage';
 import { CustomersPage } from './pages/CustomersPage';
@@ -42,6 +48,13 @@ export default function App() {
           <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/assistant" element={<AssistantPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/create" element={<CreateHubPage />} />
+          <Route path="/create/event" element={<AddEventPage />} />
+          <Route path="/create/pack" element={<CreatePackPage />} />
+          <Route path="/create/project" element={<CreateProjectPage />} />
+          <Route path="/create/group" element={<CreateGroupPage />} />
+          <Route path="/engagements" element={<EngagementsPage />} />
+          <Route path="/engagements/:id" element={<EngagementDetailPage />} />
           <Route path="/events/new" element={<AddEventPage />} />
           <Route path="/events/:id/edit" element={<EditEventPage />} />
           <Route path="/leads" element={<LeadsPage />} />

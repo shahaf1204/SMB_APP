@@ -1,6 +1,10 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 
 export function BottomNav() {
+  const { pathname } = useLocation();
+  const createActive =
+    pathname.startsWith('/create') || pathname === '/events/new';
+
   return (
     <nav className="bottom-nav bottom-nav-scroll" aria-label="ניווט ראשי">
       <NavLink to="/today" className={({ isActive }) => (isActive ? 'active' : '')}>
@@ -21,11 +25,11 @@ export function BottomNav() {
         </span>
         <span className="nav-label">לידים</span>
       </NavLink>
-      <NavLink to="/events/new" className={({ isActive }) => (isActive ? 'active' : '')}>
+      <NavLink to="/create" className={() => (createActive ? 'active' : '')}>
         <span className="nav-icon nav-icon-main" aria-hidden>
           ➕
         </span>
-        <span className="nav-label">אירוע</span>
+        <span className="nav-label">חדש</span>
       </NavLink>
       <NavLink to="/assistant" className={({ isActive }) => (isActive ? 'active' : '')}>
         <span className="nav-icon" aria-hidden>

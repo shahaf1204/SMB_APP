@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { ActiveEngagementsCard } from '../components/ActiveEngagementsCard';
 import { CalendarExportBanner } from '../components/CalendarExportBanner';
 import type { CalendarExportOutcome } from '../lib/calendarExport';
 import { BottomNav } from '../components/BottomNav';
@@ -84,6 +85,7 @@ export function DashboardPage() {
         {calendarExport && <CalendarExportBanner outcome={calendarExport} />}
         <GlobalSearch />
         <NextEventCard event={nextEvent} clientName={clientName} amount={nextAmount} />
+        <ActiveEngagementsCard />
 
         <div className="quick-actions">
           <Link to="/leads" className="quick-action-card">

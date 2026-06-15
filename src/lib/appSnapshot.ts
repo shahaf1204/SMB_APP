@@ -15,5 +15,8 @@ export function getAppSnapshot(): AppState {
     eventTemplates: s.eventTemplates,
     tasks: s.tasks,
     dismissedAutoTasks: s.dismissedAutoTasks,
+    engagements: s.engagements,
+    milestones: s.milestones,
+    engagementSessions: s.engagementSessions,
   };
 }

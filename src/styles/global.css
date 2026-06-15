@@ -2036,3 +2036,258 @@ a {
   display: block;
   text-align: center;
 }
+
+.page-back {
+  display: inline-block;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.create-hub-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+.create-hub-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  text-decoration: none;
+  color: inherit;
+  padding: 1rem;
+}
+
+.create-hub-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.create-hub-desc {
+  margin: 0.2rem 0 0;
+  font-size: 0.78rem;
+  color: var(--color-text-secondary);
+  line-height: 1.35;
+}
+
+.create-hub-link {
+  display: block;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.engagement-header {
+  margin-bottom: 0.75rem;
+}
+
+.engagement-kind-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4338ca;
+  margin-bottom: 0.35rem;
+}
+
+.engagement-hero {
+  text-align: center;
+}
+
+.pack-meter-wrap {
+  height: 8px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.pack-meter-fill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 999px;
+  transition: width 0.25s ease;
+}
+
+.pack-meter-label {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+}
+
+.engagement-summary-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.engagement-summary-row .summary-label {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--color-text-secondary);
+}
+
+.milestone-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.milestone-item {
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+}
+
+.milestone-item:last-child {
+  border-bottom: none;
+}
+
+.milestone-item-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.milestone-item-meta {
+  margin: 0.25rem 0;
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+}
+
+.milestone-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.milestone-add-form {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-border, #e5e7eb);
+}
+
+.member-list {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+}
+
+.member-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.member-add-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.attendance-list {
+  list-style: none;
+  margin: 0 0 0.65rem;
+  padding: 0;
+}
+
+.session-history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.82rem;
+}
+
+.session-history li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.engagement-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.engagement-list-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: inherit;
+  padding: 0.85rem 1rem;
+}
+
+.engagement-list-row.muted {
+  opacity: 0.65;
+}
+
+.engagement-list-icon {
+  font-size: 1.35rem;
+}
+
+.engagement-list-meta {
+  margin: 0.15rem 0 0;
+  font-size: 0.78rem;
+  color: var(--color-text-secondary);
+}
+
+.dashboard-engagements {
+  margin-bottom: 0.75rem;
+}
+
+.dashboard-engagements-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.dashboard-engagements-head a {
+  font-size: 0.82rem;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.dashboard-engagements-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.dashboard-engagement-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0;
+  text-decoration: none;
+  color: inherit;
+  font-size: 0.88rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.dashboard-engagement-link:last-child {
+  border-bottom: none;
+}
+
+.dashboard-engagement-badge {
+  margin-right: auto;
+  font-size: 0.72rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: #f3f4f6;
+  color: var(--color-text-secondary);
+}

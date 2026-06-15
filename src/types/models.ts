@@ -27,6 +27,69 @@ export type LeadSourceChannel =
 
 export type InvoiceStatus = 'draft' | 'sent' | 'paid';
 
+export type EngagementKind = 'project' | 'session_pack' | 'recurring_group';
+
+export type EngagementStatus = 'active' | 'completed' | 'paused';
+
+export type MilestoneStatus = 'pending' | 'done' | 'paid';
+
+export interface GroupMember {
+  id: string;
+  studentName: string;
+  parentName?: string;
+  phone?: string;
+  email?: string;
+}
+
+export interface Engagement {
+  id: string;
+  businessId: string;
+  userId: string;
+  kind: EngagementKind;
+  title: string;
+  clientName: string;
+  clientEmail?: string;
+  clientPhone?: string;
+  status: EngagementStatus;
+  startDate: string;
+  endDate?: string;
+  notes: string;
+  createdAt: string;
+  /** כרטיסייה */
+  totalSessions?: number;
+  usedSessions?: number;
+  packAmount?: number;
+  packExpiresAt?: string;
+  /** חוג קבוע */
+  weekday?: number;
+  lessonTime?: string;
+  members?: GroupMember[];
+  pricePerStudent?: number;
+}
+
+export interface Milestone {
+  id: string;
+  engagementId: string;
+  businessId: string;
+  name: string;
+  amount: number;
+  dueDate?: string;
+  status: MilestoneStatus;
+  notes: string;
+  invoiceId?: string;
+  sortOrder: number;
+}
+
+export interface EngagementSession {
+  id: string;
+  engagementId: string;
+  businessId: string;
+  date: string;
+  notes: string;
+  revenue: number;
+  attendedMemberIds?: string[];
+}
+
 export interface EventTemplate {
   id: string;
   businessId: string;
@@ -66,6 +129,8 @@ export interface Invoice {
   businessId: string;
   userId: string;
   eventId?: string;
+  engagementId?: string;
+  milestoneId?: string;
   invoiceNumber: number;
   clientName: string;
   clientEmail?: string;
@@ -139,4 +204,7 @@ export interface AppState {
   eventTemplates: EventTemplate[];
   tasks: Task[];
   dismissedAutoTasks: string[];
+  engagements: Engagement[];
+  milestones: Milestone[];
+  engagementSessions: EngagementSession[];
 }

@@ -37,6 +37,9 @@ export function snapshotFromState(state: AppState): AccountSnapshot {
     eventTemplates: state.eventTemplates,
     tasks: state.tasks,
     dismissedAutoTasks: state.dismissedAutoTasks,
+    engagements: state.engagements,
+    milestones: state.milestones,
+    engagementSessions: state.engagementSessions,
   };
 }
 
@@ -52,6 +55,11 @@ function normalizeSnapshot(data: AccountSnapshot): AccountSnapshot {
     tasks: Array.isArray(data.tasks) ? data.tasks : [],
     dismissedAutoTasks: Array.isArray(data.dismissedAutoTasks)
       ? data.dismissedAutoTasks
+      : [],
+    engagements: Array.isArray(data.engagements) ? data.engagements : [],
+    milestones: Array.isArray(data.milestones) ? data.milestones : [],
+    engagementSessions: Array.isArray(data.engagementSessions)
+      ? data.engagementSessions
       : [],
     nextInvoiceNumber: data.nextInvoiceNumber ?? 1001,
   };

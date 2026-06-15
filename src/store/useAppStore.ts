@@ -25,12 +25,16 @@ import type {
   AppState,
   Business,
   Category,
+  Engagement,
+  EngagementSession,
   Event,
   EventTemplate,
   EventValue,
+  GroupMember,
   Invoice,
   Lead,
   LeadStatus,
+  Milestone,
   Task,
 } from '../types/models';
 
@@ -77,8 +81,31 @@ interface AppActions {
     clientEmail?: string;
     amount: number;
     eventId?: string;
+    engagementId?: string;
+    milestoneId?: string;
     notes?: string;
   }) => string;
+  createEngagement: (
+    engagement: Omit<Engagement, 'id' | 'businessId' | 'userId' | 'createdAt' | 'status' | 'usedSessions'>,
+  ) => string;
+  updateEngagement: (id: string, patch: Partial<Omit<Engagement, 'id' | 'businessId' | 'userId'>>) => void;
+  completeEngagement: (id: string) => void;
+  addMilestone: (
+    engagementId: string,
+    milestone: Omit<Milestone, 'id' | 'engagementId' | 'businessId' | 'status' | 'sortOrder'>,
+  ) => string;
+  updateMilestone: (
+    id: string,
+    patch: Partial<Pick<Milestone, 'name' | 'amount' | 'dueDate' | 'status' | 'notes' | 'invoiceId'>>,
+  ) => void;
+  deleteMilestone: (id: string) => void;
+  createMilestoneInvoice: (milestoneId: string) => string;
+  logEngagementSession: (
+    engagementId: string,
+    session: Omit<EngagementSession, 'id' | 'engagementId' | 'businessId'>,
+  ) => string;
+  addGroupMember: (engagementId: string, member: Omit<GroupMember, 'id'>) => void;
+  removeGroupMember: (engagementId: string, memberId: string) => void;
   updateInvoiceStatus: (id: string, status: Invoice['status']) => void;
   updateInvoice: (
     id: string,
@@ -125,6 +152,9 @@ const initialState: AppState = {
   eventTemplates: [],
   tasks: [],
   dismissedAutoTasks: [],
+  engagements: [],
+  milestones: [],
+  engagementSessions: [],
 };
 
 export const useAppStore = create<Store>()(
@@ -506,7 +536,15 @@ export const useAppStore = create<Store>()(
         });
       },
 
-      createInvoice: ({ clientName, clientEmail, amount, eventId, notes = '' }) => {
+      createInvoice: ({
+        clientName,
+        clientEmail,
+        amount,
+        eventId,
+        engagementId,
+        milestoneId,
+        notes = '',
+      }) => {
         const business = get().business;
         const user = get().user;
         if (!business || !user) return '';
@@ -521,7 +559,9 @@ export const useAppStore = create<Store>()(
           clientName,
           ...(email ? { clientEmail: email } : {}),
           amount,
-          eventId,
+          ...(eventId ? { eventId } : {}),
+          ...(engagementId ? { engagementId } : {}),
+          ...(milestoneId ? { milestoneId } : {}),
           issuedAt,
           dueDate: defaultDueDate(),
           status: 'draft',
@@ -532,6 +572,132 @@ export const useAppStore = create<Store>()(
           nextInvoiceNumber: num + 1,
         });
         return invoice.id;
+      },
+
+      createEngagement: (partial) => {
+        const business = get().business;
+        const user = get().user;
+        if (!business || !user) return '';
+        const engagement: Engagement = {
+          id: createId(),
+          businessId: business.id,
+          userId: user.id,
+          status: 'active',
+          usedSessions: 0,
+          createdAt: new Date().toISOString(),
+          members: partial.members ?? [],
+          ...partial,
+        };
+        set({ engagements: [engagement, ...get().engagements] });
+        return engagement.id;
+      },
+
+      updateEngagement: (id, patch) => {
+        set({
+          engagements: get().engagements.map((e) => (e.id === id ? { ...e, ...patch } : e)),
+        });
+      },
+
+      completeEngagement: (id) => {
+        get().updateEngagement(id, { status: 'completed' });
+      },
+
+      addMilestone: (engagementId, partial) => {
+        const business = get().business;
+        if (!business) return '';
+        const sortOrder = get().milestones.filter((m) => m.engagementId === engagementId).length;
+        const milestone: Milestone = {
+          id: createId(),
+          engagementId,
+          businessId: business.id,
+          status: 'pending',
+          sortOrder,
+          ...partial,
+          notes: partial.notes ?? '',
+        };
+        set({ milestones: [...get().milestones, milestone] });
+        return milestone.id;
+      },
+
+      updateMilestone: (id, patch) => {
+        set({
+          milestones: get().milestones.map((m) => (m.id === id ? { ...m, ...patch } : m)),
+        });
+      },
+
+      deleteMilestone: (id) => {
+        set({ milestones: get().milestones.filter((m) => m.id !== id) });
+      },
+
+      createMilestoneInvoice: (milestoneId) => {
+        const milestone = get().milestones.find((m) => m.id === milestoneId);
+        const engagement = get().engagements.find((e) => e.id === milestone?.engagementId);
+        if (!milestone || !engagement) return '';
+        const invoiceId = get().createInvoice({
+          clientName: engagement.clientName,
+          clientEmail: engagement.clientEmail,
+          amount: milestone.amount,
+          engagementId: engagement.id,
+          milestoneId: milestone.id,
+          notes: milestone.name,
+        });
+        get().updateMilestone(milestoneId, { invoiceId });
+        return invoiceId;
+      },
+
+      logEngagementSession: (engagementId, partial) => {
+        const business = get().business;
+        if (!business) return '';
+        const engagement = get().engagements.find((e) => e.id === engagementId);
+        if (!engagement) return '';
+
+        const session: EngagementSession = {
+          id: createId(),
+          engagementId,
+          businessId: business.id,
+          date: partial.date,
+          notes: partial.notes,
+          revenue: partial.revenue,
+          attendedMemberIds: partial.attendedMemberIds,
+        };
+
+        const updates: Partial<Engagement> = {};
+        if (engagement.kind === 'session_pack') {
+          const used = (engagement.usedSessions ?? 0) + 1;
+          updates.usedSessions = used;
+          if ((engagement.totalSessions ?? 0) > 0 && used >= (engagement.totalSessions ?? 0)) {
+            updates.status = 'completed';
+          }
+        }
+
+        set({
+          engagementSessions: [session, ...get().engagementSessions],
+          engagements: get().engagements.map((e) =>
+            e.id === engagementId ? { ...e, ...updates } : e,
+          ),
+        });
+        return session.id;
+      },
+
+      addGroupMember: (engagementId, partial) => {
+        const member: GroupMember = { id: createId(), ...partial };
+        set({
+          engagements: get().engagements.map((e) =>
+            e.id === engagementId
+              ? { ...e, members: [...(e.members ?? []), member] }
+              : e,
+          ),
+        });
+      },
+
+      removeGroupMember: (engagementId, memberId) => {
+        set({
+          engagements: get().engagements.map((e) =>
+            e.id === engagementId
+              ? { ...e, members: (e.members ?? []).filter((m) => m.id !== memberId) }
+              : e,
+          ),
+        });
       },
 
       updateInvoiceStatus: (id, status) => {
@@ -619,6 +785,9 @@ export const useAppStore = create<Store>()(
           eventTemplates: state.eventTemplates ?? [],
           tasks: state.tasks ?? [],
           dismissedAutoTasks: state.dismissedAutoTasks ?? [],
+          engagements: state.engagements ?? [],
+          milestones: state.milestones ?? [],
+          engagementSessions: state.engagementSessions ?? [],
         });
       },
 
@@ -654,7 +823,7 @@ export const useAppStore = create<Store>()(
     }),
     {
       name: STORAGE_KEY,
-      version: 4,
+      version: 5,
       storage: createJSONStorage(() => safeJsonStorage),
       onRehydrateStorage: () => (_state, err) => {
         if (err) {
@@ -676,6 +845,11 @@ export const useAppStore = create<Store>()(
             tasks: Array.isArray(p.tasks) ? p.tasks : [],
             dismissedAutoTasks: Array.isArray(p.dismissedAutoTasks)
               ? p.dismissedAutoTasks
+              : [],
+            engagements: Array.isArray(p.engagements) ? p.engagements : [],
+            milestones: Array.isArray(p.milestones) ? p.milestones : [],
+            engagementSessions: Array.isArray(p.engagementSessions)
+              ? p.engagementSessions
               : [],
             events: Array.isArray(p.events) ? p.events : [],
             eventValues: Array.isArray(p.eventValues) ? p.eventValues : [],
