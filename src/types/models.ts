@@ -27,12 +27,10 @@ export type LeadSourceChannel =
 
 export type InvoiceStatus = 'draft' | 'sent' | 'paid';
 
-export type PrimaryWorkModel =
-  | 'single_event'
-  | 'session_pack'
-  | 'recurring_group'
-  | 'project'
-  | 'mixed';
+export type WorkConcept = 'single_event' | 'session_pack' | 'recurring_group' | 'project';
+
+/** @deprecated נשמר לתאימות — השתמשו ב-workModels */
+export type PrimaryWorkModel = WorkConcept | 'mixed';
 
 export type EngagementKind = 'project' | 'session_pack' | 'recurring_group';
 
@@ -163,7 +161,9 @@ export interface Business {
   businessTypeFromList: boolean;
   /** מזהה preset מ-onboarding — לקategorias */
   presetId?: string;
-  /** איך העסק עובד בעיקר — משפיע על דשבורד ו«חדש» */
+  /** קונסeptי העבודה שהמשתמש בחר — קובעים דשבורד ו«חדש» */
+  workModels?: WorkConcept[];
+  /** @deprecated — ממופה ל-workModels בטעינה */
   primaryWorkModel?: PrimaryWorkModel;
 }
 

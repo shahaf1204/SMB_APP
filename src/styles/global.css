@@ -2474,3 +2474,62 @@ a {
 .create-hub-card-primary {
   border-color: var(--color-primary);
 }
+
+.create-hub-quick-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.create-hub-quick-btn {
+  flex: 1;
+  min-width: 8rem;
+  text-align: center;
+  text-decoration: none;
+  font-size: 0.85rem;
+  padding: 0.65rem 0.5rem;
+}
+
+.onboarding-page .onboarding-steps {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.78rem;
+  color: var(--color-text-secondary);
+}
+
+.onboarding-steps .active {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.onboarding-suggestion {
+  margin: 0 0 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  background: #eef2ff;
+  font-size: 0.85rem;
+}
+
+.onboarding-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.onboarding-actions .btn {
+  flex: 1;
+}
+
+.work-model-option-multi {
+  position: relative;
+}
+
+.work-model-option-check {
+  width: 1.25rem;
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  color: var(--color-primary);
+  font-weight: 700;
+}

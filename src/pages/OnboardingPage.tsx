@@ -2,11 +2,12 @@ import { FormEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BUSINESS_TYPE_PRESETS } from '../data/businessTypePresets';
 import {
-  PRIMARY_WORK_MODEL_OPTIONS,
-  suggestWorkModelFromPreset,
+  suggestWorkModelsFromPreset,
+  WORK_CONCEPT_OPTIONS,
+  workModelsLabel,
 } from '../lib/workModel';
 import { useAppStore } from '../store/useAppStore';
-import type { PrimaryWorkModel } from '../types/models';
+import type { WorkConcept } from '../types/models';
 
 export function OnboardingPage() {
   const navigate = useNavigate();
@@ -17,24 +18,43 @@ export function OnboardingPage() {
     if (business) navigate('/dashboard', { replace: true });
   }, [business, navigate]);
 
+  const [step, setStep] = useState<1 | 2>(1);
   const [name, setName] = useState('');
   const [mode, setMode] = useState<'list' | 'custom'>('list');
   const [presetId, setPresetId] = useState(BUSINESS_TYPE_PRESETS[0].id);
   const [customType, setCustomType] = useState('');
-  const [workModel, setWorkModel] = useState<PrimaryWorkModel>(
-    suggestWorkModelFromPreset(BUSINESS_TYPE_PRESETS[0].id),
+  const [workModels, setWorkModels] = useState<WorkConcept[]>(
+    suggestWorkModelsFromPreset(BUSINESS_TYPE_PRESETS[0].id),
   );
-  const [workModelTouched, setWorkModelTouched] = useState(false);
+  const [workModelsTouched, setWorkModelsTouched] = useState(false);
 
   useEffect(() => {
-    if (mode === 'list' && !workModelTouched) {
-      setWorkModel(suggestWorkModelFromPreset(presetId));
+    if (mode === 'list' && !workModelsTouched) {
+      setWorkModels(suggestWorkModelsFromPreset(presetId));
     }
-  }, [presetId, mode, workModelTouched]);
+  }, [presetId, mode, workModelsTouched]);
 
-  const handleSubmit = (e: FormEvent) => {
+  const toggleConcept = (id: WorkConcept) => {
+    setWorkModelsTouched(true);
+    setWorkModels((prev) => {
+      if (prev.includes(id)) {
+        const next = prev.filter((m) => m !== id);
+        return next.length > 0 ? next : prev;
+      }
+      return [...prev, id];
+    });
+  };
+
+  const handleStep1 = (e: FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
+    if (mode === 'custom' && !customType.trim()) return;
+    setStep(2);
+  };
+
+  const handleFinish = (e: FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || workModels.length === 0) return;
 
     if (mode === 'list') {
       const preset = BUSINESS_TYPE_PRESETS.find((p) => p.id === presetId)!;
@@ -44,119 +64,155 @@ export function OnboardingPage() {
         isGeneric: false,
         businessTypeFromList: true,
         presetId: preset.id,
-        primaryWorkModel: workModel,
+        workModels,
       });
     } else {
-      if (!customType.trim()) return;
       createBusiness({
         name: name.trim(),
         businessType: customType.trim(),
         isGeneric: true,
         businessTypeFromList: false,
-        primaryWorkModel: workModel,
+        workModels,
       });
     }
     navigate('/dashboard');
   };
 
+  const suggestedLabel =
+    mode === 'list'
+      ? workModelsLabel(suggestWorkModelsFromPreset(presetId))
+      : null;
+
   return (
-    <div className="page">
-      <h1 className="page-title">פתיחת עסק</h1>
-      <p className="page-subtitle">צרי עסק חדש — נתאים את הדשבורד לסוג העבודה שלך</p>
+    <div className="page onboarding-page">
+      <h1 className="page-title">ברוכים הבאים</h1>
+      <p className="page-subtitle">
+        {step === 1
+          ? 'בואו נגדיר את העסק — האפליקציה תתאים את עצמה אליך'
+          : 'איך העסק שלך עובד? אפשר לבחור יותר מאפשרות אחת'}
+      </p>
 
-      <form onSubmit={handleSubmit} className="card">
-        <div className="field">
-          <label htmlFor="biz-name">שם העסק</label>
-          <input
-            id="biz-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="לדוגמה: סטודיו פילאטיס"
-            required
-          />
-        </div>
+      <div className="onboarding-steps" aria-hidden>
+        <span className={step >= 1 ? 'active' : ''}>1. העסק</span>
+        <span className={step >= 2 ? 'active' : ''}>2. קונסept</span>
+      </div>
 
-        <div className="field">
-          <label>סוג עסק</label>
-          <div className="chip-row">
-            <button
-              type="button"
-              className={`chip ${mode === 'list' ? 'active' : ''}`}
-              onClick={() => setMode('list')}
-            >
-              מרשימה
-            </button>
-            <button
-              type="button"
-              className={`chip ${mode === 'custom' ? 'active' : ''}`}
-              onClick={() => setMode('custom')}
-            >
-              מותאם אישית
-            </button>
-          </div>
-        </div>
-
-        {mode === 'list' ? (
+      {step === 1 ? (
+        <form onSubmit={handleStep1} className="card">
           <div className="field">
-            <label htmlFor="preset">בחרי סוג עסק</label>
-            <select id="preset" value={presetId} onChange={(e) => setPresetId(e.target.value)}>
-              {BUSINESS_TYPE_PRESETS.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        ) : (
-          <div className="field">
-            <label htmlFor="custom">סוג עסק מותאם</label>
+            <label htmlFor="biz-name">שם העסק</label>
             <input
-              id="custom"
-              value={customType}
-              onChange={(e) => setCustomType(e.target.value)}
-              placeholder="לדוגמה: מעצבת אירועים"
-              required={mode === 'custom'}
+              id="biz-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="לדוגמה: סטודיו פילאטיס / אירועי שמחה"
+              required
             />
           </div>
-        )}
 
-        <fieldset className="engagement-fieldset work-model-fieldset">
-          <legend>איך את/ה עובד/ת בעיקר?</legend>
-          <p className="field-hint" style={{ marginTop: 0 }}>
-            זה משפיע על הדשבורד ועל «➕ חדש» — אפשר לשנות בהגדרות
-          </p>
-          <div className="work-model-grid">
-            {PRIMARY_WORK_MODEL_OPTIONS.map((opt) => (
-              <label
-                key={opt.id}
-                className={`work-model-option ${workModel === opt.id ? 'active' : ''}`}
+          <div className="field">
+            <label>סוג העסק</label>
+            <div className="chip-row">
+              <button
+                type="button"
+                className={`chip ${mode === 'list' ? 'active' : ''}`}
+                onClick={() => setMode('list')}
               >
-                <input
-                  type="radio"
-                  name="work-model"
-                  value={opt.id}
-                  checked={workModel === opt.id}
-                  onChange={() => {
-                    setWorkModelTouched(true);
-                    setWorkModel(opt.id);
-                  }}
-                />
-                <span className="work-model-option-icon" aria-hidden>
-                  {opt.icon}
-                </span>
-                <span className="work-model-option-text">
-                  <strong>{opt.title}</strong>
-                  <span>{opt.desc}</span>
-                </span>
-              </label>
-            ))}
+                מרשימה
+              </button>
+              <button
+                type="button"
+                className={`chip ${mode === 'custom' ? 'active' : ''}`}
+                onClick={() => setMode('custom')}
+              >
+                מותאם אישית
+              </button>
+            </div>
           </div>
-        </fieldset>
 
-        <button type="submit" className="btn btn-primary">
-          צרי עסק והתחילי
-        </button>
-      </form>
+          {mode === 'list' ? (
+            <div className="field">
+              <label htmlFor="preset">מה סוג העסק?</label>
+              <select id="preset" value={presetId} onChange={(e) => setPresetId(e.target.value)}>
+                {BUSINESS_TYPE_PRESETS.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div className="field">
+              <label htmlFor="custom">תיאור סוג העסק</label>
+              <input
+                id="custom"
+                value={customType}
+                onChange={(e) => setCustomType(e.target.value)}
+                placeholder="לדוגמה: מדריך כושר / מפעילת ימי הולדת"
+                required={mode === 'custom'}
+              />
+            </div>
+          )}
+
+          <button type="submit" className="btn btn-primary">
+            המשך ←
+          </button>
+        </form>
+      ) : (
+        <form onSubmit={handleFinish} className="card">
+          {suggestedLabel && !workModelsTouched && (
+            <p className="onboarding-suggestion">
+              💡 לפי סוג העסק — מומלץ: <strong>{suggestedLabel}</strong>
+            </p>
+          )}
+
+          <fieldset className="engagement-fieldset work-model-fieldset">
+            <legend>באילו קונסeptים את/ה משתמש/ת?</legend>
+            <p className="field-hint" style={{ marginTop: 0 }}>
+              למשל: מאמן כושר → כרטיסיות · מפעילת ימי הולדת → אירועים בודדים ·
+              שילוב → סמן/י כמה אפשרויות
+            </p>
+            <div className="work-model-grid">
+              {WORK_CONCEPT_OPTIONS.map((opt) => {
+                const selected = workModels.includes(opt.id);
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    className={`work-model-option work-model-option-multi ${selected ? 'active' : ''}`}
+                    onClick={() => toggleConcept(opt.id)}
+                    aria-pressed={selected}
+                  >
+                    <span className="work-model-option-check" aria-hidden>
+                      {selected ? '✓' : ''}
+                    </span>
+                    <span className="work-model-option-icon" aria-hidden>
+                      {opt.icon}
+                    </span>
+                    <span className="work-model-option-text">
+                      <strong>{opt.title}</strong>
+                      <span>{opt.desc}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </fieldset>
+
+          <p className="field-hint" style={{ textAlign: 'center' }}>
+            נבחר: {workModelsLabel(workModels)}
+          </p>
+
+          <div className="onboarding-actions">
+            <button type="button" className="btn btn-ghost" onClick={() => setStep(1)}>
+              → חזרה
+            </button>
+            <button type="submit" className="btn btn-primary">
+              התחל/י לעבוד
+            </button>
+          </div>
+        </form>
+      )}
     </div>
   );
 }

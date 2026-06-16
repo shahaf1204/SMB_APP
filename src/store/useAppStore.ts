@@ -7,7 +7,7 @@ import {
   registerAccount,
   updateAccountDisplayName,
 } from '../lib/accountsRegistry';
-import { suggestWorkModelFromPreset, normalizeBusiness } from '../lib/workModel';
+import { suggestWorkModelsFromPreset, normalizeBusiness } from '../lib/workModel';
 import { clearAppStorage, safeJsonStorage, STORAGE_KEY } from '../lib/safeStorage';
 import {
   buildCategoriesFromPreset,
@@ -36,7 +36,7 @@ import type {
   Lead,
   LeadStatus,
   Milestone,
-  PrimaryWorkModel,
+  WorkConcept,
   Task,
 } from '../types/models';
 
@@ -57,9 +57,11 @@ interface AppActions {
     isGeneric: boolean;
     businessTypeFromList: boolean;
     presetId?: string;
-    primaryWorkModel?: PrimaryWorkModel;
+    workModels?: WorkConcept[];
+    /** @deprecated */
+    primaryWorkModel?: WorkConcept | 'mixed';
   }) => void;
-  updatePrimaryWorkModel: (model: PrimaryWorkModel) => void;
+  updateWorkModels: (models: WorkConcept[]) => void;
   ensureCustomerSourceCategory: () => void;
   addCategory: (category: Omit<Category, 'id' | 'businessId' | 'isActive'> & { isActive?: boolean }) => void;
   deleteCategory: (id: string) => void;
@@ -299,6 +301,7 @@ export const useAppStore = create<Store>()(
         isGeneric,
         businessTypeFromList,
         presetId,
+        workModels,
         primaryWorkModel,
       }) => {
         const user = get().user;
@@ -306,8 +309,11 @@ export const useAppStore = create<Store>()(
 
         const prev = get().business;
         const trimmedName = name.trim();
-        const resolvedWorkModel =
-          primaryWorkModel ?? suggestWorkModelFromPreset(presetId);
+        const resolvedWorkModels =
+          workModels ??
+          (primaryWorkModel && primaryWorkModel !== 'mixed'
+            ? [primaryWorkModel]
+            : suggestWorkModelsFromPreset(presetId));
 
         if (prev) {
           let categories = get().categories;
@@ -340,7 +346,9 @@ export const useAppStore = create<Store>()(
               isGeneric,
               businessTypeFromList,
               ...(presetId ? { presetId } : {}),
-              primaryWorkModel: resolvedWorkModel,
+              workModels: resolvedWorkModels,
+              primaryWorkModel:
+                resolvedWorkModels.length > 1 ? 'mixed' : resolvedWorkModels[0],
             },
             categories,
           });
@@ -364,10 +372,12 @@ export const useAppStore = create<Store>()(
               isGeneric,
               businessTypeFromList,
               ...(presetId ? { presetId } : {}),
-              primaryWorkModel:
-                primaryWorkModel ??
-                archived.business.primaryWorkModel ??
-                suggestWorkModelFromPreset(presetId ?? archived.business.presetId),
+              workModels:
+                workModels ??
+                archived.business.workModels ??
+                (primaryWorkModel && primaryWorkModel !== 'mixed'
+                  ? [primaryWorkModel]
+                  : suggestWorkModelsFromPreset(presetId ?? archived.business.presetId)),
             })!,
           });
           get().ensureCustomerSourceCategory();
@@ -382,7 +392,9 @@ export const useAppStore = create<Store>()(
           isGeneric,
           businessTypeFromList,
           ...(presetId ? { presetId } : {}),
-          primaryWorkModel: resolvedWorkModel,
+          workModels: resolvedWorkModels,
+          primaryWorkModel:
+            resolvedWorkModels.length > 1 ? 'mixed' : resolvedWorkModels[0],
         };
 
         let categoryDefs: Omit<Category, 'id'>[];
@@ -423,10 +435,15 @@ export const useAppStore = create<Store>()(
         });
       },
 
-      updatePrimaryWorkModel: (model) => {
+      updateWorkModels: (models) => {
         const business = get().business;
-        if (!business) return;
-        set({ business: { ...business, primaryWorkModel: model } });
+        if (!business || models.length === 0) return;
+        set({
+          business: normalizeBusiness({
+            ...business,
+            workModels: models,
+          })!,
+        });
       },
 
       ensureCustomerSourceCategory: () => {
@@ -862,7 +879,7 @@ export const useAppStore = create<Store>()(
     }),
     {
       name: STORAGE_KEY,
-      version: 6,
+      version: 7,
       storage: createJSONStorage(() => safeJsonStorage),
       onRehydrateStorage: () => (_state, err) => {
         if (err) {

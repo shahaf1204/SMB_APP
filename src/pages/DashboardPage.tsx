@@ -31,7 +31,7 @@ import {
 } from '../lib/events';
 import { filterEventsByPeriod } from '../lib/finance';
 import { getCustomerSourceBreakdown } from '../lib/sources';
-import { CREATE_ROUTES, resolveDashboardLayout, resolvePrimaryWorkModel } from '../lib/workModel';
+import { CREATE_ROUTES, resolveDashboardLayout, resolveWorkModels } from '../lib/workModel';
 import { useAppStore } from '../store/useAppStore';
 import type { PeriodFilter as PeriodFilterType } from '../types/models';
 
@@ -60,7 +60,7 @@ export function DashboardPage() {
   const [period, setPeriod] = useState<PeriodFilterType>('thisMonth');
   const [selectedEventIds, setSelectedEventIds] = useState<Set<string>>(new Set());
 
-  const workModel = resolvePrimaryWorkModel(business);
+  const workModels = resolveWorkModels(business);
   const layout = useMemo(
     () => resolveDashboardLayout(business, events.length, engagements),
     [business, events.length, engagements],
@@ -119,7 +119,6 @@ export function DashboardPage() {
     ? getClientName(nextEvent.id, categories, eventValues)
     : null;
   const nextAmount = nextEvent ? getEventRevenueTotal(nextEvent.id, eventValues) : 0;
-  const primaryCreateRoute = CREATE_ROUTES[workModel];
 
   const applyEventSelection = (ids: string[], mode: 'select' | 'deselect') => {
     setSelectedEventIds((prev) => {
@@ -139,11 +138,11 @@ export function DashboardPage() {
         {calendarExport && <CalendarExportBanner outcome={calendarExport} />}
         <GlobalSearch />
 
-        {layout.hero === 'pack' && (
+        {layout.showPackHero && (
           <PackDashboardHero stats={packStats} period={period} />
         )}
-        {layout.hero === 'group' && <GroupDashboardHero stats={groupStats} />}
-        {layout.hero === 'project' && (
+        {layout.showGroupHero && <GroupDashboardHero stats={groupStats} />}
+        {layout.showProjectHero && (
           <ProjectDashboardHero
             stats={projectStats}
             engagements={engagements}
@@ -162,23 +161,33 @@ export function DashboardPage() {
             <span className="quick-action-value">{newLeadsCount}</span>
             <span className="quick-action-label">לידים חדשים השבוע</span>
           </Link>
-          {workModel === 'session_pack' ? (
+          {workModels.length > 1 ? (
+            <Link to="/create" className="quick-action-card">
+              <span className="quick-action-icon">➕</span>
+              <span className="quick-action-label">יצירה</span>
+            </Link>
+          ) : workModels.includes('session_pack') ? (
             <Link to="/create/pack" className="quick-action-card">
               <span className="quick-action-icon">🎫</span>
               <span className="quick-action-label">כרטיסייה חדשה</span>
             </Link>
-          ) : workModel === 'recurring_group' ? (
+          ) : workModels.includes('recurring_group') ? (
             <Link to="/create/group" className="quick-action-card">
               <span className="quick-action-icon">👥</span>
               <span className="quick-action-label">חוג חדש</span>
             </Link>
-          ) : workModel === 'project' ? (
+          ) : workModels.includes('project') ? (
             <Link to="/create/project" className="quick-action-card">
               <span className="quick-action-icon">📋</span>
               <span className="quick-action-label">ליווי חדש</span>
             </Link>
+          ) : workModels.includes('single_event') ? (
+            <Link to={CREATE_ROUTES.single_event} className="quick-action-card">
+              <span className="quick-action-icon">📅</span>
+              <span className="quick-action-label">אירוע חדש</span>
+            </Link>
           ) : (
-            <Link to={primaryCreateRoute} className="quick-action-card">
+            <Link to="/create" className="quick-action-card">
               <span className="quick-action-icon">➕</span>
               <span className="quick-action-label">יצירה חדשה</span>
             </Link>
@@ -223,9 +232,11 @@ export function DashboardPage() {
           </>
         )}
 
-        {!layout.showCalendar && layout.hero !== 'none' && (
+        {!layout.showCalendar && workModels.some((m) => m !== 'single_event') && (
           <p className="dashboard-no-calendar-hint">
-            אין קלנדר אירועים — העבודה שלך מנוהלת דרך{' '}
+            {workModels.includes('single_event')
+              ? 'אין אירועים בקלנדר עדיין — '
+              : 'העבודה שלך מנוהלת דרך '}
             <Link to="/engagements">ליוויים וכרטיסיות</Link>
           </p>
         )}
