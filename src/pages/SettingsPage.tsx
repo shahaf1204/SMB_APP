@@ -1,5 +1,6 @@
 import { FormEvent, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { WorkModelSettings } from '../components/WorkModelSettings';
 import { AiSettingsForm } from '../components/AiSettingsForm';
 import { BottomNav } from '../components/BottomNav';
 import { CalendarReminderSettings } from '../components/CalendarReminderSettings';
@@ -77,6 +78,8 @@ export function SettingsPage() {
       <div className="page">
         <h1 className="page-title">הגדרות</h1>
         <p className="page-subtitle">{business.name}</p>
+
+        <WorkModelSettings />
 
         <section className="card" style={{ marginTop: '1rem' }}>
           <h2 style={{ margin: '0 0 0.5rem', fontSize: '0.95rem' }}>עוזר AI</h2>

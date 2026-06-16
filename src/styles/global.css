@@ -2291,3 +2291,186 @@ a {
   background: #f3f4f6;
   color: var(--color-text-secondary);
 }
+
+.dashboard-hero {
+  margin-bottom: 0.75rem;
+}
+
+.dashboard-hero-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.dashboard-hero-head a {
+  font-size: 0.82rem;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.dashboard-hero-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  text-align: center;
+}
+
+.dashboard-hero-group .dashboard-hero-stats {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.dashboard-hero-stat strong {
+  display: block;
+  font-size: 1.15rem;
+  line-height: 1.2;
+}
+
+.dashboard-hero-stat span {
+  font-size: 0.72rem;
+  color: var(--color-text-secondary);
+}
+
+.dashboard-hero-alerts {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  font-size: 0.82rem;
+}
+
+.dashboard-hero-alerts li {
+  padding: 0.35rem 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.dashboard-hero-alerts a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.dashboard-hero-alerts-warn li {
+  color: #b45309;
+}
+
+.dashboard-hero-alerts-label {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  border-bottom: none !important;
+  padding-bottom: 0.15rem !important;
+}
+
+.dashboard-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.dashboard-hero-actions .btn {
+  flex: 1;
+  min-width: 8rem;
+  text-align: center;
+  text-decoration: none;
+}
+
+.dashboard-no-calendar-hint {
+  margin: 0 0 0.85rem;
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.engagement-fieldset {
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 12px;
+  padding: 0.75rem;
+  margin: 0.75rem 0;
+}
+
+.engagement-fieldset legend {
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0 0.35rem;
+}
+
+.work-model-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.work-model-grid-compact {
+  gap: 0.35rem;
+}
+
+.work-model-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 10px;
+  cursor: pointer;
+  background: var(--color-card, #fff);
+  text-align: right;
+  width: 100%;
+  font: inherit;
+  color: inherit;
+}
+
+.work-model-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.work-model-option.active {
+  border-color: var(--color-primary);
+  background: #eef2ff;
+}
+
+.work-model-option-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.work-model-option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.work-model-option-text strong {
+  font-size: 0.88rem;
+}
+
+.work-model-option-text span {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  line-height: 1.35;
+}
+
+.create-hub-primary-btn {
+  display: block;
+  width: 100%;
+  text-align: center;
+  text-decoration: none;
+  margin-bottom: 0.75rem;
+}
+
+.create-hub-badge {
+  display: inline-block;
+  margin-right: 0.35rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: var(--color-primary);
+  vertical-align: middle;
+}
+
+.create-hub-card-primary {
+  border-color: var(--color-primary);
+}

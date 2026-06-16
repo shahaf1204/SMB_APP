@@ -1,7 +1,12 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BUSINESS_TYPE_PRESETS } from '../data/businessTypePresets';
+import {
+  PRIMARY_WORK_MODEL_OPTIONS,
+  suggestWorkModelFromPreset,
+} from '../lib/workModel';
 import { useAppStore } from '../store/useAppStore';
+import type { PrimaryWorkModel } from '../types/models';
 
 export function OnboardingPage() {
   const navigate = useNavigate();
@@ -16,6 +21,16 @@ export function OnboardingPage() {
   const [mode, setMode] = useState<'list' | 'custom'>('list');
   const [presetId, setPresetId] = useState(BUSINESS_TYPE_PRESETS[0].id);
   const [customType, setCustomType] = useState('');
+  const [workModel, setWorkModel] = useState<PrimaryWorkModel>(
+    suggestWorkModelFromPreset(BUSINESS_TYPE_PRESETS[0].id),
+  );
+  const [workModelTouched, setWorkModelTouched] = useState(false);
+
+  useEffect(() => {
+    if (mode === 'list' && !workModelTouched) {
+      setWorkModel(suggestWorkModelFromPreset(presetId));
+    }
+  }, [presetId, mode, workModelTouched]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -29,6 +44,7 @@ export function OnboardingPage() {
         isGeneric: false,
         businessTypeFromList: true,
         presetId: preset.id,
+        primaryWorkModel: workModel,
       });
     } else {
       if (!customType.trim()) return;
@@ -37,6 +53,7 @@ export function OnboardingPage() {
         businessType: customType.trim(),
         isGeneric: true,
         businessTypeFromList: false,
+        primaryWorkModel: workModel,
       });
     }
     navigate('/dashboard');
@@ -45,7 +62,7 @@ export function OnboardingPage() {
   return (
     <div className="page">
       <h1 className="page-title">פתיחת עסק</h1>
-      <p className="page-subtitle">צרי עסק חדש ובחרי סוג — נטענו קטגוריות ברירת מחדל</p>
+      <p className="page-subtitle">צרי עסק חדש — נתאים את הדשבורד לסוג העבודה שלך</p>
 
       <form onSubmit={handleSubmit} className="card">
         <div className="field">
@@ -54,7 +71,7 @@ export function OnboardingPage() {
             id="biz-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="לדוגמה: אירועי שמחה"
+            placeholder="לדוגמה: סטודיו פילאטיס"
             required
           />
         </div>
@@ -102,6 +119,39 @@ export function OnboardingPage() {
             />
           </div>
         )}
+
+        <fieldset className="engagement-fieldset work-model-fieldset">
+          <legend>איך את/ה עובד/ת בעיקר?</legend>
+          <p className="field-hint" style={{ marginTop: 0 }}>
+            זה משפיע על הדשבורד ועל «➕ חדש» — אפשר לשנות בהגדרות
+          </p>
+          <div className="work-model-grid">
+            {PRIMARY_WORK_MODEL_OPTIONS.map((opt) => (
+              <label
+                key={opt.id}
+                className={`work-model-option ${workModel === opt.id ? 'active' : ''}`}
+              >
+                <input
+                  type="radio"
+                  name="work-model"
+                  value={opt.id}
+                  checked={workModel === opt.id}
+                  onChange={() => {
+                    setWorkModelTouched(true);
+                    setWorkModel(opt.id);
+                  }}
+                />
+                <span className="work-model-option-icon" aria-hidden>
+                  {opt.icon}
+                </span>
+                <span className="work-model-option-text">
+                  <strong>{opt.title}</strong>
+                  <span>{opt.desc}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
 
         <button type="submit" className="btn btn-primary">
           צרי עסק והתחילי

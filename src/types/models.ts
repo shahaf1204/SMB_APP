@@ -27,6 +27,13 @@ export type LeadSourceChannel =
 
 export type InvoiceStatus = 'draft' | 'sent' | 'paid';
 
+export type PrimaryWorkModel =
+  | 'single_event'
+  | 'session_pack'
+  | 'recurring_group'
+  | 'project'
+  | 'mixed';
+
 export type EngagementKind = 'project' | 'session_pack' | 'recurring_group';
 
 export type EngagementStatus = 'active' | 'completed' | 'paused';
@@ -154,6 +161,10 @@ export interface Business {
   businessType: string;
   isGeneric: boolean;
   businessTypeFromList: boolean;
+  /** מזהה preset מ-onboarding — לקategorias */
+  presetId?: string;
+  /** איך העסק עובד בעיקר — משפיע על דשבורד ו«חדש» */
+  primaryWorkModel?: PrimaryWorkModel;
 }
 
 export interface Category {

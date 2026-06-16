@@ -7,6 +7,7 @@ import {
   registerAccount,
   updateAccountDisplayName,
 } from '../lib/accountsRegistry';
+import { suggestWorkModelFromPreset, normalizeBusiness } from '../lib/workModel';
 import { clearAppStorage, safeJsonStorage, STORAGE_KEY } from '../lib/safeStorage';
 import {
   buildCategoriesFromPreset,
@@ -35,6 +36,7 @@ import type {
   Lead,
   LeadStatus,
   Milestone,
+  PrimaryWorkModel,
   Task,
 } from '../types/models';
 
@@ -55,7 +57,9 @@ interface AppActions {
     isGeneric: boolean;
     businessTypeFromList: boolean;
     presetId?: string;
+    primaryWorkModel?: PrimaryWorkModel;
   }) => void;
+  updatePrimaryWorkModel: (model: PrimaryWorkModel) => void;
   ensureCustomerSourceCategory: () => void;
   addCategory: (category: Omit<Category, 'id' | 'businessId' | 'isActive'> & { isActive?: boolean }) => void;
   deleteCategory: (id: string) => void;
@@ -146,6 +150,7 @@ function normalizeEngagementState(p: Partial<AppState>): Partial<AppState> {
     engagements: Array.isArray(p.engagements) ? p.engagements : [],
     milestones: Array.isArray(p.milestones) ? p.milestones : [],
     engagementSessions: Array.isArray(p.engagementSessions) ? p.engagementSessions : [],
+    business: p.business ? normalizeBusiness(p.business) : p.business,
   };
 }
 
@@ -288,12 +293,21 @@ export const useAppStore = create<Store>()(
         set({ ...initialState });
       },
 
-      createBusiness: ({ name, businessType, isGeneric, businessTypeFromList, presetId }) => {
+      createBusiness: ({
+        name,
+        businessType,
+        isGeneric,
+        businessTypeFromList,
+        presetId,
+        primaryWorkModel,
+      }) => {
         const user = get().user;
         if (!user) return;
 
         const prev = get().business;
         const trimmedName = name.trim();
+        const resolvedWorkModel =
+          primaryWorkModel ?? suggestWorkModelFromPreset(presetId);
 
         if (prev) {
           let categories = get().categories;
@@ -325,6 +339,8 @@ export const useAppStore = create<Store>()(
               businessType,
               isGeneric,
               businessTypeFromList,
+              ...(presetId ? { presetId } : {}),
+              primaryWorkModel: resolvedWorkModel,
             },
             categories,
           });
@@ -341,13 +357,18 @@ export const useAppStore = create<Store>()(
               displayName: user.displayName,
               email: user.email ?? archived.user!.email,
             },
-            business: {
+            business: normalizeBusiness({
               ...archived.business,
               name: trimmedName,
               businessType,
               isGeneric,
               businessTypeFromList,
-            },
+              ...(presetId ? { presetId } : {}),
+              primaryWorkModel:
+                primaryWorkModel ??
+                archived.business.primaryWorkModel ??
+                suggestWorkModelFromPreset(presetId ?? archived.business.presetId),
+            })!,
           });
           get().ensureCustomerSourceCategory();
           return;
@@ -360,6 +381,8 @@ export const useAppStore = create<Store>()(
           businessType,
           isGeneric,
           businessTypeFromList,
+          ...(presetId ? { presetId } : {}),
+          primaryWorkModel: resolvedWorkModel,
         };
 
         let categoryDefs: Omit<Category, 'id'>[];
@@ -398,6 +421,12 @@ export const useAppStore = create<Store>()(
           tasks: [],
           dismissedAutoTasks: [],
         });
+      },
+
+      updatePrimaryWorkModel: (model) => {
+        const business = get().business;
+        if (!business) return;
+        set({ business: { ...business, primaryWorkModel: model } });
       },
 
       ensureCustomerSourceCategory: () => {
@@ -833,7 +862,7 @@ export const useAppStore = create<Store>()(
     }),
     {
       name: STORAGE_KEY,
-      version: 5,
+      version: 6,
       storage: createJSONStorage(() => safeJsonStorage),
       onRehydrateStorage: () => (_state, err) => {
         if (err) {
