@@ -10,6 +10,7 @@ import {
   isSupabaseConfigured,
 } from '../lib/cloudAuth';
 import { getSupabase } from '../lib/supabase';
+import { PasswordInput } from '../components/PasswordInput';
 import { useAutoLoginFromRememberMe } from '../hooks/useAutoLoginFromRememberMe';
 import { useStoreHydration } from '../hooks/useStoreHydration';
 import { clearRememberMe, loadRememberMe, saveRememberMe } from '../lib/rememberMe';
@@ -340,32 +341,26 @@ export function AuthPage() {
 
       {mode === 'reset' && cloudEnabled && (
         <form onSubmit={(e) => void handleResetPassword(e)} className="card">
-          <div className="field">
-            <label htmlFor="password">סיסמה חדשה</label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="לפחות 6 תווים"
-              required
-              minLength={6}
-              autoComplete="new-password"
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="confirm-password">אימות סיסמה</label>
-            <input
-              id="confirm-password"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="הקלד/י שוב את הסיסמה"
-              required
-              minLength={6}
-              autoComplete="new-password"
-            />
-          </div>
+          <PasswordInput
+            id="password"
+            label="סיסמה חדשה"
+            value={password}
+            onChange={setPassword}
+            placeholder="לפחות 6 תווים"
+            required
+            minLength={6}
+            autoComplete="new-password"
+          />
+          <PasswordInput
+            id="confirm-password"
+            label="אימות סיסמה"
+            value={confirmPassword}
+            onChange={setConfirmPassword}
+            placeholder="הקלד/י שוב את הסיסמה"
+            required
+            minLength={6}
+            autoComplete="new-password"
+          />
           <button type="submit" className="btn btn-primary" disabled={!hydrated || busy}>
             {!hydrated || busy ? 'טוען…' : 'שמירת סיסמה חדשה'}
           </button>
@@ -405,28 +400,27 @@ export function AuthPage() {
         </div>
 
         {cloudEnabled && (
-          <div className="field">
-            <label htmlFor="password">סיסמה</label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder={mode === 'register' ? 'לפחות 6 תווים' : 'הסיסמה שלך'}
-              required
-              minLength={mode === 'register' ? 6 : undefined}
-              autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
-            />
-            {mode === 'login' && (
-              <button
-                type="button"
-                className="auth-text-link"
-                onClick={() => switchMode('forgot')}
-              >
-                שכחתי סיסמה
-              </button>
-            )}
-          </div>
+          <PasswordInput
+            id="password"
+            label="סיסמה"
+            value={password}
+            onChange={setPassword}
+            placeholder={mode === 'register' ? 'לפחות 6 תווים' : 'הסיסמה שלך'}
+            required
+            minLength={mode === 'register' ? 6 : undefined}
+            autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
+            footer={
+              mode === 'login' ? (
+                <button
+                  type="button"
+                  className="auth-text-link"
+                  onClick={() => switchMode('forgot')}
+                >
+                  שכחתי סיסמה
+                </button>
+              ) : undefined
+            }
+          />
         )}
 
         {mode === 'login' && !cloudEnabled && (
