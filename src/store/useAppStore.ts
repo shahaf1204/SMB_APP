@@ -9,6 +9,7 @@ import {
 } from '../lib/accountsRegistry';
 import { suggestWorkModelsFromPreset, normalizeBusiness } from '../lib/workModel';
 import { cloudSignOut } from '../lib/cloudSync';
+import { clearRememberMe } from '../lib/rememberMe';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { clearAppStorage, safeJsonStorage, STORAGE_KEY } from '../lib/safeStorage';
 import {
@@ -294,6 +295,7 @@ export const useAppStore = create<Store>()(
         if (state.user && !isSupabaseConfigured()) {
           flushAccountSnapshot(state);
         }
+        clearRememberMe();
         if (isSupabaseConfigured()) {
           void cloudSignOut();
         }

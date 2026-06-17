@@ -1,5 +1,5 @@
 import { FormEvent, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { WorkModelSettings } from '../components/WorkModelSettings';
 import { AiSettingsForm } from '../components/AiSettingsForm';
 import { BottomNav } from '../components/BottomNav';
@@ -12,12 +12,16 @@ import {
   type HistoricalEventRow,
 } from '../lib/historicalImport';
 import { downloadPeriodReport } from '../lib/report';
+import { flushCloudPush, cloudSignOut } from '../lib/cloudSync';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { useAppStore } from '../store/useAppStore';
 import type { PeriodFilter } from '../types/models';
 
 export function SettingsPage() {
+  const navigate = useNavigate();
   const business = useAppStore((s) => s.business)!;
+  const user = useAppStore((s) => s.user);
+  const logout = useAppStore((s) => s.logout);
   const eventTemplates = useAppStore((s) => s.eventTemplates);
   const events = useAppStore((s) => s.events);
   const categories = useAppStore((s) => s.categories);
@@ -40,6 +44,26 @@ export function SettingsPage() {
   const [tplName, setTplName] = useState('');
   const [tplTitle, setTplTitle] = useState('');
   const [showTplForm, setShowTplForm] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    const message = isSupabaseConfigured()
+      ? 'להתנתק? הנתונים נשמרים בענן — אפשר להתחבר שוב עם אותו אימייל וסיסמה.'
+      : 'להתנתק? כדי לחזור תצטרכ/י להתחבר שוב מאותו מכשיר.';
+    if (!window.confirm(message)) return;
+
+    setLoggingOut(true);
+    try {
+      if (isSupabaseConfigured()) {
+        await flushCloudPush();
+        await cloudSignOut();
+      }
+      logout();
+      navigate('/auth', { replace: true });
+    } finally {
+      setLoggingOut(false);
+    }
+  };
 
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -354,6 +378,31 @@ export function SettingsPage() {
           {importMsg && (
             <p style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>{importMsg}</p>
           )}
+        </section>
+
+        <section className="card" style={{ marginTop: '1rem' }}>
+          <h2 style={{ margin: '0 0 0.5rem', fontSize: '0.95rem' }}>חשבון</h2>
+          {user?.email && (
+            <p
+              style={{
+                margin: '0 0 0.75rem',
+                fontSize: '0.85rem',
+                color: 'var(--color-text-secondary)',
+              }}
+            >
+              מחובר/ת כ-<strong>{user.displayName}</strong>
+              {user.email ? ` · ${user.email}` : ''}
+            </p>
+          )}
+          <button
+            type="button"
+            className="btn btn-ghost"
+            style={{ width: '100%' }}
+            disabled={loggingOut}
+            onClick={() => void handleLogout()}
+          >
+            {loggingOut ? 'מתנתק/ת…' : 'התנתקות'}
+          </button>
         </section>
 
         <section className="card" style={{ marginTop: '1rem' }}>
