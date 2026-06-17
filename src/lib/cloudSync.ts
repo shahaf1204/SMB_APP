@@ -177,6 +177,12 @@ export async function flushCloudPush(): Promise<void> {
 
 export async function restoreSessionFromSupabase(): Promise<boolean> {
   if (!isSupabaseConfigured()) return false;
+
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  if (hashParams.get('type') === 'recovery') {
+    return false;
+  }
+
   const supabase = getSupabase();
   const { data, error } = await supabase.auth.getSession();
   if (error || !data.session?.user.email) return false;

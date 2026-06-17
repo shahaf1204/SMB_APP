@@ -5,14 +5,17 @@ import { findAccountByEmail } from '../lib/accountsRegistry';
 import {
   cloudLogin,
   cloudRegister,
+  cloudRequestPasswordReset,
+  cloudUpdatePassword,
   isSupabaseConfigured,
 } from '../lib/cloudAuth';
+import { getSupabase } from '../lib/supabase';
 import { useAutoLoginFromRememberMe } from '../hooks/useAutoLoginFromRememberMe';
 import { useStoreHydration } from '../hooks/useStoreHydration';
 import { clearRememberMe, loadRememberMe, saveRememberMe } from '../lib/rememberMe';
 import { useAppStore } from '../store/useAppStore';
 
-type AuthMode = 'login' | 'register';
+type AuthMode = 'login' | 'register' | 'forgot' | 'reset';
 
 function navigateAfterAuth(navigate: ReturnType<typeof useNavigate>) {
   const { business, events } = useAppStore.getState();
@@ -35,14 +38,16 @@ export function AuthPage() {
   const [displayName, setDisplayName] = useState(remembered?.displayName ?? '');
   const [email, setEmail] = useState(remembered?.email ?? '');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(remembered?.enabled ?? true);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!autoLoginReady || !user) return;
+    if (!autoLoginReady || !user || mode === 'reset' || mode === 'forgot') return;
     navigateAfterAuth(navigate);
-  }, [autoLoginReady, user, navigate]);
+  }, [autoLoginReady, user, navigate, mode]);
 
   useEffect(() => {
     if (remembered?.enabled) {
@@ -50,6 +55,30 @@ export function AuthPage() {
       setEmail(remembered.email);
     }
   }, [remembered]);
+
+  useEffect(() => {
+    if (!cloudEnabled) return;
+
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    if (hashParams.get('type') === 'recovery') {
+      setMode('reset');
+      setError(null);
+      setInfo(null);
+    }
+
+    const supabase = getSupabase();
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setMode('reset');
+        setError(null);
+        setInfo(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [cloudEnabled]);
 
   const archiveHint = useMemo(() => {
     if (!hydrated || mode !== 'login' || !email.trim() || cloudEnabled) return null;
@@ -151,6 +180,71 @@ export function AuthPage() {
     }
   };
 
+  const handleForgotPassword = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setInfo(null);
+    if (!email.trim()) {
+      setError('יש להזין אימייל');
+      return;
+    }
+    if (!hydrated) return;
+
+    setBusy(true);
+    try {
+      const result = await cloudRequestPasswordReset(email.trim());
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+      setInfo(
+        'אם קיים חשבון עם האימייל הזה, נשלח אליו קישור לאיפוס סיסמה. בדק/י גם בתיקיית הספאם.',
+      );
+      setPassword('');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleResetPassword = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setInfo(null);
+    if (password.length < 6) {
+      setError('הסיסמה חייבת להכיל לפחות 6 תווים');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('הסיסמאות לא תואמות');
+      return;
+    }
+    if (!hydrated) return;
+
+    setBusy(true);
+    try {
+      const result = await cloudUpdatePassword(password);
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+      const sessionUser = useAppStore.getState().user!;
+      persistRememberMe(sessionUser.displayName, sessionUser.email ?? email.trim().toLowerCase());
+      setPassword('');
+      setConfirmPassword('');
+      navigateAfterAuth(navigate);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const switchMode = (next: AuthMode) => {
+    setMode(next);
+    setError(null);
+    setInfo(null);
+    setPassword('');
+    setConfirmPassword('');
+  };
+
   if (!autoLoginReady) {
     return (
       <div className="page" style={{ paddingTop: '3rem', textAlign: 'center' }}>
@@ -163,33 +257,33 @@ export function AuthPage() {
     <div className="page" style={{ paddingTop: '3rem' }}>
       <h1 className="page-title">ניהול עסק</h1>
       <p className="page-subtitle">
-        {cloudEnabled
-          ? 'הנתונים נשמרים בענן מאובטח — גישה מכל מכשיר'
-          : 'הנתונים נשמרים במכשיר — אימייל מקשר בין כניסות'}
+        {mode === 'forgot'
+          ? 'נשלח אליך קישור לאיפוס סיסמה'
+          : mode === 'reset'
+            ? 'בחר/י סיסמה חדשה'
+            : cloudEnabled
+              ? 'הנתונים נשמרים בענן מאובטח — גישה מכל מכשיר'
+              : 'הנתונים נשמרים במכשיר — אימייל מקשר בין כניסות'}
       </p>
 
-      <div className="chip-row auth-mode-row">
-        <button
-          type="button"
-          className={`chip ${mode === 'login' ? 'active' : ''}`}
-          onClick={() => {
-            setMode('login');
-            setError(null);
-          }}
-        >
-          התחברות
-        </button>
-        <button
-          type="button"
-          className={`chip ${mode === 'register' ? 'active' : ''}`}
-          onClick={() => {
-            setMode('register');
-            setError(null);
-          }}
-        >
-          הרשמה
-        </button>
-      </div>
+      {(mode === 'login' || mode === 'register') && (
+        <div className="chip-row auth-mode-row">
+          <button
+            type="button"
+            className={`chip ${mode === 'login' ? 'active' : ''}`}
+            onClick={() => switchMode('login')}
+          >
+            התחברות
+          </button>
+          <button
+            type="button"
+            className={`chip ${mode === 'register' ? 'active' : ''}`}
+            onClick={() => switchMode('register')}
+          >
+            הרשמה
+          </button>
+        </div>
+      )}
 
       {archiveHint && (
         <div className="card auth-restore-hint">
@@ -215,6 +309,70 @@ export function AuthPage() {
         </div>
       )}
 
+      {info && (
+        <div className="card auth-info-hint" role="status">
+          <p style={{ margin: 0, fontSize: '0.88rem' }}>{info}</p>
+        </div>
+      )}
+
+      {mode === 'forgot' && cloudEnabled && (
+        <form onSubmit={(e) => void handleForgotPassword(e)} className="card">
+          <div className="field">
+            <label htmlFor="email">אימייל</label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="name@example.com"
+              required
+              autoComplete="email"
+            />
+          </div>
+          <button type="submit" className="btn btn-primary" disabled={!hydrated || busy}>
+            {!hydrated || busy ? 'טוען…' : 'שליחת קישור לאיפוס'}
+          </button>
+          <button type="button" className="auth-text-link" onClick={() => switchMode('login')}>
+            חזרה להתחברות
+          </button>
+        </form>
+      )}
+
+      {mode === 'reset' && cloudEnabled && (
+        <form onSubmit={(e) => void handleResetPassword(e)} className="card">
+          <div className="field">
+            <label htmlFor="password">סיסמה חדשה</label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="לפחות 6 תווים"
+              required
+              minLength={6}
+              autoComplete="new-password"
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="confirm-password">אימות סיסמה</label>
+            <input
+              id="confirm-password"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="הקלד/י שוב את הסיסמה"
+              required
+              minLength={6}
+              autoComplete="new-password"
+            />
+          </div>
+          <button type="submit" className="btn btn-primary" disabled={!hydrated || busy}>
+            {!hydrated || busy ? 'טוען…' : 'שמירת סיסמה חדשה'}
+          </button>
+        </form>
+      )}
+
+      {(mode === 'login' || mode === 'register') && (
       <form
         onSubmit={(e) => void (mode === 'register' ? handleRegister(e) : handleLogin(e))}
         className="card"
@@ -259,6 +417,15 @@ export function AuthPage() {
               minLength={mode === 'register' ? 6 : undefined}
               autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
             />
+            {mode === 'login' && (
+              <button
+                type="button"
+                className="auth-text-link"
+                onClick={() => switchMode('forgot')}
+              >
+                שכחתי סיסמה
+              </button>
+            )}
           </div>
         )}
 
@@ -296,6 +463,7 @@ export function AuthPage() {
                   : 'התחברות'}
         </button>
       </form>
+      )}
     </div>
   );
 }

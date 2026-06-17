@@ -1617,6 +1617,26 @@ a {
   color: #991b1b;
 }
 
+.auth-info-hint {
+  margin-bottom: 0.75rem;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+}
+
+.auth-text-link {
+  display: inline-block;
+  margin-top: 0.35rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-primary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
 .auth-mode-row {
   margin-bottom: 0.75rem;
 }

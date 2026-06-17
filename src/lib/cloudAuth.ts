@@ -119,4 +119,59 @@ export async function cloudLogout(): Promise<void> {
   await cloudSignOut();
 }
 
+export async function cloudRequestPasswordReset(email: string): Promise<CloudAuthResult> {
+  if (!isSupabaseConfigured()) {
+    return { ok: false, message: 'הענן לא מוגדר — פנה/י למנהל המערכת' };
+  }
+
+  const trimmedEmail = email.trim().toLowerCase();
+  if (!trimmedEmail) {
+    return { ok: false, message: 'יש להזין אימייל' };
+  }
+
+  const { error } = await getSupabase().auth.resetPasswordForEmail(trimmedEmail, {
+    redirectTo: `${window.location.origin}/auth`,
+  });
+
+  if (error) {
+    return { ok: false, message: authErrorMessage(error.message) };
+  }
+
+  return { ok: true };
+}
+
+export async function cloudUpdatePassword(password: string): Promise<CloudAuthResult> {
+  if (!isSupabaseConfigured()) {
+    return { ok: false, message: 'הענן לא מוגדר — פנה/י למנהל המערכת' };
+  }
+
+  const supabase = getSupabase();
+  const { data, error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    return { ok: false, message: authErrorMessage(error.message) };
+  }
+
+  const user = data.user;
+  if (!user?.id || !user.email) {
+    return { ok: false, message: 'לא הצלחנו לעדכן את הסיסמה' };
+  }
+
+  const trimmedEmail = user.email.toLowerCase();
+  const displayName =
+    (user.user_metadata?.display_name as string | undefined)?.trim() ||
+    trimmedEmail.split('@')[0];
+
+  try {
+    await hydrateUserFromCloud(user.id, trimmedEmail, displayName);
+    window.history.replaceState({}, '', `${window.location.pathname}${window.location.search}`);
+    return { ok: true };
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : 'שגיאה בטעינת נתונים',
+    };
+  }
+}
+
 export { isSupabaseConfigured };
