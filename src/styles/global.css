@@ -1642,6 +1642,10 @@ a {
   background: var(--color-success);
 }
 
+.auto-save-dot-cloud {
+  background: var(--color-primary);
+}
+
 .assistant-page .assistant-page-inner {
   display: flex;
   flex-direction: column;
@@ -2526,10 +2530,22 @@ a {
   position: relative;
 }
 
-.work-model-option-check {
-  width: 1.25rem;
-  flex-shrink: 0;
-  font-size: 0.85rem;
-  color: var(--color-primary);
-  font-weight: 700;
+.backup-info {
+  margin: 0 0 0.65rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+}
+
+.backup-info-tip {
+  padding: 0.6rem 0.7rem;
+  border-radius: 10px;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  color: #78350f;
+}
+
+.backup-info strong {
+  color: var(--color-text);
+  font-weight: 600;
 }

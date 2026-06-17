@@ -5,6 +5,8 @@ import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { saveAccountSnapshot, flushAccountSnapshot } from './lib/accountArchive';
 import { ensureAccountInRegistry } from './lib/accountsRegistry';
+import { flushCloudPush } from './lib/cloudSync';
+import { isSupabaseConfigured } from './lib/supabase';
 import { runBootstrapResetFromUrl } from './lib/safeStorage';
 import { useAppStore } from './store/useAppStore';
 import './styles/global.css';
@@ -15,7 +17,9 @@ useAppStore.persist.onFinishHydration(() => {
   const state = useAppStore.getState();
   if (state.user?.email) {
     ensureAccountInRegistry(state.user);
-    flushAccountSnapshot(state);
+    if (!isSupabaseConfigured()) {
+      flushAccountSnapshot(state);
+    }
   }
 });
 
@@ -24,7 +28,9 @@ useAppStore.subscribe((state) => {
   if (!state.user?.email) return;
   if (archiveTimer) clearTimeout(archiveTimer);
   archiveTimer = setTimeout(() => {
-    saveAccountSnapshot(state.user!.displayName, state.user!.email, state);
+    if (!isSupabaseConfigured()) {
+      saveAccountSnapshot(state.user!.displayName, state.user!.email, state);
+    }
     ensureAccountInRegistry(state.user!);
   }, 300);
 });
@@ -32,7 +38,11 @@ useAppStore.subscribe((state) => {
 window.addEventListener('beforeunload', () => {
   const state = useAppStore.getState();
   if (state.user?.email) {
-    saveAccountSnapshot(state.user.displayName, state.user.email, state);
+    if (isSupabaseConfigured()) {
+      void flushCloudPush();
+    } else {
+      saveAccountSnapshot(state.user.displayName, state.user.email, state);
+    }
   }
 });
 

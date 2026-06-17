@@ -8,6 +8,8 @@ import {
   updateAccountDisplayName,
 } from '../lib/accountsRegistry';
 import { suggestWorkModelsFromPreset, normalizeBusiness } from '../lib/workModel';
+import { cloudSignOut } from '../lib/cloudSync';
+import { isSupabaseConfigured } from '../lib/supabase';
 import { clearAppStorage, safeJsonStorage, STORAGE_KEY } from '../lib/safeStorage';
 import {
   buildCategoriesFromPreset,
@@ -289,8 +291,11 @@ export const useAppStore = create<Store>()(
 
       logout: () => {
         const state = get();
-        if (state.user) {
+        if (state.user && !isSupabaseConfigured()) {
           flushAccountSnapshot(state);
+        }
+        if (isSupabaseConfigured()) {
+          void cloudSignOut();
         }
         set({ ...initialState });
       },

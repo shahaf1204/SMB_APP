@@ -2,6 +2,11 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { findAccountSnapshot } from '../lib/accountArchive';
 import { findAccountByEmail } from '../lib/accountsRegistry';
+import {
+  cloudLogin,
+  cloudRegister,
+  isSupabaseConfigured,
+} from '../lib/cloudAuth';
 import { useAutoLoginFromRememberMe } from '../hooks/useAutoLoginFromRememberMe';
 import { useStoreHydration } from '../hooks/useStoreHydration';
 import { clearRememberMe, loadRememberMe, saveRememberMe } from '../lib/rememberMe';
@@ -24,12 +29,15 @@ export function AuthPage() {
   const register = useAppStore((s) => s.register);
   const loginExisting = useAppStore((s) => s.loginExisting);
   const remembered = loadRememberMe();
+  const cloudEnabled = isSupabaseConfigured();
 
   const [mode, setMode] = useState<AuthMode>('login');
   const [displayName, setDisplayName] = useState(remembered?.displayName ?? '');
   const [email, setEmail] = useState(remembered?.email ?? '');
+  const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(remembered?.enabled ?? true);
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!autoLoginReady || !user) return;
@@ -44,14 +52,14 @@ export function AuthPage() {
   }, [remembered]);
 
   const archiveHint = useMemo(() => {
-    if (!hydrated || mode !== 'login' || !email.trim()) return null;
+    if (!hydrated || mode !== 'login' || !email.trim() || cloudEnabled) return null;
     const saved = findAccountSnapshot(displayName, email);
     if (!saved || (!saved.business && !(saved.events?.length ?? 0))) return null;
     return {
       businessName: saved.business?.name ?? 'העסק שלך',
       eventCount: saved.events?.length ?? 0,
     };
-  }, [displayName, email, hydrated, mode]);
+  }, [displayName, email, hydrated, mode, cloudEnabled]);
 
   const persistRememberMe = (name: string, mail: string) => {
     if (rememberMe) {
@@ -61,49 +69,86 @@ export function AuthPage() {
     }
   };
 
-  const handleRegister = (e: FormEvent) => {
+  const handleRegister = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     if (!displayName.trim() || !email.trim()) {
       setError('יש למלא שם ואימייל');
       return;
     }
-    if (!hydrated) return;
-
-    const result = register(displayName.trim(), email.trim());
-    if (!result.ok) {
-      if (result.reason === 'exists') {
-        setError('כבר קיים חשבון עם האימייל הזה. עברי ל«התחברות».');
-      }
+    if (cloudEnabled && password.length < 6) {
+      setError('יש לבחור סיסמה של לפחות 6 תווים');
       return;
     }
+    if (!hydrated) return;
 
-    persistRememberMe(displayName.trim(), email.trim().toLowerCase());
-    navigateAfterAuth(navigate);
+    setBusy(true);
+    try {
+      if (cloudEnabled) {
+        const result = await cloudRegister(displayName.trim(), email.trim(), password);
+        if (!result.ok) {
+          setError(result.message);
+          return;
+        }
+      } else {
+        const result = register(displayName.trim(), email.trim());
+        if (!result.ok) {
+          if (result.reason === 'exists') {
+            setError('כבר קיים חשבון עם האימייל הזה. עברי ל«התחברות».');
+          }
+          return;
+        }
+      }
+
+      persistRememberMe(displayName.trim(), email.trim().toLowerCase());
+      navigateAfterAuth(navigate);
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const handleLogin = (e: FormEvent) => {
+  const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     if (!email.trim()) {
       setError('יש להזין אימייל');
       return;
     }
-    if (!hydrated) return;
-
-    const trimmedEmail = email.trim().toLowerCase();
-    const result = loginExisting(trimmedEmail, displayName.trim() || undefined);
-    if (!result.ok) {
-      if (result.reason === 'not_found') {
-        setError('לא נמצא חשבון עם האימייל הזה. עברי ל«הרשמה» לפתיחת חשבון חדש.');
-      }
+    if (cloudEnabled && !password) {
+      setError('יש להזין סיסמה');
       return;
     }
+    if (!hydrated) return;
 
-    const record = findAccountByEmail(trimmedEmail);
-    const resolvedName = displayName.trim() || record?.displayName || trimmedEmail;
-    persistRememberMe(resolvedName, trimmedEmail);
-    navigateAfterAuth(navigate);
+    setBusy(true);
+    try {
+      const trimmedEmail = email.trim().toLowerCase();
+
+      if (cloudEnabled) {
+        const result = await cloudLogin(trimmedEmail, password);
+        if (!result.ok) {
+          setError(result.message);
+          return;
+        }
+        const sessionUser = useAppStore.getState().user!;
+        persistRememberMe(sessionUser.displayName, trimmedEmail);
+      } else {
+        const result = loginExisting(trimmedEmail, displayName.trim() || undefined);
+        if (!result.ok) {
+          if (result.reason === 'not_found') {
+            setError('לא נמצא חשבון עם האימייל הזה. עברי ל«הרשמה» לפתיחת חשבון חדש.');
+          }
+          return;
+        }
+        const record = findAccountByEmail(trimmedEmail);
+        const resolvedName = displayName.trim() || record?.displayName || trimmedEmail;
+        persistRememberMe(resolvedName, trimmedEmail);
+      }
+
+      navigateAfterAuth(navigate);
+    } finally {
+      setBusy(false);
+    }
   };
 
   if (!autoLoginReady) {
@@ -118,7 +163,9 @@ export function AuthPage() {
     <div className="page" style={{ paddingTop: '3rem' }}>
       <h1 className="page-title">ניהול עסק</h1>
       <p className="page-subtitle">
-        הנתונים נשמרים במכשיר — אימייל מקשר בין כניסות
+        {cloudEnabled
+          ? 'הנתונים נשמרים בענן מאובטח — גישה מכל מכשיר'
+          : 'הנתונים נשמרים במכשיר — אימייל מקשר בין כניסות'}
       </p>
 
       <div className="chip-row auth-mode-row">
@@ -154,6 +201,14 @@ export function AuthPage() {
         </div>
       )}
 
+      {cloudEnabled && mode === 'login' && (
+        <div className="card auth-restore-hint">
+          <p style={{ margin: 0, fontSize: '0.88rem' }}>
+            יש לך נתונים ישנים במכשיר? התחבר/י עם אותו אימייל — הם יועלו לענן אוטומטית.
+          </p>
+        </div>
+      )}
+
       {error && (
         <div className="card auth-error-hint" role="alert">
           <p style={{ margin: 0, fontSize: '0.88rem' }}>{error}</p>
@@ -161,7 +216,7 @@ export function AuthPage() {
       )}
 
       <form
-        onSubmit={mode === 'register' ? handleRegister : handleLogin}
+        onSubmit={(e) => void (mode === 'register' ? handleRegister(e) : handleLogin(e))}
         className="card"
       >
         {mode === 'register' && (
@@ -189,14 +244,25 @@ export function AuthPage() {
             required
             autoComplete="email"
           />
-          {mode === 'login' && (
-            <p className="field-hint">
-              הזיני את אותו אימייל שבו נרשמת — כך ישוחזרו האירועים והעסק
-            </p>
-          )}
         </div>
 
-        {mode === 'login' && (
+        {cloudEnabled && (
+          <div className="field">
+            <label htmlFor="password">סיסמה</label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder={mode === 'register' ? 'לפחות 6 תווים' : 'הסיסמה שלך'}
+              required
+              minLength={mode === 'register' ? 6 : undefined}
+              autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
+            />
+          </div>
+        )}
+
+        {mode === 'login' && !cloudEnabled && (
           <div className="field">
             <label htmlFor="login-name">שם (אופציונלי)</label>
             <input
@@ -218,14 +284,16 @@ export function AuthPage() {
           <span>זכור אותי — כניסה אוטומטית בפעם הבאה</span>
         </label>
 
-        <button type="submit" className="btn btn-primary" disabled={!hydrated}>
-          {!hydrated
-            ? 'טוען נתונים…'
+        <button type="submit" className="btn btn-primary" disabled={!hydrated || busy}>
+          {!hydrated || busy
+            ? 'טוען…'
             : mode === 'register'
               ? 'יצירת חשבון חדש'
-              : archiveHint
-                ? 'התחברות ושחזור נתונים'
-                : 'התחברות'}
+              : cloudEnabled
+                ? 'התחברות'
+                : archiveHint
+                  ? 'התחברות ושחזור נתונים'
+                  : 'התחברות'}
         </button>
       </form>
     </div>

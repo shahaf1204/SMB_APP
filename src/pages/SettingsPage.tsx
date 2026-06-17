@@ -12,6 +12,7 @@ import {
   type HistoricalEventRow,
 } from '../lib/historicalImport';
 import { downloadPeriodReport } from '../lib/report';
+import { isSupabaseConfigured } from '../lib/supabase';
 import { useAppStore } from '../store/useAppStore';
 import type { PeriodFilter } from '../types/models';
 
@@ -295,6 +296,27 @@ export function SettingsPage() {
 
         <section className="card" style={{ marginTop: '1rem' }}>
           <h2 style={{ margin: '0 0 0.5rem', fontSize: '0.95rem' }}>גיבוי ושחזור</h2>
+          <p className="backup-info">
+            {isSupabaseConfigured() ? (
+              <>
+                הנתונים שלך נשמרים <strong>אוטומטית בענן</strong> — גם אם תחליפי מכשיר,
+                תנקי דפדפן או תיכנסי מטלפון אחר. עותק מקומי נשמר במקביל לעבודה מהירה.
+              </>
+            ) : (
+              <>
+                הנתונים שלך (אירועים, לידים, חשבוניות, כרטיסיות וכו׳) נשמרים{' '}
+                <strong>במכשיר הזה</strong> — בדפדפן. הם לא עולים לענן אוטומטית.
+                אם תנקי נתוני דפדפן, תחליפי מחשב או תפתחי ממכשיר אחר — הנתונים לא יעברו
+                איתך, אלא אם הורדת גיבוי.
+              </>
+            )}
+          </p>
+          {!isSupabaseConfigured() && (
+            <p className="backup-info backup-info-tip">
+              💡 מומלץ: הורידי גיבוי JSON לפחות פעם בשבוע, או אחרי יום עבודה חשוב.
+              שמרי את הקובץ ב-Google Drive, iCloud או במחשב.
+            </p>
+          )}
           <button
             type="button"
             className="btn btn-primary"
