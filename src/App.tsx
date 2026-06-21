@@ -21,6 +21,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { EditEventPage } from './pages/EditEventPage';
 import { InvoiceDetailPage } from './pages/InvoiceDetailPage';
 import { InvoicesPage } from './pages/InvoicesPage';
+import { LeadDetailPage } from './pages/LeadDetailPage';
 import { LeadsPage } from './pages/LeadsPage';
 import { OnboardingPage } from './pages/OnboardingPage';
 import { AssistantPage } from './pages/AssistantPage';
@@ -58,6 +59,7 @@ export default function App() {
           <Route path="/events/new" element={<AddEventPage />} />
           <Route path="/events/:id/edit" element={<EditEventPage />} />
           <Route path="/leads" element={<LeadsPage />} />
+          <Route path="/leads/:id" element={<LeadDetailPage />} />
           <Route path="/customers" element={<CustomersPage />} />
           <Route path="/customers/:key" element={<CustomerDetailPage />} />
           <Route path="/invoices" element={<InvoicesPage />} />

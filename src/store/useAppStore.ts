@@ -9,6 +9,8 @@ import {
 } from '../lib/accountsRegistry';
 import { suggestWorkModelsFromPreset, normalizeBusiness } from '../lib/workModel';
 import { cloudSignOut } from '../lib/cloudSync';
+import { normalizeLeads } from '../lib/crm/leadNormalize';
+import { pushLeadStatusToCloud } from '../lib/crm/leadsSync';
 import { clearRememberMe } from '../lib/rememberMe';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { clearAppStorage, safeJsonStorage, STORAGE_KEY } from '../lib/safeStorage';
@@ -81,9 +83,13 @@ interface AppActions {
   addLead: (
     lead: Omit<Lead, 'id' | 'businessId' | 'userId' | 'createdAt' | 'status'> & {
       createdAt?: string;
+      id?: string;
+      status?: LeadStatus;
     },
   ) => void;
-  updateLead: (id: string, patch: Partial<Pick<Lead, 'status' | 'notes' | 'phone' | 'email' | 'name'>>) => void;
+  upsertCloudLead: (lead: Lead, isNew: boolean) => void;
+  updateLead: (id: string, patch: Partial<Lead>) => void;
+  setLeadStatus: (id: string, status: LeadStatus, note?: string) => void;
   linkLeadToEvent: (leadId: string, eventId: string) => void;
   createInvoice: (params: {
     clientName: string;
@@ -152,6 +158,7 @@ function migrateInvoices(invoices: unknown): Invoice[] {
 function normalizeEngagementState(p: Partial<AppState>): Partial<AppState> {
   return {
     ...p,
+    leads: normalizeLeads(p.leads as Lead[] | undefined),
     engagements: Array.isArray(p.engagements) ? p.engagements : [],
     milestones: Array.isArray(p.milestones) ? p.milestones : [],
     engagementSessions: Array.isArray(p.engagementSessions) ? p.engagementSessions : [],
@@ -573,28 +580,76 @@ export const useAppStore = create<Store>()(
         const business = get().business;
         const user = get().user;
         if (!business || !user) return;
+        const now = new Date().toISOString();
         const lead: Lead = {
-          id: createId(),
+          id: partial.id ?? createId(),
           businessId: business.id,
           userId: user.id,
-          status: 'new',
+          status: partial.status ?? 'new',
           ...partial,
-          createdAt: partial.createdAt ?? new Date().toISOString(),
+          createdAt: partial.createdAt ?? now,
+          updatedAt: now,
+          statusHistory: partial.statusHistory ?? [{ status: partial.status ?? 'new', at: now }],
         };
-        set({ leads: [lead, ...get().leads] });
+        set({ leads: [lead, ...get().leads.filter((l) => l.id !== lead.id)] });
+      },
+
+      upsertCloudLead: (lead, isNew) => {
+        if (isNew) {
+          set({ leads: [lead, ...get().leads] });
+        } else {
+          set({
+            leads: get().leads.map((l) => (l.id === lead.id ? { ...l, ...lead } : l)),
+          });
+        }
       },
 
       updateLead: (id, patch) => {
+        const now = new Date().toISOString();
         set({
-          leads: get().leads.map((l) => (l.id === id ? { ...l, ...patch } : l)),
+          leads: get().leads.map((l) =>
+            l.id === id ? { ...l, ...patch, updatedAt: now } : l,
+          ),
         });
+        const updated = get().leads.find((l) => l.id === id);
+        if (updated?.externalProvider === 'meta' && updated.externalLeadId) {
+          void pushLeadStatusToCloud(id, updated.status, updated.statusHistory, updated);
+        }
+      },
+
+      setLeadStatus: (id, status, note) => {
+        const now = new Date().toISOString();
+        set({
+          leads: get().leads.map((l) => {
+            if (l.id !== id) return l;
+            const history = [...(l.statusHistory ?? []), { status, at: now, note }];
+            return { ...l, status, statusHistory: history, updatedAt: now };
+          }),
+        });
+        const updated = get().leads.find((l) => l.id === id);
+        if (updated?.externalProvider === 'meta') {
+          void pushLeadStatusToCloud(id, status, updated.statusHistory, updated);
+        }
       },
 
       linkLeadToEvent: (leadId, eventId) => {
+        const now = new Date().toISOString();
         set({
-          leads: get().leads.map((l) =>
-            l.id === leadId ? { ...l, eventId, status: 'won' as LeadStatus } : l,
-          ),
+          leads: get().leads.map((l) => {
+            if (l.id !== leadId) return l;
+            const history = [
+              ...(l.statusHistory ?? []),
+              { status: 'closed' as LeadStatus, at: now },
+            ];
+            return {
+              ...l,
+              eventId,
+              convertedToEventId: eventId,
+              status: 'closed' as LeadStatus,
+              statusHistory: history,
+              updatedAt: now,
+            };
+          }),
         });
       },
 

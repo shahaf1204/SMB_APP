@@ -1,4 +1,5 @@
-import type { AppState } from '../types/models';
+import { normalizeLeads } from './crm/leadNormalize';
+import type { AppState, Lead } from '../types/models';
 
 const ARCHIVE_PREFIX = 'smb-account-';
 
@@ -49,7 +50,7 @@ function normalizeSnapshot(data: AccountSnapshot): AccountSnapshot {
     events: Array.isArray(data.events) ? data.events : [],
     eventValues: Array.isArray(data.eventValues) ? data.eventValues : [],
     categories: Array.isArray(data.categories) ? data.categories : [],
-    leads: Array.isArray(data.leads) ? data.leads : [],
+    leads: Array.isArray(data.leads) ? normalizeLeads(data.leads as Lead[]) : [],
     invoices: Array.isArray(data.invoices) ? data.invoices : [],
     eventTemplates: Array.isArray(data.eventTemplates) ? data.eventTemplates : [],
     tasks: Array.isArray(data.tasks) ? data.tasks : [],

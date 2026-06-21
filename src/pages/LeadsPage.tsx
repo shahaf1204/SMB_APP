@@ -1,387 +1,142 @@
-import { FormEvent, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useMemo, useState } from 'react';
 import { BottomNav } from '../components/BottomNav';
-import { LeadContactActions } from '../components/LeadContactActions';
-import { LEAD_SOURCE_OPTIONS, leadSourceLabel } from '../data/leadSources';
+import { LeadCard } from '../components/crm/LeadCard';
+import { MetaConnectionCard } from '../components/crm/MetaConnectionCard';
 import {
-  loadLeadSheetSettings,
-  saveLeadSheetSettings,
-  type LeadSheetSettings,
-} from '../lib/leadSheetSettings';
-import {
-  previewSheetMapping,
-  resolveSheetSettingsFromInput,
-  syncLeadsFromGoogleSheet,
-  type SheetColumnMapping,
-} from '../lib/leadSheetSync';
+  countByStatStatus,
+  LEAD_FILTER_OPTIONS,
+  STAT_CARD_LABELS,
+  STAT_CARD_STATUSES,
+  type LeadFilter,
+} from '../lib/crm/constants';
+import { importDemoMetaLead } from '../lib/crm/leadsSync';
+import { isSupabaseConfigured } from '../lib/supabase';
+import { useCrmSync } from '../hooks/useCrmSync';
 import { useAppStore } from '../store/useAppStore';
-import type { LeadSourceChannel, LeadStatus } from '../types/models';
-
-const STATUS_LABELS: Record<LeadStatus, string> = {
-  new: 'חדש',
-  contacted: 'יצרתי קשר',
-  quoted: 'נשלחה הצעה',
-  won: 'נסגר',
-  lost: 'לא רלוונטי',
-};
-
-const FIELD_LABELS: Record<keyof SheetColumnMapping['mapped'], string> = {
-  name: 'שם',
-  phone: 'טלפון',
-  email: 'אימייל',
-  date: 'תאריך',
-  source: 'מקור',
-};
 
 export function LeadsPage() {
+  const user = useAppStore((s) => s.user);
+  const business = useAppStore((s) => s.business)!;
   const leads = useAppStore((s) => s.leads);
   const addLead = useAppStore((s) => s.addLead);
-  const updateLead = useAppStore((s) => s.updateLead);
-  const [showForm, setShowForm] = useState(false);
-  const [showSyncSetup, setShowSyncSetup] = useState(false);
-  const [sheetSettings, setSheetSettings] = useState<LeadSheetSettings>(() => loadLeadSheetSettings());
-  const [syncMsg, setSyncMsg] = useState<string | null>(null);
-  const [syncing, setSyncing] = useState(false);
-  const [previewing, setPreviewing] = useState(false);
-  const [sheetPreview, setSheetPreview] = useState<SheetColumnMapping | null>(null);
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
-  const [source, setSource] = useState<LeadSourceChannel>('instagram');
-  const [notes, setNotes] = useState('');
+  const { metaConnection, metaLoading, refreshMeta, syncLeads } = useCrmSync();
+  const [filter, setFilter] = useState<LeadFilter>('all');
 
-  const newLeads = leads.filter((l) => l.status === 'new');
+  const isConnected = Boolean(metaConnection?.isActive);
+  const cloudReady = isSupabaseConfigured();
 
-  useEffect(() => {
-    setSheetSettings(loadLeadSheetSettings());
-  }, []);
+  const filtered = useMemo(() => {
+    if (filter === 'all') return leads;
+    if (filter === 'in_progress') {
+      return leads.filter((l) => l.status === 'in_progress' || l.status === 'contacted');
+    }
+    return leads.filter((l) => l.status === filter);
+  }, [leads, filter]);
 
-  const handleSaveSheetSettings = async (e: FormEvent) => {
-    e.preventDefault();
-    const resolved = resolveSheetSettingsFromInput(sheetSettings.sheetInput);
-    if (!resolved.sheetId) {
-      setSyncMsg('לא נמצא מזהה גיליון — יש להדביק קישור מלא לגיליון גוגל');
-      setSheetPreview(null);
-      return;
-    }
-    const next = { ...sheetSettings, ...resolved };
-    saveLeadSheetSettings(next);
-    setSheetSettings(next);
-    setSyncMsg('ההגדרות נשמרו. מומלץ ללחוץ «בדיקת גיליון» לפני הסנכרון הראשון.');
-    await runSheetPreview(next.sheetId, next.gid);
-  };
+  const showNoSourceEmpty = !metaLoading && !isConnected && leads.length === 0;
+  const showNoLeadsEmpty = isConnected && leads.length === 0;
 
-  const runSheetPreview = async (sheetId: string, gid?: string) => {
-    setPreviewing(true);
-    setSheetPreview(null);
-    const result = await previewSheetMapping(sheetId, gid || undefined);
-    setPreviewing(false);
-    if (!result.ok) {
-      setSyncMsg(result.error);
-      return;
-    }
-    setSheetPreview(result.mapping);
-    if (!result.mapping.mapped.name) {
-      setSyncMsg('הגיליון נקרא, אך לא נמצאה עמודת שם. ודאו שיש עמודה «שם» או «full_name».');
-    }
-  };
-
-  const handlePreviewSheet = async () => {
-    const resolved = resolveSheetSettingsFromInput(sheetSettings.sheetInput);
-    if (!resolved.sheetId) {
-      setSyncMsg('יש להדביק קישור לגיליון לפני הבדיקה');
-      return;
-    }
-    setSyncMsg(null);
-    await runSheetPreview(resolved.sheetId, resolved.gid);
-  };
-
-  const handleSyncNow = async () => {
-    const settings = loadLeadSheetSettings();
-    if (!settings.sheetId) {
-      setSyncMsg('יש להגדיר גיליון גוגל לפני הסנכרון');
-      setShowSyncSetup(true);
-      return;
-    }
-    setSyncing(true);
-    setSyncMsg(null);
-    const result = await syncLeadsFromGoogleSheet(
-      (lead) => addLead(lead),
-      useAppStore.getState().leads,
-      settings,
-    );
-    setSyncing(false);
-    setSheetSettings(loadLeadSheetSettings());
-    if (!result.ok) {
-      setSyncMsg(result.error);
-      return;
-    }
-    if (result.imported === 0) {
-      setSyncMsg(`לא נמצאו לידים חדשים (${result.skipped} שורות כבר ידועות)`);
-      return;
-    }
-    setSyncMsg(`יובאו ${result.imported} לידים חדשים`);
-  };
-
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) return;
-    addLead({
-      name: name.trim(),
-      phone: phone.trim() || undefined,
-      email: email.trim() || undefined,
-      source,
-      notes: notes.trim(),
-    });
-    setName('');
-    setPhone('');
-    setEmail('');
-    setNotes('');
-    setShowForm(false);
+  const handleLoadDemo = () => {
+    if (!user) return;
+    const demo = importDemoMetaLead(business.id, user.id, leads);
+    if (demo) addLead(demo);
   };
 
   return (
     <div className="app-shell">
       <div className="page">
         <h1 className="page-title">לידים</h1>
-        <p className="page-subtitle">
-          ייבוא אוטומטי מגיליון גוגל — לידים ממודעות, מאינסטגרם, מפייסבוק או מאתר
-        </p>
+        <p className="page-subtitle">כל הפניות מהקמפיינים שלך במקום אחד</p>
 
-        <section className="card lead-sync-card">
-          <div className="lead-sync-head">
-            <div>
-              <h2 style={{ margin: 0, fontSize: '0.95rem' }}>ייבוא אוטומטי (ללא עלות)</h2>
-              <p className="field-hint" style={{ margin: '0.25rem 0 0' }}>
-                {sheetSettings.sheetId
-                  ? sheetSettings.autoSync
-                    ? 'פעיל — לידים חדשים נכנסים בכל פתיחה של האפליקציה'
-                    : 'גיליון מחובר — סנכרון ידני בלבד'
-                  : 'טרם חובר גיליון'}
-              </p>
-            </div>
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm"
-              onClick={() => setShowSyncSetup((v) => !v)}
-            >
-              {showSyncSetup ? 'סגירה' : 'חיבור גיליון'}
-            </button>
-          </div>
+        {cloudReady && user && (
+          <MetaConnectionCard
+            connection={metaConnection}
+            loading={metaLoading}
+            userId={user.id}
+            businessId={business.id}
+            onUpdated={() => void refreshMeta()}
+          />
+        )}
 
-          <button
-            type="button"
-            className="btn btn-primary"
-            style={{ width: '100%', marginTop: '0.75rem' }}
-            disabled={syncing}
-            onClick={() => void handleSyncNow()}
-          >
-            {syncing ? 'מסנכרן…' : 'סנכרון עכשיו'}
-          </button>
-
-          {syncMsg && (
-            <p className="lead-sync-msg" role="status">
-              {syncMsg}
+        {!cloudReady && (
+          <section className="card crm-meta-card">
+            <p className="crm-meta-title">ענן לא מחובר</p>
+            <p className="crm-meta-desc">
+              לקליטה אוטומטית מ-Meta יש לחבר Supabase (VITE_SUPABASE_URL).
             </p>
-          )}
+          </section>
+        )}
 
-          {showSyncSetup && (
-            <form onSubmit={(e) => void handleSaveSheetSettings(e)} className="lead-sync-setup">
-              <p className="lead-sync-intro">
-                בעל העסק מחבר את גיליון הלידים שלו (ממטא או מאתר). האפליקציה קוראת את
-                הגיליון ומזהה אוטומטית עמודות נפוצות — גם אם לכל עסק יש פורמט שונה.
-              </p>
+        {leads.length > 0 && (
+          <>
+            <div className="crm-stats-row">
+              {STAT_CARD_STATUSES.map((stat) => (
+                <div key={stat} className="crm-stat-card">
+                  <span className="crm-stat-num">{countByStatStatus(leads, stat)}</span>
+                  <span className="crm-stat-label">{STAT_CARD_LABELS[stat]}</span>
+                </div>
+              ))}
+            </div>
 
-              <ol className="lead-sync-steps">
-                <li>
-                  <strong>מודעות לידים (מטא):</strong> במערכת העסק של מטא ← טפסי לידים ←
-                  חיבור לגיליון גוגל
-                </li>
-                <li>
-                  <strong>אתר:</strong> טופס גוגל, או כל טופס שנשמר בגיליון גוגל
-                </li>
-                <li>
-                  <strong>שיתוף:</strong> הגיליון חייב להיות «כל מי שיש לו את הקישור — צופה»
-                </li>
-                <li>
-                  <strong>כאן:</strong> הדביקו את הקישור, שמרו, ולחצו «בדיקת גיליון»
-                </li>
-              </ol>
-
-              <div className="field">
-                <label htmlFor="sheet-url">קישור לגיליון גוגל</label>
-                <input
-                  id="sheet-url"
-                  type="url"
-                  className="ltr-input"
-                  dir="ltr"
-                  value={sheetSettings.sheetInput}
-                  onChange={(e) =>
-                    setSheetSettings((s) => ({ ...s, sheetInput: e.target.value }))
-                  }
-                  placeholder="https://docs.google.com/spreadsheets/d/..."
-                />
-              </div>
-
-              <label className="remember-row">
-                <input
-                  type="checkbox"
-                  checked={sheetSettings.autoSync}
-                  onChange={(e) =>
-                    setSheetSettings((s) => ({ ...s, autoSync: e.target.checked }))
-                  }
-                />
-                <span>סנכרון אוטומטי בפתיחת האפליקציה</span>
-              </label>
-
-              <div className="lead-sync-actions">
-                <button type="submit" className="btn btn-primary">
-                  שמירת הגדרות
-                </button>
+            <div className="chip-row crm-filter-row">
+              {LEAD_FILTER_OPTIONS.map((opt) => (
                 <button
+                  key={opt.id}
                   type="button"
-                  className="btn btn-ghost"
-                  disabled={previewing}
-                  onClick={() => void handlePreviewSheet()}
+                  className={`chip ${filter === opt.id ? 'active' : ''}`}
+                  onClick={() => setFilter(opt.id)}
                 >
-                  {previewing ? 'בודק…' : 'בדיקת גיליון'}
+                  {opt.label}
                 </button>
-              </div>
+              ))}
+            </div>
 
-              {sheetPreview && (
-                <div className="lead-sheet-preview">
-                  <p className="lead-sheet-preview-title">
-                    זיהוי עמודות ({sheetPreview.parseableRows} שורות עם שם מתוך{' '}
-                    {sheetPreview.totalRows})
-                  </p>
-                  <ul className="lead-sheet-preview-list">
-                    {(Object.keys(FIELD_LABELS) as Array<keyof SheetColumnMapping['mapped']>).map(
-                      (key) => (
-                        <li key={key}>
-                          <span>{FIELD_LABELS[key]}:</span>{' '}
-                          {sheetPreview.mapped[key] ? (
-                            <strong>{sheetPreview.mapped[key]}</strong>
-                          ) : (
-                            <span className="lead-sheet-missing">לא זוהתה</span>
-                          )}
-                        </li>
-                      ),
-                    )}
-                  </ul>
-                  {sheetPreview.headers.length > 0 && (
-                    <p className="field-hint" style={{ margin: '0.5rem 0 0' }}>
-                      עמודות בגיליון: {sheetPreview.headers.slice(0, 8).join(' · ')}
-                      {sheetPreview.headers.length > 8 ? ' …' : ''}
-                    </p>
-                  )}
-                </div>
-              )}
+            <div className="crm-lead-list">
+              {filtered.map((lead) => (
+                <LeadCard key={lead.id} lead={lead} />
+              ))}
+            </div>
 
-              <details className="lead-sync-details">
-                <summary>אילו שמות עמודות נתמכים?</summary>
-                <p className="field-hint">
-                  שם: «שם», «שם מלא», full_name, first_name · טלפון: «טלפון», phone,
-                  phone_number · אימייל: «אימייל», email · תאריך: created_time, «תאריך» ·
-                  מקור: platform, ad_name, «מקור». שדות נוספים נשמרים בהערות.
-                </p>
-              </details>
-
-              {sheetSettings.lastSyncAt && (
-                <p className="field-hint" style={{ margin: '0.5rem 0 0' }}>
-                  סנכרון אחרון:{' '}
-                  {new Date(sheetSettings.lastSyncAt).toLocaleString('he-IL')}
-                </p>
-              )}
-            </form>
-          )}
-        </section>
-
-        {newLeads.length > 0 && (
-          <div className="card alert-card" style={{ marginBottom: '0.75rem' }}>
-            <strong>{newLeads.length} לידים חדשים</strong> ממתינים ליצירת קשר
-          </div>
+            {filtered.length === 0 && (
+              <p className="empty-state">אין לידים בסינון הזה</p>
+            )}
+          </>
         )}
 
-        {showForm ? (
-          <form onSubmit={handleSubmit} className="card">
-            <div className="field">
-              <label htmlFor="lead-name">שם</label>
-              <input id="lead-name" value={name} onChange={(e) => setName(e.target.value)} required />
-            </div>
-            <div className="field">
-              <label htmlFor="lead-phone">טלפון</label>
-              <input id="lead-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
-            </div>
-            <div className="field">
-              <label htmlFor="lead-email">אימייל</label>
-              <input id="lead-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-            </div>
-            <div className="field">
-              <label htmlFor="lead-source">מקור</label>
-              <select id="lead-source" value={source} onChange={(e) => setSource(e.target.value as LeadSourceChannel)}>
-                {LEAD_SOURCE_OPTIONS.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <label htmlFor="lead-notes">הערות</label>
-              <textarea id="lead-notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
-            </div>
-            <button type="submit" className="btn btn-primary">
-              שמור ליד
-            </button>
-            <button type="button" className="btn btn-ghost" style={{ marginTop: '0.5rem' }} onClick={() => setShowForm(false)}>
-              ביטול
-            </button>
-          </form>
-        ) : (
-          <button type="button" className="btn btn-primary" onClick={() => setShowForm(true)}>
-            + ליד חדש (הזנה ידנית)
-          </button>
+        {showNoSourceEmpty && (
+          <section className="card crm-empty-state">
+            <p className="crm-empty-title">עדיין לא חיברת מקור לידים</p>
+            <p className="crm-empty-desc">
+              חברי את חשבון Meta שלך כדי שלידים מפייסבוק ואינסטגרם ייכנסו אוטומטית.
+            </p>
+            {import.meta.env.DEV && (
+              <button type="button" className="btn btn-ghost" onClick={handleLoadDemo}>
+                טעינת ליד לדוגמה (פיתוח)
+              </button>
+            )}
+          </section>
         )}
 
-        <ul className="lead-list" style={{ marginTop: '1rem' }}>
-          {leads.length === 0 ? (
-            <li className="empty-state">אין לידים עדיין</li>
-          ) : (
-            leads.map((lead) => (
-              <li key={lead.id} className="card lead-card">
-                <div className="lead-card-head">
-                  <strong>{lead.name}</strong>
-                  <span className={`status-pill status-${lead.status === 'new' ? 'today' : 'past'}`}>
-                    {STATUS_LABELS[lead.status]}
-                  </span>
-                </div>
-                <p className="lead-meta">
-                  {leadSourceLabel(lead.source)} ·{' '}
-                  {new Date(lead.createdAt).toLocaleDateString('he-IL')}
-                </p>
-                {lead.notes && <p className="lead-notes">{lead.notes}</p>}
-                <LeadContactActions name={lead.name} phone={lead.phone} email={lead.email} />
-                <div className="field" style={{ marginBottom: 0, marginTop: '0.5rem' }}>
-                  <label htmlFor={`status-${lead.id}`}>סטטוס</label>
-                  <select
-                    id={`status-${lead.id}`}
-                    value={lead.status}
-                    onChange={(e) => updateLead(lead.id, { status: e.target.value as LeadStatus })}
-                  >
-                    {(Object.keys(STATUS_LABELS) as LeadStatus[]).map((s) => (
-                      <option key={s} value={s}>
-                        {STATUS_LABELS[s]}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <Link to="/events/new" className="lead-link-event" onClick={() => updateLead(lead.id, { status: 'contacted' })}>
-                  + צור אירוע מהליד
-                </Link>
-              </li>
-            ))
-          )}
-        </ul>
+        {showNoLeadsEmpty && (
+          <section className="card crm-empty-state">
+            <p className="crm-empty-title">אין לידים חדשים עדיין</p>
+            <p className="crm-empty-desc">
+              ברגע שלקוח ישאיר פרטים בקמפיין, הוא יופיע כאן.
+            </p>
+            <button type="button" className="btn btn-ghost" onClick={() => void syncLeads()}>
+              רענון רשימה
+            </button>
+          </section>
+        )}
+
+        {!showNoSourceEmpty && !showNoLeadsEmpty && leads.length === 0 && !metaLoading && (
+          <section className="card crm-empty-state">
+            <p className="crm-empty-title">אין לידים להצגה</p>
+            <button type="button" className="btn btn-ghost" onClick={() => void syncLeads()}>
+              סנכרון מהענן
+            </button>
+          </section>
+        )}
       </div>
       <BottomNav />
     </div>

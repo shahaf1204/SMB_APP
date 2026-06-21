@@ -13,17 +13,37 @@ export type PeriodFilter =
 
 export type ChartMetric = 'revenue' | 'expense' | 'profit';
 
-export type LeadStatus = 'new' | 'contacted' | 'quoted' | 'won' | 'lost';
+export type LeadStatus =
+  | 'new'
+  | 'in_progress'
+  | 'contacted'
+  | 'proposal_sent'
+  | 'closed'
+  | 'not_relevant';
 
 export type LeadSourceChannel =
   | 'facebook'
   | 'instagram'
+  | 'website'
+  | 'whatsapp'
   | 'tiktok'
   | 'google'
-  | 'whatsapp'
   | 'referral'
   | 'repeat'
   | 'other';
+
+export type LeadExternalProvider = 'meta' | 'website' | 'whatsapp' | 'manual' | 'sheet';
+
+export interface LeadFormAnswer {
+  field: string;
+  value: string;
+}
+
+export interface LeadStatusHistoryEntry {
+  status: LeadStatus;
+  at: string;
+  note?: string;
+}
 
 export type InvoiceStatus = 'draft' | 'sent' | 'paid';
 
@@ -119,6 +139,7 @@ export interface Lead {
   id: string;
   businessId: string;
   userId: string;
+  /** שם מלא */
   name: string;
   phone?: string;
   email?: string;
@@ -126,7 +147,28 @@ export interface Lead {
   notes: string;
   status: LeadStatus;
   createdAt: string;
+  updatedAt?: string;
+  serviceInterest?: string;
+  externalProvider?: LeadExternalProvider;
+  externalLeadId?: string;
+  externalFormId?: string;
+  externalFormName?: string;
+  externalPageId?: string;
+  externalPageName?: string;
+  externalCampaignId?: string;
+  externalCampaignName?: string;
+  externalAdId?: string;
+  externalAdName?: string;
+  formAnswers?: LeadFormAnswer[];
+  statusHistory?: LeadStatusHistoryEntry[];
+  rawPayload?: unknown;
+  /** @deprecated השתמשו ב-convertedToEventId */
   eventId?: string;
+  convertedToEventId?: string;
+  convertedToCardId?: string;
+  convertedToProjectId?: string;
+  convertedToClassId?: string;
+  convertedToCustomerId?: string;
 }
 
 export interface Invoice {

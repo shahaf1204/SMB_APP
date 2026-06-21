@@ -1,4 +1,5 @@
-import type { AppState } from '../types/models';
+import { normalizeLeads } from './crm/leadNormalize';
+import type { AppState, Lead } from '../types/models';
 
 const BACKUP_VERSION = 1;
 
@@ -49,7 +50,7 @@ export function parseBackup(jsonText: string): ImportResult {
         eventTemplates: data.eventTemplates ?? [],
         tasks: data.tasks ?? [],
         dismissedAutoTasks: data.dismissedAutoTasks ?? [],
-        leads: data.leads ?? [],
+        leads: normalizeLeads(data.leads as Lead[]),
         invoices: data.invoices ?? [],
         nextInvoiceNumber: data.nextInvoiceNumber ?? 1001,
       },
