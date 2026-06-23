@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useCloudSync } from '../hooks/useCloudSync';
 import { useCrmSync } from '../hooks/useCrmSync';
+import { useLeadSheetAutoSync } from '../hooks/useLeadSheetAutoSync';
 import { runEventReminderCheck } from '../lib/eventReminders';
 import { useAppStore } from '../store/useAppStore';
 import { AutoSaveIndicator } from './AutoSaveIndicator';
@@ -12,6 +13,7 @@ export function BusinessLayout() {
 
   useCrmSync();
   useCloudSync();
+  useLeadSheetAutoSync();
 
   useEffect(() => {
     if (!business || events.length === 0) return;

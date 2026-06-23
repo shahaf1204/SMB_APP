@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { BottomNav } from '../components/BottomNav';
 import { LeadCard } from '../components/crm/LeadCard';
+import { LeadSheetSyncCard } from '../components/crm/LeadSheetSyncCard';
+import { ManualLeadForm } from '../components/crm/ManualLeadForm';
 import { MetaConnectionCard } from '../components/crm/MetaConnectionCard';
 import {
   countByStatStatus,
@@ -33,7 +35,8 @@ export function LeadsPage() {
     return leads.filter((l) => l.status === filter);
   }, [leads, filter]);
 
-  const showNoSourceEmpty = !metaLoading && !isConnected && leads.length === 0;
+  const showNoSourceEmpty =
+    !metaLoading && !isConnected && leads.length === 0 && !cloudReady;
   const showNoLeadsEmpty = isConnected && leads.length === 0;
 
   const handleLoadDemo = () => {
@@ -46,7 +49,10 @@ export function LeadsPage() {
     <div className="app-shell">
       <div className="page">
         <h1 className="page-title">לידים</h1>
-        <p className="page-subtitle">כל הפניות מהקמפיינים שלך במקום אחד</p>
+        <p className="page-subtitle">כל הפניות מהקמפיינים והמקורות שלך במקום אחד</p>
+
+        <LeadSheetSyncCard />
+        <ManualLeadForm />
 
         {cloudReady && user && (
           <MetaConnectionCard
@@ -105,9 +111,9 @@ export function LeadsPage() {
 
         {showNoSourceEmpty && (
           <section className="card crm-empty-state">
-            <p className="crm-empty-title">עדיין לא חיברת מקור לידים</p>
+            <p className="crm-empty-title">אין לידים עדיין</p>
             <p className="crm-empty-desc">
-              חברי את חשבון Meta שלך כדי שלידים מפייסבוק ואינסטגרם ייכנסו אוטומטית.
+              חברי Google Sheets, הוסיפי ליד ידנית, או חברי Meta כשיהיה לקוח עם Lead Ads.
             </p>
             {import.meta.env.DEV && (
               <button type="button" className="btn btn-ghost" onClick={handleLoadDemo}>

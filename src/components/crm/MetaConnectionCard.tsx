@@ -82,9 +82,10 @@ export function MetaConnectionCard({
   if (!isConnected) {
     return (
       <section className="card crm-meta-card">
-        <p className="crm-meta-title">לא מחובר לחשבון פרסום</p>
+        <p className="crm-meta-title">Meta Lead Ads (מתקדם)</p>
         <p className="crm-meta-desc">
-          חברי את חשבון Meta שלך כדי לקבל לידים אוטומטית מפייסבוק ואינסטגרם.
+          חיבור אוטומטי מפייסבוק ואינסטגרם — לשלב שיש לקוח עם עמוד ו-Lead Ads. אפשר לדלג
+          ולהשתמש ב-Google Sheets או הוספה ידנית.
         </p>
         {connection && !connection.isActive && (
           <p className="crm-meta-hint">

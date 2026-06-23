@@ -1,5 +1,5 @@
-import { getMetaVerifyToken } from '../_lib/supabaseAdmin';
-import { processMetaLeadgenWebhook } from '../_lib/createLeadFromExternalSource';
+import { getMetaVerifyToken } from '../../_lib/supabaseAdmin';
+import { processMetaLeadgenWebhook } from '../../_lib/createLeadFromExternalSource';
 
 export const config = { runtime: 'nodejs' };
 
