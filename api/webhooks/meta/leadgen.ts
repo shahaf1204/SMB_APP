@@ -1,7 +1,4 @@
-import { getMetaVerifyToken } from '../../_lib/supabaseAdmin';
-import { processMetaLeadgenWebhook } from '../../_lib/createLeadFromExternalSource';
-
-export const config = { runtime: 'nodejs' };
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 interface MetaWebhookEntry {
   id?: string;
@@ -20,32 +17,38 @@ interface MetaWebhookBody {
   entry?: MetaWebhookEntry[];
 }
 
-export default async function handler(request: Request): Promise<Response> {
-  const url = new URL(request.url);
+function queryParam(value: string | string[] | undefined): string {
+  if (Array.isArray(value)) return value[0] ?? '';
+  return value ?? '';
+}
 
-  if (request.method === 'GET') {
-    const mode = url.searchParams.get('hub.mode');
-    const token = url.searchParams.get('hub.verify_token');
-    const challenge = url.searchParams.get('hub.challenge');
-    const verifyToken = getMetaVerifyToken();
+export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
+  if (req.method === 'GET') {
+    const mode = queryParam(req.query['hub.mode']);
+    const token = queryParam(req.query['hub.verify_token']);
+    const challenge = queryParam(req.query['hub.challenge']);
+    const verifyToken = process.env.META_WEBHOOK_VERIFY_TOKEN ?? '';
 
     if (mode === 'subscribe' && token && verifyToken && token === verifyToken && challenge) {
-      return new Response(challenge, { status: 200, headers: { 'Content-Type': 'text/plain' } });
+      res.status(200).setHeader('Content-Type', 'text/plain').send(challenge);
+      return;
     }
-    return new Response('Forbidden', { status: 403 });
+    res.status(403).send('Forbidden');
+    return;
   }
 
-  if (request.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 });
+  if (req.method !== 'POST') {
+    res.status(405).send('Method not allowed');
+    return;
   }
 
-  let body: MetaWebhookBody;
-  try {
-    body = (await request.json()) as MetaWebhookBody;
-  } catch {
-    return new Response('Bad request', { status: 400 });
+  const body = req.body as MetaWebhookBody | undefined;
+  if (!body || typeof body !== 'object') {
+    res.status(400).json({ error: 'Bad request' });
+    return;
   }
 
+  const { processMetaLeadgenWebhook } = await import('../../_lib/createLeadFromExternalSource');
   const entries = body.entry ?? [];
   const results: string[] = [];
 
@@ -67,8 +70,5 @@ export default async function handler(request: Request): Promise<Response> {
     }
   }
 
-  return new Response(JSON.stringify({ received: true, results }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
-  });
+  res.status(200).json({ received: true, results });
 }
