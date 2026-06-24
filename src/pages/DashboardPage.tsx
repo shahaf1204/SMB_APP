@@ -3,11 +3,13 @@ import { useLocation } from 'react-router-dom';
 import { CalendarExportBanner } from '../components/CalendarExportBanner';
 import type { CalendarExportOutcome } from '../lib/calendarExport';
 import { BottomNav } from '../components/BottomNav';
+import { DashboardInsights } from '../components/dashboard/DashboardInsights';
 import { DashboardMetricChart } from '../components/dashboard/DashboardMetricChart';
 import { DashboardQuickActions } from '../components/dashboard/DashboardQuickActions';
 import { KpiCards } from '../components/KpiCards';
 import { NextEventCard } from '../components/NextEventCard';
 import { PageHeader } from '../components/PageHeader';
+import { buildCustomerSummaries } from '../lib/customers';
 import { calculateUnifiedTotals } from '../lib/engagementFinance';
 import {
   findNextEvent,
@@ -22,6 +24,7 @@ export function DashboardPage() {
     ?.calendarExport;
 
   const events = useAppStore((s) => s.events);
+  const leads = useAppStore((s) => s.leads);
   const categories = useAppStore((s) => s.categories);
   const eventValues = useAppStore((s) => s.eventValues);
   const invoices = useAppStore((s) => s.invoices ?? []);
@@ -44,6 +47,11 @@ export function DashboardPage() {
     [events, eventValues, invoices, engagementSessions],
   );
 
+  const customerCount = useMemo(
+    () => buildCustomerSummaries(events, leads, invoices, categories, eventValues).length,
+    [events, leads, invoices, categories, eventValues],
+  );
+
   const nextEvent = findNextEvent(events);
   const clientName = nextEvent
     ? getClientName(nextEvent.id, categories, eventValues)
@@ -59,6 +67,14 @@ export function DashboardPage() {
         <NextEventCard event={nextEvent} clientName={clientName} amount={nextAmount} />
 
         <KpiCards revenue={totals.revenue} expense={totals.expense} profit={totals.profit} />
+
+        <DashboardInsights
+          events={events}
+          invoices={invoices}
+          customerCount={customerCount}
+          profit={totals.profit}
+          revenue={totals.revenue}
+        />
 
         <DashboardQuickActions />
 

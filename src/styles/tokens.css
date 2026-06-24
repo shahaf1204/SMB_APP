@@ -1,14 +1,14 @@
 :root {
-  /* ── Brand palette (SaaS unified) ── */
+  /* ── Vibrant SaaS palette (Monday / Glovo inspired) ── */
   --color-primary: #6366f1;
   --color-primary-dark: #4f46e5;
   --color-primary-light: #818cf8;
-  --color-primary-soft: #eef2ff;
-  --color-primary-muted: rgba(99, 102, 241, 0.12);
+  --color-primary-soft: #e0e7ff;
+  --color-primary-muted: rgba(99, 102, 241, 0.14);
 
-  --color-success: #22c55e;
-  --color-success-dark: #16a34a;
-  --color-success-soft: #dcfce7;
+  --color-success: #10b981;
+  --color-success-dark: #059669;
+  --color-success-soft: #d1fae5;
 
   --color-warning: #f59e0b;
   --color-warning-dark: #d97706;
@@ -17,15 +17,21 @@
   --color-danger: #ef4444;
   --color-danger-soft: #fee2e2;
 
-  /* Aliases used across codebase */
   --color-accent: var(--color-warning);
   --color-accent-dark: var(--color-warning-dark);
   --color-accent-soft: var(--color-warning-soft);
   --color-error: var(--color-danger);
   --color-error-soft: var(--color-danger-soft);
 
-  --color-bg: #f8fafc;
-  --color-bg-subtle: #f1f5f9;
+  /* Pastel surfaces */
+  --color-violet-soft: #ede9fe;
+  --color-sky-soft: #e0f2fe;
+  --color-amber-soft: #fef3c7;
+  --color-rose-soft: #ffe4e6;
+  --color-mint-soft: #d1fae5;
+
+  --color-bg: #f0f4ff;
+  --color-bg-subtle: #e8edfa;
   --color-surface: #ffffff;
   --color-card: #ffffff;
 
@@ -33,19 +39,19 @@
   --color-text-secondary: #6b7280;
   --color-text-muted: #9ca3af;
   --color-border: #e5e7eb;
-  --color-border-light: #f3f4f6;
+  --color-border-light: #eef2ff;
 
-  --radius-card: 16px;
-  --radius-button: 12px;
-  --radius-input: 12px;
+  --radius-card: 18px;
+  --radius-button: 14px;
+  --radius-input: 14px;
   --radius-pill: 999px;
-  --radius-nav: 20px;
+  --radius-nav: 22px;
 
-  --shadow-card: 0 1px 2px rgba(17, 24, 39, 0.04), 0 2px 8px rgba(17, 24, 39, 0.04);
-  --shadow-card-hover: 0 4px 16px rgba(17, 24, 39, 0.08);
-  --shadow-nav: 0 -2px 16px rgba(17, 24, 39, 0.06);
-  --shadow-button: 0 2px 8px rgba(99, 102, 241, 0.25);
-  --shadow-hero: 0 8px 24px rgba(99, 102, 241, 0.28);
+  --shadow-card: 0 2px 8px rgba(99, 102, 241, 0.06), 0 1px 2px rgba(17, 24, 39, 0.04);
+  --shadow-card-hover: 0 8px 24px rgba(99, 102, 241, 0.12);
+  --shadow-nav: 0 -4px 24px rgba(99, 102, 241, 0.1);
+  --shadow-button: 0 4px 14px rgba(99, 102, 241, 0.35);
+  --shadow-hero: 0 12px 32px rgba(99, 102, 241, 0.35);
 
   --nav-height: 72px;
   --touch-min: 44px;
@@ -55,6 +61,7 @@
   --transition-fast: 200ms ease;
   --transition-base: 250ms ease;
 
-  --gradient-primary: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  --gradient-primary: linear-gradient(135deg, #818cf8 0%, #6366f1 45%, #4f46e5 100%);
+  --gradient-bg: linear-gradient(180deg, #eef2ff 0%, #f0f4ff 35%, #f8fafc 100%);
   --gradient-auth: linear-gradient(160deg, #6366f1 0%, #4f46e5 50%, #4338ca 100%);
 }

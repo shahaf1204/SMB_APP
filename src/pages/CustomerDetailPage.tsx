@@ -4,7 +4,7 @@ import { Mail, Phone } from 'lucide-react';
 import { BottomNav } from '../components/BottomNav';
 import { Avatar } from '../components/ui/Avatar';
 import { PillTabs } from '../components/ui/PillTabs';
-import { buildCustomerSummaries } from '../lib/customers';
+import { buildCustomerSummaries, findCustomerByParamKey } from '../lib/customers';
 import { formatCurrency, formatDate } from '../lib/finance';
 import { getEventRevenueTotal } from '../lib/events';
 import { isInvoiceOverdue } from '../lib/invoices';
@@ -39,7 +39,7 @@ export function CustomerDetailPage() {
 
   const customer = useMemo(() => {
     const all = buildCustomerSummaries(events, leads, invoices, categories, eventValues);
-    return all.find((c) => c.key === key) ?? null;
+    return findCustomerByParamKey(all, key);
   }, [key, events, leads, invoices, categories, eventValues]);
 
   const customerEvents = useMemo(

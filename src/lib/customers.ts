@@ -14,8 +14,34 @@ export interface CustomerSummary {
   lastActivity: string;
 }
 
+function tryDecode(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 export function customerKey(name: string): string {
   return encodeURIComponent(name.trim().toLowerCase());
+}
+
+/** Match route param to stored customer key (handles Hebrew / URL decoding). */
+export function findCustomerByParamKey(
+  summaries: CustomerSummary[],
+  paramKey: string | undefined,
+): CustomerSummary | null {
+  if (!paramKey) return null;
+  const decodedParam = tryDecode(paramKey).trim().toLowerCase();
+
+  return (
+    summaries.find((c) => {
+      if (c.key === paramKey) return true;
+      if (tryDecode(c.key).trim().toLowerCase() === decodedParam) return true;
+      if (c.name.trim().toLowerCase() === decodedParam) return true;
+      return false;
+    }) ?? null
+  );
 }
 
 export function buildCustomerSummaries(

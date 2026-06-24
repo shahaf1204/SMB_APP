@@ -8,6 +8,7 @@ import {
   Users,
 } from 'lucide-react';
 import { BottomNav } from '../components/BottomNav';
+import { CollapsibleSection } from '../components/ui/CollapsibleSection';
 import { EmptyState } from '../components/ui/EmptyState';
 import { PillTabs } from '../components/ui/PillTabs';
 import { formatCurrency, formatDate } from '../lib/finance';
@@ -21,18 +22,19 @@ import type { Engagement } from '../types/models';
 import { useAppStore } from '../store/useAppStore';
 
 type ActivityFilter = 'all' | 'event' | 'session_pack' | 'recurring_group' | 'project';
-type ActivityTiming = 'today' | 'upcoming' | 'completed';
 
 interface ActivityItem {
   id: string;
   kind: ActivityFilter;
-  timing: ActivityTiming;
   client: string;
   dateLabel: string;
   valueLabel: string;
   typeLabel: string;
   href: string;
   icon: typeof Calendar;
+  sortDate: string;
+  isEvent: boolean;
+  isPast: boolean;
 }
 
 const FILTER_TABS: Array<{ id: ActivityFilter; label: string }> = [
@@ -43,12 +45,6 @@ const FILTER_TABS: Array<{ id: ActivityFilter; label: string }> = [
   { id: 'project', label: 'ליווי' },
 ];
 
-const TIMING_LABEL: Record<ActivityTiming, string> = {
-  today: 'היום',
-  upcoming: 'קרוב',
-  completed: 'הושלם',
-};
-
 const KIND_ICON: Record<Exclude<ActivityFilter, 'all'>, typeof Calendar> = {
   event: Calendar,
   session_pack: Ticket,
@@ -56,13 +52,13 @@ const KIND_ICON: Record<Exclude<ActivityFilter, 'all'>, typeof Calendar> = {
   project: ClipboardList,
 };
 
-function eventTiming(eventDate: string, todayIso: string): ActivityTiming {
-  if (eventDate === todayIso) return 'today';
-  if (eventDate < todayIso) return 'completed';
-  return 'upcoming';
+function weekEndIso(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 7);
+  return d.toISOString().slice(0, 10);
 }
 
-function engagementItem(e: Engagement, todayIso: string): ActivityItem {
+function engagementItem(e: Engagement): ActivityItem {
   const { remaining } = packProgress(e);
   const memberCount = e.members?.length ?? 0;
   const nextDate =
@@ -81,20 +77,55 @@ function engagementItem(e: Engagement, todayIso: string): ActivityItem {
     valueLabel = e.status === 'active' ? 'פעיל' : 'הסתיים';
   }
 
-  const timing: ActivityTiming =
-    e.status !== 'active' ? 'completed' : nextDate === todayIso ? 'today' : 'upcoming';
-
   return {
     id: e.id,
     kind: e.kind,
-    timing,
     client: e.clientName || e.title,
     dateLabel,
     valueLabel,
     typeLabel: ENGAGEMENT_KIND_LABEL[e.kind],
     href: `/engagements/${e.id}`,
     icon: KIND_ICON[e.kind],
+    sortDate: nextDate ?? e.startDate ?? e.createdAt.slice(0, 10),
+    isEvent: false,
+    isPast: e.status !== 'active',
   };
+}
+
+function ActivityCard({ item, highlight }: { item: ActivityItem; highlight?: boolean }) {
+  const Icon = item.icon;
+  return (
+    <Link
+      to={item.href}
+      className={`card activity-card-v2 ${highlight ? 'activity-card-v2--highlight' : ''} ${item.isPast ? 'activity-card-v2--muted' : ''}`}
+    >
+      <div className="activity-card-v2-body">
+        <div className="activity-card-v2-top">
+          <span className="activity-card-v2-icon" aria-hidden>
+            <Icon size={16} strokeWidth={2} />
+          </span>
+          <strong>{item.client}</strong>
+        </div>
+        <p className="activity-card-v2-meta">
+          {item.dateLabel} · {item.valueLabel}
+        </p>
+      </div>
+      <span className="activity-card-v2-type">{item.typeLabel}</span>
+    </Link>
+  );
+}
+
+function ActivityList({ items, highlight }: { items: ActivityItem[]; highlight?: boolean }) {
+  if (items.length === 0) return null;
+  return (
+    <ul className="activity-list">
+      {items.map((item) => (
+        <li key={item.id}>
+          <ActivityCard item={item} highlight={highlight} />
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 export function EngagementsPage() {
@@ -105,43 +136,67 @@ export function EngagementsPage() {
 
   const [filter, setFilter] = useState<ActivityFilter>('all');
   const todayIso = new Date().toISOString().slice(0, 10);
+  const weekEnd = weekEndIso();
 
-  const items = useMemo(() => {
-    const list: ActivityItem[] = [];
+  const sections = useMemo(() => {
+    const thisWeekEvents: ActivityItem[] = [];
+    const laterEvents: ActivityItem[] = [];
+    const pastEvents: ActivityItem[] = [];
+    const activeEngagements: ActivityItem[] = [];
+    const pastEngagements: ActivityItem[] = [];
 
     for (const ev of events) {
       const client = getClientName(ev.id, categories, eventValues);
       const amount = getEventRevenueTotal(ev.id, eventValues);
-      list.push({
+      const item: ActivityItem = {
         id: `ev-${ev.id}`,
         kind: 'event',
-        timing: eventTiming(ev.eventDate, todayIso),
         client: client ?? 'לקוח',
         dateLabel: formatDate(ev.eventDate),
         valueLabel: amount > 0 ? formatCurrency(amount) : '—',
         typeLabel: 'אירוע',
         href: `/events/${ev.id}/edit`,
         icon: Calendar,
-      });
+        sortDate: ev.eventDate,
+        isEvent: true,
+        isPast: ev.eventDate < todayIso,
+      };
+
+      if (ev.eventDate < todayIso) pastEvents.push(item);
+      else if (ev.eventDate <= weekEnd) thisWeekEvents.push(item);
+      else laterEvents.push(item);
     }
 
     for (const e of engagements) {
-      list.push(engagementItem(e, todayIso));
+      const item = engagementItem(e);
+      if (item.isPast) pastEngagements.push(item);
+      else activeEngagements.push(item);
     }
 
-    return list.sort((a, b) => {
-      const order = { today: 0, upcoming: 1, completed: 2 };
-      return order[a.timing] - order[b.timing];
-    });
-  }, [events, categories, eventValues, engagements, todayIso]);
+    const byDate = (a: ActivityItem, b: ActivityItem) => a.sortDate.localeCompare(b.sortDate);
+    thisWeekEvents.sort(byDate);
+    laterEvents.sort(byDate);
+    pastEvents.sort((a, b) => b.sortDate.localeCompare(a.sortDate));
+    activeEngagements.sort(byDate);
+    pastEngagements.sort((a, b) => b.sortDate.localeCompare(a.sortDate));
 
-  const filtered = useMemo(() => {
+    return { thisWeekEvents, laterEvents, pastEvents, activeEngagements, pastEngagements };
+  }, [events, categories, eventValues, engagements, todayIso, weekEnd]);
+
+  const applyFilter = (items: ActivityItem[]) => {
     if (filter === 'all') return items;
     return items.filter((i) => i.kind === filter);
-  }, [items, filter]);
+  };
 
-  const activeItems = filtered.filter((i) => i.timing !== 'completed');
-  const completedItems = filtered.filter((i) => i.timing === 'completed');
+  const thisWeek = applyFilter(sections.thisWeekEvents);
+  const later = applyFilter(sections.laterEvents);
+  const pastEvents = applyFilter(sections.pastEvents);
+  const activeEng = applyFilter(sections.activeEngagements);
+  const pastEng = applyFilter(sections.pastEngagements);
+  const past = [...pastEvents, ...pastEng].sort((a, b) => b.sortDate.localeCompare(a.sortDate));
+
+  const totalVisible =
+    thisWeek.length + later.length + activeEng.length + past.length;
 
   return (
     <div className="app-shell">
@@ -155,7 +210,7 @@ export function EngagementsPage() {
 
         <PillTabs tabs={FILTER_TABS} active={filter} onChange={setFilter} ariaLabel="סינון פעילויות" />
 
-        {filtered.length === 0 ? (
+        {totalVisible === 0 ? (
           <EmptyState
             icon={Layers}
             title="אין פעילויות עדיין"
@@ -164,67 +219,49 @@ export function EngagementsPage() {
             actionTo="/create"
           />
         ) : (
-          <>
-            {activeItems.length > 0 && (
-              <ul className="activity-list">
-                {activeItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <li key={item.id}>
-                      <Link to={item.href} className="card activity-card-v2">
-                        <span className={`activity-timing activity-timing--${item.timing}`}>
-                          {TIMING_LABEL[item.timing]}
-                        </span>
-                        <div className="activity-card-v2-body">
-                          <div className="activity-card-v2-top">
-                            <span className="activity-card-v2-icon" aria-hidden>
-                              <Icon size={16} strokeWidth={2} />
-                            </span>
-                            <strong>{item.client}</strong>
-                          </div>
-                          <p className="activity-card-v2-meta">
-                            {item.dateLabel} · {item.valueLabel}
-                          </p>
-                        </div>
-                        <span className="activity-card-v2-type">{item.typeLabel}</span>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
+          <div className="activity-sections">
+            {thisWeek.length > 0 && (
+              <CollapsibleSection
+                title="השבוע הקרוב"
+                count={thisWeek.length}
+                defaultOpen
+                variant="highlight"
+              >
+                <ActivityList items={thisWeek} highlight />
+              </CollapsibleSection>
             )}
 
-            {completedItems.length > 0 && (
-              <>
-                <h2 className="section-title-sm" style={{ marginTop: '1rem' }}>
-                  הושלם
-                </h2>
-                <ul className="activity-list">
-                  {completedItems.slice(0, 8).map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <li key={item.id}>
-                        <Link to={item.href} className="card activity-card-v2 activity-card-v2--muted">
-                          <span className="activity-timing activity-timing--completed">
-                            {TIMING_LABEL.completed}
-                          </span>
-                          <div className="activity-card-v2-body">
-                            <div className="activity-card-v2-top">
-                              <span className="activity-card-v2-icon" aria-hidden>
-                                <Icon size={16} strokeWidth={2} />
-                              </span>
-                              <strong>{item.client}</strong>
-                            </div>
-                            <p className="activity-card-v2-meta">{item.typeLabel}</p>
-                          </div>
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </>
+            {activeEng.length > 0 && (
+              <CollapsibleSection
+                title="ליוויים פעילים"
+                count={activeEng.length}
+                defaultOpen
+              >
+                <ActivityList items={activeEng} />
+              </CollapsibleSection>
             )}
-          </>
+
+            {later.length > 0 && (
+              <CollapsibleSection
+                title="אירועים עתידיים"
+                count={later.length}
+                defaultOpen={false}
+              >
+                <ActivityList items={later} />
+              </CollapsibleSection>
+            )}
+
+            {past.length > 0 && (
+              <CollapsibleSection
+                title="עבר"
+                count={past.length}
+                defaultOpen={false}
+                variant="muted"
+              >
+                <ActivityList items={past.slice(0, 20)} />
+              </CollapsibleSection>
+            )}
+          </div>
         )}
       </div>
       <BottomNav />
