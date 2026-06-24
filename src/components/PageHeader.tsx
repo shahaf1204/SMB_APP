@@ -5,13 +5,13 @@ interface PageHeaderProps {
 
 export function PageHeader({ userName, subtitle }: PageHeaderProps) {
   return (
-    <header style={{ marginBottom: '1rem' }}>
-      <p style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600 }}>היי 👋</p>
-      <p style={{ margin: '0.25rem 0 0', color: 'var(--color-text-secondary)' }}>
-        {subtitle ??
-          (userName
-            ? `${userName}, ברוכה הבאה לדשבורד העסק שלך`
-            : 'ברוכה הבאה לדשבורד העסק שלך')}
+    <header className="page-header">
+      <p className="page-header-greeting">שלום 👋</p>
+      <h1 className="page-header-title">
+        {userName ? `היי, ${userName}` : 'ברוכים הבאים'}
+      </h1>
+      <p className="page-header-sub">
+        {subtitle ?? 'הנה סיכום העסק שלך להיום'}
       </p>
     </header>
   );

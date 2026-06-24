@@ -248,24 +248,32 @@ export function AuthPage() {
 
   if (!autoLoginReady) {
     return (
-      <div className="page" style={{ paddingTop: '3rem', textAlign: 'center' }}>
-        <p className="page-subtitle">טוען…</p>
+      <div className="loading-screen">
+        <div className="loading-spinner" aria-hidden />
+        <p className="loading-text">טוען…</p>
       </div>
     );
   }
 
   return (
-    <div className="page" style={{ paddingTop: '3rem' }}>
-      <h1 className="page-title">ניהול עסק</h1>
-      <p className="page-subtitle">
-        {mode === 'forgot'
-          ? 'נשלח אליך קישור לאיפוס סיסמה'
-          : mode === 'reset'
-            ? 'בחר/י סיסמה חדשה'
-            : cloudEnabled
-              ? 'הנתונים נשמרים בענן מאובטח — גישה מכל מכשיר'
-              : 'הנתונים נשמרים במכשיר — אימייל מקשר בין כניסות'}
-      </p>
+    <div className="auth-shell">
+      <div className="auth-hero">
+        <div className="auth-hero-logo" aria-hidden>
+          📊
+        </div>
+        <h1 className="auth-hero-title">ניהול עסק</h1>
+        <p className="auth-hero-sub">
+          {mode === 'forgot'
+            ? 'נשלח אליך קישור לאיפוס סיסמה'
+            : mode === 'reset'
+              ? 'בחר/י סיסמה חדשה'
+              : cloudEnabled
+                ? 'הנתונים נשמרים בענן מאובטח — גישה מכל מכשיר'
+                : 'הנתונים נשמרים במכשיר — אימייל מקשר בין כניסות'}
+        </p>
+      </div>
+
+      <div className="auth-body">
 
       {(mode === 'login' || mode === 'register') && (
         <div className="chip-row auth-mode-row">
@@ -458,6 +466,7 @@ export function AuthPage() {
         </button>
       </form>
       )}
+      </div>
     </div>
   );
 }

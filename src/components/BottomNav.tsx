@@ -1,4 +1,15 @@
 import { NavLink, useLocation } from 'react-router-dom';
+import { NavIcon } from './NavIcons';
+
+const NAV_ITEMS = [
+  { to: '/today', label: 'היום', icon: 'today' as const },
+  { to: '/dashboard', label: 'דשבורד', icon: 'dashboard' as const },
+  { to: '/leads', label: 'לידים', icon: 'leads' as const },
+  { to: '/create', label: 'חדש', icon: 'create' as const, fab: true },
+  { to: '/assistant', label: 'עוזר', icon: 'assistant' as const },
+  { to: '/invoices', label: 'חשבוניות', icon: 'invoices' as const },
+  { to: '/settings', label: 'הגדרות', icon: 'settings' as const },
+];
 
 export function BottomNav() {
   const { pathname } = useLocation();
@@ -6,49 +17,44 @@ export function BottomNav() {
     pathname.startsWith('/create') || pathname === '/events/new';
 
   return (
-    <nav className="bottom-nav bottom-nav-scroll" aria-label="ניווט ראשי">
-      <NavLink to="/today" className={({ isActive }) => (isActive ? 'active' : '')}>
-        <span className="nav-icon" aria-hidden>
-          ✅
-        </span>
-        <span className="nav-label">היום</span>
-      </NavLink>
-      <NavLink to="/dashboard" className={({ isActive }) => (isActive ? 'active' : '')}>
-        <span className="nav-icon" aria-hidden>
-          📊
-        </span>
-        <span className="nav-label">דשבורד</span>
-      </NavLink>
-      <NavLink to="/leads" className={({ isActive }) => (isActive ? 'active' : '')}>
-        <span className="nav-icon" aria-hidden>
-          📣
-        </span>
-        <span className="nav-label">לידים</span>
-      </NavLink>
-      <NavLink to="/create" className={() => (createActive ? 'active' : '')}>
-        <span className="nav-icon nav-icon-main" aria-hidden>
-          ➕
-        </span>
-        <span className="nav-label">חדש</span>
-      </NavLink>
-      <NavLink to="/assistant" className={({ isActive }) => (isActive ? 'active' : '')}>
-        <span className="nav-icon" aria-hidden>
-          🤖
-        </span>
-        <span className="nav-label">עוזר</span>
-      </NavLink>
-      <NavLink to="/invoices" className={({ isActive }) => (isActive ? 'active' : '')}>
-        <span className="nav-icon" aria-hidden>
-          🧾
-        </span>
-        <span className="nav-label">חשבוניות</span>
-      </NavLink>
-      <NavLink to="/settings" className={({ isActive }) => (isActive ? 'active' : '')}>
-        <span className="nav-icon" aria-hidden>
-          ⚙️
-        </span>
-        <span className="nav-label">הגדרות</span>
-      </NavLink>
+    <nav className="bottom-nav-wrap" aria-label="ניווט ראשי">
+      <div className="bottom-nav bottom-nav-scroll">
+        {NAV_ITEMS.map((item) => {
+          const isActive = item.fab
+            ? createActive
+            : pathname === item.to || pathname.startsWith(`${item.to}/`);
+
+          if (item.fab) {
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={`bottom-nav-fab ${createActive ? 'active' : ''}`}
+                aria-label={item.label}
+              >
+                <span className="bottom-nav-fab-btn">
+                  <NavIcon name="create" />
+                </span>
+                <span className="nav-label">{item.label}</span>
+              </NavLink>
+            );
+          }
+
+          return (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={isActive ? 'active' : ''}
+              aria-current={isActive ? 'page' : undefined}
+            >
+              <span className="nav-icon-wrap">
+                <NavIcon name={item.icon} active={isActive} />
+              </span>
+              <span className="nav-label">{item.label}</span>
+            </NavLink>
+          );
+        })}
+      </div>
     </nav>
   );
 }

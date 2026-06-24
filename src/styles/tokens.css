@@ -1,16 +1,57 @@
 :root {
-  --color-primary: #687cd4;
-  --color-primary-dark: #5568b8;
-  --color-bg: #f7f8fa;
-  --color-text: #111827;
-  --color-text-secondary: #6b7280;
-  --color-success: #16a34a;
+  /* ── 3 צבעי מותג ── */
+  /* Teal — ראשי: כפתורים, ניווט, קישורים */
+  --color-primary: #0f766e;
+  --color-primary-dark: #0d5f58;
+  --color-primary-light: #14b8a6;
+  --color-primary-soft: #ccfbf1;
+  --color-primary-muted: rgba(15, 118, 110, 0.1);
+
+  /* Amber — משני: FAB, הדגשות, badges */
+  --color-accent: #ea580c;
+  --color-accent-dark: #c2410c;
+  --color-accent-soft: #fff7ed;
+
+  /* Cream — רקע חם ונעים */
+  --color-bg: #faf8f5;
+  --color-bg-subtle: #f3f0ea;
+
+  --color-text: #1c1917;
+  --color-text-secondary: #78716c;
+  --color-text-muted: #a8a29e;
+  --color-border: #e7e2db;
+  --color-border-light: #f0ece6;
+
+  --color-success: #059669;
+  --color-success-soft: #d1fae5;
   --color-error: #dc2626;
+  --color-error-soft: #fee2e2;
+  --color-warning: #d97706;
+  --color-warning-soft: #fef3c7;
+
   --color-card: #ffffff;
-  --radius-card: 16px;
-  --radius-button: 14px;
-  --shadow-card: 0 2px 12px rgba(17, 24, 39, 0.06);
-  --nav-height: 64px;
-  --touch-min: 44px;
+
+  --radius-card: 18px;
+  --radius-button: 12px;
+  --radius-input: 12px;
+  --radius-pill: 999px;
+  --radius-nav: 24px;
+
+  --shadow-card: 0 1px 2px rgba(28, 25, 23, 0.04), 0 4px 20px rgba(28, 25, 23, 0.06);
+  --shadow-card-hover: 0 4px 24px rgba(28, 25, 23, 0.1);
+  --shadow-nav: 0 -2px 20px rgba(28, 25, 23, 0.07), 0 8px 32px rgba(28, 25, 23, 0.05);
+  --shadow-button: 0 2px 10px rgba(15, 118, 110, 0.28);
+  --shadow-fab: 0 4px 16px rgba(234, 88, 12, 0.35);
+
+  --nav-height: 76px;
+  --touch-min: 48px;
   --font: 'Heebo', system-ui, sans-serif;
+
+  --gradient-app: linear-gradient(165deg, #faf8f5 0%, #f5f1eb 50%, #faf8f5 100%);
+  --gradient-primary: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+  --gradient-accent: linear-gradient(135deg, #ea580c 0%, #f97316 100%);
+  --gradient-auth: linear-gradient(160deg, #0f766e 0%, #115e59 45%, #134e4a 100%);
+
+  /* תאימות — מחליפים צבעים ישנים */
+  --color-primary-old-soft: var(--color-primary-soft);
 }

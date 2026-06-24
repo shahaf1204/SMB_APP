@@ -10,23 +10,11 @@ export function LoadingScreen() {
   }, []);
 
   return (
-    <div
-      className="page"
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100dvh',
-        color: 'var(--color-text-secondary)',
-        gap: '0.75rem',
-        padding: '1rem',
-        textAlign: 'center',
-      }}
-    >
-      <p style={{ margin: 0 }}>טוען…</p>
+    <div className="loading-screen">
+      <div className="loading-spinner" aria-hidden />
+      <p className="loading-text">טוען את האפליקציה…</p>
       {slow && (
-        <div style={{ fontSize: '0.85rem', maxWidth: 300 }}>
+        <div style={{ fontSize: '0.85rem', maxWidth: 300, color: 'var(--color-text-secondary)' }}>
           <p style={{ margin: '0 0 0.5rem' }}>
             הטעינה אורכת יותר מדי — לרוב אחרי ייבוא גדול או נתונים פגומים בדפדפן.
           </p>
