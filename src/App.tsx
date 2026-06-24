@@ -6,6 +6,7 @@ import {
   RequireUser,
   RootRedirect,
 } from './components/RouteGuards';
+import { ActivitiesPage } from './pages/ActivitiesPage';
 import { AddEventPage } from './pages/AddEventPage';
 import { AuthPage } from './pages/AuthPage';
 import { CreateGroupPage } from './pages/CreateGroupPage';
@@ -45,6 +46,7 @@ export default function App() {
         <Route element={<RequireBusiness />}>
           <Route element={<BusinessLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/activities" element={<ActivitiesPage />} />
           <Route path="/today" element={<TodayPage />} />
           <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/assistant" element={<AssistantPage />} />

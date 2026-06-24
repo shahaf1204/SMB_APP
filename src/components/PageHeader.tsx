@@ -1,18 +1,14 @@
 interface PageHeaderProps {
   userName?: string;
-  subtitle?: string;
 }
 
-export function PageHeader({ userName, subtitle }: PageHeaderProps) {
+export function PageHeader({ userName }: PageHeaderProps) {
   return (
     <header className="page-header">
-      <p className="page-header-greeting">שלום 👋</p>
-      <h1 className="page-header-title">
-        {userName ? `היי, ${userName}` : 'ברוכים הבאים'}
+      <h1 className="page-header-welcome">
+        היי {userName ?? 'שם'} 👋
       </h1>
-      <p className="page-header-sub">
-        {subtitle ?? 'הנה סיכום העסק שלך להיום'}
-      </p>
+      <p className="page-header-sub">הנה מה שקורה בעסק שלך היום</p>
     </header>
   );
 }

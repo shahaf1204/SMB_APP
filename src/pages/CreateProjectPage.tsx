@@ -1,6 +1,8 @@
 import { FormEvent, useState } from 'react';
+import { Banknote, Calendar, StickyNote, User } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
+import { FormSection } from '../components/ui/FormSection';
 import { useAppStore } from '../store/useAppStore';
 
 export function CreateProjectPage() {
@@ -45,90 +47,56 @@ export function CreateProjectPage() {
   return (
     <div className="app-shell">
       <div className="page">
-        <Link to="/create" className="page-back">
-          ← חזרה
-        </Link>
+        <Link to="/create" className="page-back">← חזרה</Link>
         <h1 className="page-title">ליווי / פרויקט חדש</h1>
-        <p className="page-subtitle">אבני דרך עם שם חופשי — אפשר להוסיף עוד אחר כך</p>
+        <p className="page-subtitle">אבני דרך — אפשר להוסיף עוד אחר כך</p>
 
-        <form onSubmit={handleSubmit} className="card">
-          <div className="field">
-            <label htmlFor="proj-client">שם לקוח *</label>
-            <input
-              id="proj-client"
-              value={clientName}
-              onChange={(e) => setClientName(e.target.value)}
-              required
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="proj-title">שם הפרויקט / הליווי *</label>
-            <input
-              id="proj-title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="לדוגמה: שיפוץ דירה / ליווי פיננסי"
-              required
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="proj-start">תאריך התחלה</label>
-            <input
-              id="proj-start"
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="proj-end">תאריך סיום (אופציונלי)</label>
-            <input
-              id="proj-end"
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="proj-email">אימייל לקוח</label>
-            <input
-              id="proj-email"
-              type="email"
-              value={clientEmail}
-              onChange={(e) => setClientEmail(e.target.value)}
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="proj-notes">הערות</label>
-            <textarea id="proj-notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
-          </div>
-
-          <fieldset className="engagement-fieldset">
-            <legend>אבן דרך ראשונה (אופציונלי)</legend>
+        <form onSubmit={handleSubmit} className="form-stack">
+          <FormSection title="פרטי לקוח" icon={User}>
             <div className="field">
-              <label htmlFor="ms-name">שם אבן הדרך</label>
-              <input
-                id="ms-name"
-                value={milestoneName}
-                onChange={(e) => setMilestoneName(e.target.value)}
-                placeholder="לדוגמה: הדמיות / תוכנית עבודה"
-              />
+              <label htmlFor="proj-client">שם לקוח *</label>
+              <input id="proj-client" value={clientName} onChange={(e) => setClientName(e.target.value)} required />
+            </div>
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label htmlFor="proj-email">אימייל לקוח</label>
+              <input id="proj-email" type="email" value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} dir="ltr" />
+            </div>
+          </FormSection>
+
+          <FormSection title="פרטי פעילות" icon={Calendar}>
+            <div className="field">
+              <label htmlFor="proj-title">שם הפרויקט / הליווי *</label>
+              <input id="proj-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="שיפוץ דירה / ליווי פיננסי" required />
             </div>
             <div className="field">
+              <label htmlFor="proj-start">תאריך התחלה</label>
+              <input id="proj-start" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            </div>
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label htmlFor="proj-end">תאריך סיום (אופציונלי)</label>
+              <input id="proj-end" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+            </div>
+          </FormSection>
+
+          <FormSection title="תשלום" icon={Banknote}>
+            <div className="field">
+              <label htmlFor="ms-name">אבן דרך ראשונה (אופציונלי)</label>
+              <input id="ms-name" value={milestoneName} onChange={(e) => setMilestoneName(e.target.value)} placeholder="הדמיות / תוכנית עבודה" />
+            </div>
+            <div className="field" style={{ marginBottom: 0 }}>
               <label htmlFor="ms-amount">סכום (₪)</label>
-              <input
-                id="ms-amount"
-                type="number"
-                min={0}
-                value={milestoneAmount}
-                onChange={(e) => setMilestoneAmount(e.target.value)}
-              />
+              <input id="ms-amount" type="number" min={0} value={milestoneAmount} onChange={(e) => setMilestoneAmount(e.target.value)} />
             </div>
-          </fieldset>
+          </FormSection>
 
-          <button type="submit" className="btn btn-primary">
-            צור ליווי
-          </button>
+          <FormSection title="הערות" icon={StickyNote}>
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label htmlFor="proj-notes">הערות</label>
+              <textarea id="proj-notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
+            </div>
+          </FormSection>
+
+          <button type="submit" className="btn btn-primary form-submit-btn">צור ליווי</button>
         </form>
       </div>
       <BottomNav />

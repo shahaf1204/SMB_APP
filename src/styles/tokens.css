@@ -1,57 +1,49 @@
 :root {
-  /* ── 3 צבעי מותג ── */
-  /* Teal — ראשי: כפתורים, ניווט, קישורים */
-  --color-primary: #0f766e;
-  --color-primary-dark: #0d5f58;
-  --color-primary-light: #14b8a6;
-  --color-primary-soft: #ccfbf1;
-  --color-primary-muted: rgba(15, 118, 110, 0.1);
+  /* ── Brand palette ── */
+  --color-primary: #5b6cf9;
+  --color-primary-dark: #4a58e0;
+  --color-primary-light: #818cf8;
+  --color-primary-soft: #eef2ff;
+  --color-primary-muted: rgba(91, 108, 249, 0.12);
 
-  /* Amber — משני: FAB, הדגשות, badges */
-  --color-accent: #ea580c;
-  --color-accent-dark: #c2410c;
-  --color-accent-soft: #fff7ed;
+  --color-success: #22c55e;
+  --color-success-dark: #16a34a;
+  --color-success-soft: #dcfce7;
 
-  /* Cream — רקע חם ונעים */
-  --color-bg: #faf8f5;
-  --color-bg-subtle: #f3f0ea;
+  --color-accent: #f59e0b;
+  --color-accent-dark: #d97706;
+  --color-accent-soft: #fef3c7;
 
-  --color-text: #1c1917;
-  --color-text-secondary: #78716c;
-  --color-text-muted: #a8a29e;
-  --color-border: #e7e2db;
-  --color-border-light: #f0ece6;
-
-  --color-success: #059669;
-  --color-success-soft: #d1fae5;
-  --color-error: #dc2626;
+  --color-error: #ef4444;
   --color-error-soft: #fee2e2;
-  --color-warning: #d97706;
-  --color-warning-soft: #fef3c7;
 
+  --color-bg: #f8fafc;
+  --color-bg-subtle: #f1f5f9;
+  --color-surface: #ffffff;
   --color-card: #ffffff;
 
-  --radius-card: 18px;
-  --radius-button: 12px;
-  --radius-input: 12px;
+  --color-text: #0f172a;
+  --color-text-secondary: #64748b;
+  --color-text-muted: #94a3b8;
+  --color-border: #e2e8f0;
+  --color-border-light: #f1f5f9;
+
+  --radius-card: 20px;
+  --radius-button: 14px;
+  --radius-input: 14px;
   --radius-pill: 999px;
-  --radius-nav: 24px;
+  --radius-nav: 20px;
 
-  --shadow-card: 0 1px 2px rgba(28, 25, 23, 0.04), 0 4px 20px rgba(28, 25, 23, 0.06);
-  --shadow-card-hover: 0 4px 24px rgba(28, 25, 23, 0.1);
-  --shadow-nav: 0 -2px 20px rgba(28, 25, 23, 0.07), 0 8px 32px rgba(28, 25, 23, 0.05);
-  --shadow-button: 0 2px 10px rgba(15, 118, 110, 0.28);
-  --shadow-fab: 0 4px 16px rgba(234, 88, 12, 0.35);
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 16px rgba(15, 23, 42, 0.05);
+  --shadow-card-hover: 0 4px 20px rgba(15, 23, 42, 0.08);
+  --shadow-nav: 0 -2px 16px rgba(15, 23, 42, 0.06);
+  --shadow-button: 0 2px 8px rgba(91, 108, 249, 0.28);
 
-  --nav-height: 76px;
+  --nav-height: 72px;
   --touch-min: 48px;
+  --space-page: 1.125rem;
   --font: 'Heebo', system-ui, sans-serif;
 
-  --gradient-app: linear-gradient(165deg, #faf8f5 0%, #f5f1eb 50%, #faf8f5 100%);
-  --gradient-primary: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
-  --gradient-accent: linear-gradient(135deg, #ea580c 0%, #f97316 100%);
-  --gradient-auth: linear-gradient(160deg, #0f766e 0%, #115e59 45%, #134e4a 100%);
-
-  /* תאימות — מחליפים צבעים ישנים */
-  --color-primary-old-soft: var(--color-primary-soft);
+  --gradient-primary: linear-gradient(135deg, #5b6cf9 0%, #6366f1 100%);
+  --gradient-auth: linear-gradient(160deg, #5b6cf9 0%, #4f46e5 50%, #4338ca 100%);
 }

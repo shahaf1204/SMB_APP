@@ -132,6 +132,10 @@ export function SettingsPage() {
         </section>
 
         <nav className="settings-links card">
+          <Link to="/leads" className="settings-link-row">
+            <span>📣</span>
+            <span>לידים (CRM)</span>
+          </Link>
           <Link to="/categories" className="settings-link-row">
             <span>📋</span>
             <span>ניהול קטגוריות</span>

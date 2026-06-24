@@ -4,8 +4,8 @@
   "description": "ניהול אירועים, לידים וחשבוניות לעסק קטן",
   "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#faf8f5",
-  "theme_color": "#0f766e",
+  "background_color": "#f8fafc",
+  "theme_color": "#5b6cf9",
   "lang": "he",
   "dir": "rtl",
   "icons": [

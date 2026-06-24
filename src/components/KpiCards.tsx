@@ -7,55 +7,28 @@ interface KpiCardsProps {
 }
 
 function KpiCard({
-  icon,
-  title,
+  label,
   value,
-  iconClass,
-  valueColor,
+  variant,
 }: {
-  icon: string;
-  title: string;
+  label: string;
   value: string;
-  iconClass: string;
-  valueColor?: string;
+  variant: 'revenue' | 'expense' | 'profit';
 }) {
   return (
-    <div className="kpi-card">
-      <div className={`kpi-card-icon ${iconClass}`} aria-hidden>
-        {icon}
-      </div>
-      <p className="kpi-card-label">{title}</p>
-      <p className="kpi-card-value" style={{ color: valueColor ?? 'var(--color-text)' }}>
-        {value}
-      </p>
+    <div className={`kpi-compact kpi-compact--${variant}`}>
+      <span className="kpi-compact-label">{label}</span>
+      <span className="kpi-compact-value">{value}</span>
     </div>
   );
 }
 
 export function KpiCards({ revenue, expense, profit }: KpiCardsProps) {
   return (
-    <div className="kpi-row">
-      <KpiCard
-        icon="💰"
-        title="הכנסות"
-        value={formatCurrency(revenue)}
-        iconClass="kpi-card-icon--revenue"
-        valueColor="var(--color-success)"
-      />
-      <KpiCard
-        icon="📉"
-        title="הוצאות"
-        value={formatCurrency(expense)}
-        iconClass="kpi-card-icon--expense"
-        valueColor="var(--color-error)"
-      />
-      <KpiCard
-        icon="📈"
-        title="רווח"
-        value={formatCurrency(profit)}
-        iconClass="kpi-card-icon--profit"
-        valueColor="var(--color-primary)"
-      />
-    </div>
+    <section className="kpi-compact-row" aria-label="סיכום כספי">
+      <KpiCard label="הכנסות" value={formatCurrency(revenue)} variant="revenue" />
+      <KpiCard label="הוצאות" value={formatCurrency(expense)} variant="expense" />
+      <KpiCard label="רווח" value={formatCurrency(profit)} variant="profit" />
+    </section>
   );
 }

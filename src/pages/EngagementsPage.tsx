@@ -17,11 +17,20 @@ export function EngagementsPage() {
   return (
     <div className="app-shell">
       <div className="page">
-        <Link to="/create" className="page-back">
-          ← יצירה חדשה
-        </Link>
-        <h1 className="page-title">ליוויים וחוגים</h1>
-        <p className="page-subtitle">כרטיסיות · פרויקטים · חוגים קבועים</p>
+        <h1 className="page-title">פעילויות</h1>
+        <p className="page-subtitle">אירועים · כרטיסיות · ליווי · חוגים</p>
+
+        <div className="chip-row" style={{ marginBottom: '1rem' }}>
+          <Link to="/create" className="chip active">
+            + חדש
+          </Link>
+          <Link to="/leads" className="chip">
+            לידים
+          </Link>
+          <Link to="/customers" className="chip">
+            לקוחות
+          </Link>
+        </div>
 
         {active.length === 0 ? (
           <p className="empty-state">אין ליוויים פעילים — התחילו מ«+ חדש»</p>

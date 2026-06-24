@@ -1,3 +1,5 @@
+import { Calendar, Clock, MapPin, User } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { formatCurrency, formatDate } from '../lib/finance';
 import type { Event } from '../types/models';
 
@@ -10,37 +12,45 @@ interface NextEventCardProps {
 export function NextEventCard({ event, clientName, amount }: NextEventCardProps) {
   if (!event) {
     return (
-      <section className="card" style={{ marginBottom: '1rem' }}>
-        <h2 style={{ margin: '0 0 0.5rem', fontSize: '1rem' }}>אירוע קרוב</h2>
-        <p className="empty-state" style={{ padding: '0.5rem 0', margin: 0 }}>
-          אין אירועים עתידיים
-        </p>
+      <section className="next-event-card next-event-card--empty" aria-label="אירוע קרוב">
+        <div className="next-event-card-badge">הבא בתור</div>
+        <p className="next-event-empty-text">אין אירועים עתידיים</p>
+        <Link to="/create/event" className="btn btn-primary next-event-cta">
+          + אירוע חדש
+        </Link>
       </section>
     );
   }
 
   return (
-    <section className="card" style={{ marginBottom: '1rem' }}>
-      <h2 style={{ margin: '0 0 0.75rem', fontSize: '1rem' }}>אירוע קרוב</h2>
-      <p style={{ margin: 0, fontWeight: 600, fontSize: '1.05rem' }}>
-        {clientName ?? event.title}
-      </p>
-      <p style={{ margin: '0.35rem 0 0', color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
-        {formatDate(event.eventDate)}
-      </p>
-      {event.location && (
-        <p style={{ margin: '0.25rem 0 0', fontSize: '0.9rem' }}>📍 {event.location}</p>
-      )}
-      <p
-        style={{
-          margin: '0.75rem 0 0',
-          fontWeight: 700,
-          color: 'var(--color-primary)',
-          fontSize: '1.125rem',
-        }}
-      >
-        {formatCurrency(amount)}
-      </p>
-    </section>
+    <Link to={`/events/${event.id}/edit`} className="next-event-card" aria-label="אירוע קרוב">
+      <div className="next-event-card-badge">הבא בתור</div>
+      <div className="next-event-card-main">
+        <p className="next-event-client">
+          <User size={16} strokeWidth={2} aria-hidden />
+          {clientName ?? 'לקוח'}
+        </p>
+        <h2 className="next-event-title">{event.title}</h2>
+        <div className="next-event-meta">
+          <span>
+            <Calendar size={14} strokeWidth={2} aria-hidden />
+            {formatDate(event.eventDate)}
+          </span>
+          {event.location && (
+            <span>
+              <MapPin size={14} strokeWidth={2} aria-hidden />
+              {event.location}
+            </span>
+          )}
+        </div>
+      </div>
+      <div className="next-event-footer">
+        <span className="next-event-amount">{formatCurrency(amount)}</span>
+        <span className="next-event-link">
+          <Clock size={14} strokeWidth={2} aria-hidden />
+          פרטים
+        </span>
+      </div>
+    </Link>
   );
 }
