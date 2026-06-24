@@ -22,6 +22,7 @@ const MORE_ITEMS = [
     label: 'עוזר AI',
     desc: 'שיחה חכמה ועזרה יומיומית',
     icon: Bot,
+    badge: 'Beta',
   },
   {
     to: '/settings/data',
@@ -38,13 +39,14 @@ const MORE_ITEMS = [
   {
     to: '/leads',
     label: 'CRM — לידים',
-    desc: 'ניהול לידים (בקרוב: Meta)',
+    desc: 'ניהול לידים מ-Meta ובעתיד',
     icon: Users,
+    badge: 'בקרוב',
   },
   {
     to: '/today',
     label: 'משימות',
-    desc: 'היום, עתידיות והושלמו',
+    desc: 'היום, השבוע והושלמו',
     icon: ListTodo,
   },
 ] as const;
@@ -55,18 +57,23 @@ export function MorePage() {
       <div className="page">
         <h1 className="page-title">עוד</h1>
 
-        <ul className="hub-card-list">
-          {MORE_ITEMS.map(({ to, label, desc, icon: Icon }) => (
+        <ul className="hub-card-list hub-card-list--lg">
+          {MORE_ITEMS.map(({ to, label, desc, icon: Icon, ...rest }) => (
             <li key={`${to}-${label}`}>
-              <Link to={to} className="hub-card">
-                <span className="hub-card-icon" aria-hidden>
-                  <Icon size={22} strokeWidth={1.75} />
+              <Link to={to} className="hub-card hub-card--lg">
+                <span className="hub-card-icon hub-card-icon--lg" aria-hidden>
+                  <Icon size={24} strokeWidth={1.75} />
                 </span>
                 <span className="hub-card-body">
-                  <strong>{label}</strong>
+                  <span className="hub-card-title-row">
+                    <strong>{label}</strong>
+                    {'badge' in rest && rest.badge && (
+                      <span className="hub-badge">{rest.badge}</span>
+                    )}
+                  </span>
                   <span className="hub-card-desc">{desc}</span>
                 </span>
-                <ChevronLeft size={18} className="hub-card-chevron" aria-hidden />
+                <ChevronLeft size={20} className="hub-card-chevron" aria-hidden />
               </Link>
             </li>
           ))}

@@ -148,6 +148,23 @@ export function buildUpcomingTasks(customTasks: Task[]): DailyTaskItem[] {
     }));
 }
 
+/** Tasks due this week (after today, within 7 days) */
+export function buildWeekTasks(customTasks: Task[]): DailyTaskItem[] {
+  const today = todayIso();
+  const weekEnd = weekEndIso();
+  return customTasks
+    .filter((t) => !t.done && t.dueDate > today && t.dueDate <= weekEnd)
+    .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
+    .map((t) => ({
+      id: `custom:${t.id}`,
+      title: t.title,
+      dueDate: t.dueDate,
+      subtitle: new Date(t.dueDate).toLocaleDateString('he-IL'),
+      kind: 'custom' as const,
+      isDone: false,
+    }));
+}
+
 export function buildCompletedTasks(
   leads: Lead[],
   events: Event[],

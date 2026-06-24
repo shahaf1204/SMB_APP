@@ -1,6 +1,9 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { Users } from 'lucide-react';
 import { BottomNav } from '../components/BottomNav';
+import { Avatar } from '../components/ui/Avatar';
+import { EmptyState } from '../components/ui/EmptyState';
 import { buildCustomerSummaries } from '../lib/customers';
 import { formatCurrency } from '../lib/finance';
 import { useAppStore } from '../store/useAppStore';
@@ -23,26 +26,30 @@ export function CustomersPage() {
         <h1 className="page-title">לקוחות</h1>
 
         {customers.length === 0 ? (
-          <p className="empty-state">עדיין אין לקוחות</p>
+          <EmptyState
+            icon={Users}
+            title="אין לקוחות עדיין"
+            message="הוסיפו שם לקוח באירוע או ליד כדי לבנות את מאגר הלקוחות"
+            actionLabel="+ אירוע חדש"
+            actionTo="/create/event"
+          />
         ) : (
           <ul className="customer-list">
             {customers.map((c) => (
               <li key={c.key}>
-                <Link to={`/customers/${c.key}`} className="card customer-card">
-                  <div className="customer-card-main">
+                <Link to={`/customers/${c.key}`} className="card customer-card-v2">
+                  <Avatar name={c.name} size="md" />
+                  <div className="customer-card-v2-body">
                     <strong>{c.name}</strong>
-                    <p className="customer-card-contact">
-                      {c.phone && <span>{c.phone}</span>}
-                      {c.phone && c.email && ' · '}
-                      {c.email && <span>{c.email}</span>}
-                      {!c.phone && !c.email && (
-                        <span className="customer-card-muted">אין פרטי קשר</span>
-                      )}
+                    <p className="customer-card-v2-contact">
+                      {c.phone || c.email || 'אין פרטי קשר'}
                     </p>
+                    <span className="customer-card-v2-meta">
+                      {c.activityCount} פעילויות
+                    </span>
                   </div>
-                  <div className="customer-card-side">
+                  <div className="customer-card-v2-side">
                     <span className="customer-revenue">{formatCurrency(c.totalRevenue)}</span>
-                    <span className="customer-card-count">{c.activityCount} פעילויות</span>
                   </div>
                 </Link>
               </li>

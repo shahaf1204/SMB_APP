@@ -1,10 +1,13 @@
 import { FormEvent, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ListTodo } from 'lucide-react';
 import { BottomNav } from '../components/BottomNav';
+import { EmptyState } from '../components/ui/EmptyState';
+import { Modal } from '../components/ui/Modal';
 import {
   buildCompletedTasks,
   buildTodayTasks,
-  buildUpcomingTasks,
+  buildWeekTasks,
   taskCounters,
   type DailyTaskItem,
 } from '../lib/tasks';
@@ -18,18 +21,16 @@ function TaskRow({
   onComplete: (item: DailyTaskItem) => void;
 }) {
   return (
-    <li className={`task-row ${item.isDone ? 'done' : ''}`}>
+    <li className={`task-row task-row-v2 ${item.isDone ? 'done' : ''}`}>
       {!item.isDone ? (
         <button
           type="button"
-          className="task-check"
+          className="task-check-v2"
           aria-label="סמן כבוצע"
           onClick={() => onComplete(item)}
-        >
-          ○
-        </button>
+        />
       ) : (
-        <span className="task-check done">✓</span>
+        <span className="task-check-v2 task-check-v2--done" aria-hidden />
       )}
       <div className="task-body">
         {item.href && !item.isDone ? (
@@ -58,14 +59,14 @@ export function TodayPage() {
 
   const [taskTitle, setTaskTitle] = useState('');
   const [taskDue, setTaskDue] = useState(() => new Date().toISOString().slice(0, 10));
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   const todayTasks = useMemo(
     () => buildTodayTasks(leads, events, invoices, tasks, dismissedAutoTasks),
     [leads, events, invoices, tasks, dismissedAutoTasks],
   );
 
-  const upcomingTasks = useMemo(() => buildUpcomingTasks(tasks), [tasks]);
+  const weekTasks = useMemo(() => buildWeekTasks(tasks), [tasks]);
 
   const completedTasks = useMemo(
     () => buildCompletedTasks(leads, events, invoices, tasks, dismissedAutoTasks),
@@ -82,7 +83,7 @@ export function TodayPage() {
     if (!taskTitle.trim()) return;
     addTask(taskTitle, taskDue);
     setTaskTitle('');
-    setShowCreateForm(false);
+    setShowModal(false);
   };
 
   const completeItem = (item: DailyTaskItem) => {
@@ -92,6 +93,9 @@ export function TodayPage() {
       dismissAutoTask(item.id);
     }
   };
+
+  const hasAnyTasks =
+    todayTasks.length > 0 || weekTasks.length > 0 || completedTasks.length > 0;
 
   return (
     <div className="app-shell">
@@ -116,102 +120,106 @@ export function TodayPage() {
           </div>
         </div>
 
-        {!showCreateForm ? (
-          <button
-            type="button"
-            className="btn btn-primary"
-            style={{ width: '100%', marginBottom: '0.75rem' }}
-            onClick={() => setShowCreateForm(true)}
-          >
-            + משימה חדשה
-          </button>
+        <button
+          type="button"
+          className="btn btn-primary"
+          style={{ width: '100%', marginBottom: '0.75rem' }}
+          onClick={() => setShowModal(true)}
+        >
+          + משימה חדשה
+        </button>
+
+        {!hasAnyTasks ? (
+          <EmptyState
+            icon={ListTodo}
+            title="אין משימות"
+            message="הוסיפו משימה כדי לעקוב אחרי מה שחשוב"
+            actionLabel="+ משימה חדשה"
+            onAction={() => setShowModal(true)}
+          />
         ) : (
-          <form onSubmit={handleAddTask} className="card" style={{ marginBottom: '0.75rem' }}>
-            <div className="field">
-              <label htmlFor="task-title">תיאור</label>
-              <input
-                id="task-title"
-                value={taskTitle}
-                onChange={(e) => setTaskTitle(e.target.value)}
-                placeholder="לדוגמה: להתקשר לספק"
-                autoFocus
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="task-due">תאריך יעד</label>
-              <input
-                id="task-due"
-                type="date"
-                value={taskDue}
-                onChange={(e) => setTaskDue(e.target.value)}
-              />
-            </div>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button type="submit" className="btn btn-primary">
-                הוסף
-              </button>
-              <button
-                type="button"
-                className="btn btn-ghost"
-                onClick={() => setShowCreateForm(false)}
-              >
-                ביטול
-              </button>
-            </div>
-          </form>
+          <>
+            <section className="task-section">
+              <h2 className="section-title-sm">היום</h2>
+              {todayTasks.length === 0 ? (
+                <p className="empty-state empty-state--compact">אין משימות להיום</p>
+              ) : (
+                <ul className="task-list">
+                  {todayTasks.map((item) => (
+                    <TaskRow key={item.id} item={item} onComplete={completeItem} />
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            <section className="task-section">
+              <h2 className="section-title-sm">השבוע</h2>
+              {weekTasks.length === 0 ? (
+                <p className="empty-state empty-state--compact">אין משימות השבוע</p>
+              ) : (
+                <ul className="task-list">
+                  {weekTasks.map((item) => (
+                    <TaskRow key={item.id} item={item} onComplete={completeItem} />
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            <section className="task-section">
+              <h2 className="section-title-sm">הושלמו</h2>
+              {completedTasks.length === 0 ? (
+                <p className="empty-state empty-state--compact">אין משימות שהושלמו</p>
+              ) : (
+                <ul className="task-list">
+                  {completedTasks.map((item) => (
+                    <li key={item.id} className="task-row task-row-v2 done">
+                      <span className="task-check-v2 task-check-v2--done" aria-hidden />
+                      <span>{item.title}</span>
+                      {item.kind === 'custom' && (
+                        <button
+                          type="button"
+                          className="chip"
+                          onClick={() => deleteTask(item.id.replace('custom:', ''))}
+                        >
+                          מחק
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          </>
         )}
-
-        <section className="task-section">
-          <h2 className="section-title-sm">היום</h2>
-          {todayTasks.length === 0 ? (
-            <p className="empty-state empty-state--compact">אין משימות להיום</p>
-          ) : (
-            <ul className="task-list">
-              {todayTasks.map((item) => (
-                <TaskRow key={item.id} item={item} onComplete={completeItem} />
-              ))}
-            </ul>
-          )}
-        </section>
-
-        <section className="task-section">
-          <h2 className="section-title-sm">עתידיות</h2>
-          {upcomingTasks.length === 0 ? (
-            <p className="empty-state empty-state--compact">אין משימות עתידיות</p>
-          ) : (
-            <ul className="task-list">
-              {upcomingTasks.map((item) => (
-                <TaskRow key={item.id} item={item} onComplete={completeItem} />
-              ))}
-            </ul>
-          )}
-        </section>
-
-        <section className="task-section">
-          <h2 className="section-title-sm">הושלמו</h2>
-          {completedTasks.length === 0 ? (
-            <p className="empty-state empty-state--compact">אין משימות שהושלמו</p>
-          ) : (
-            <ul className="task-list">
-              {completedTasks.map((item) => (
-                <li key={item.id} className="task-row done">
-                  <span className="task-check done">✓</span>
-                  <span>{item.title}</span>
-                  {item.kind === 'custom' && (
-                    <button
-                      type="button"
-                      className="chip"
-                      onClick={() => deleteTask(item.id.replace('custom:', ''))}
-                    >
-                      מחק
-                    </button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
       </div>
+
+      <Modal open={showModal} onClose={() => setShowModal(false)} title="משימה חדשה">
+        <form onSubmit={handleAddTask}>
+          <div className="field">
+            <label htmlFor="task-title">תיאור</label>
+            <input
+              id="task-title"
+              value={taskTitle}
+              onChange={(e) => setTaskTitle(e.target.value)}
+              placeholder="לדוגמה: להתקשר לספק"
+              autoFocus
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="task-due">תאריך יעד</label>
+            <input
+              id="task-due"
+              type="date"
+              value={taskDue}
+              onChange={(e) => setTaskDue(e.target.value)}
+            />
+          </div>
+          <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
+            הוסף משימה
+          </button>
+        </form>
+      </Modal>
+
       <BottomNav />
     </div>
   );

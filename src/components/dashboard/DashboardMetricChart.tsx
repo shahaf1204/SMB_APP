@@ -50,7 +50,7 @@ export function DashboardMetricChart({
     <section className="dash-section card dash-chart-card" aria-label="גרף פיננסי">
       <div className="dash-chart-header">
         <h2 className="dash-section-label" style={{ margin: 0 }}>
-          מגמת כספים
+          מצב העסק
         </h2>
         <div className="chip-row dash-chart-tabs">
           {TABS.map((t) => (

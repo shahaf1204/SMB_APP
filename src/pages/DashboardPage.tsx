@@ -21,7 +21,6 @@ export function DashboardPage() {
   const calendarExport = (location.state as { calendarExport?: CalendarExportOutcome } | null)
     ?.calendarExport;
 
-  const user = useAppStore((s) => s.user)!;
   const events = useAppStore((s) => s.events);
   const categories = useAppStore((s) => s.categories);
   const eventValues = useAppStore((s) => s.eventValues);
@@ -54,7 +53,7 @@ export function DashboardPage() {
   return (
     <div className="app-shell">
       <div className="page page-dashboard">
-        <PageHeader userName={user.displayName} />
+        <PageHeader />
         {calendarExport && <CalendarExportBanner outcome={calendarExport} />}
 
         <NextEventCard event={nextEvent} clientName={clientName} amount={nextAmount} />

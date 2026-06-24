@@ -15,6 +15,7 @@ const SETTINGS_SECTIONS = [
     label: 'אוטומציות',
     desc: 'AI, יומן ותזכורות',
     icon: Zap,
+    badge: 'Beta',
   },
   {
     to: '/settings/data',
@@ -39,18 +40,23 @@ export function SettingsHubPage() {
         <h1 className="page-title">הגדרות</h1>
         <p className="page-subtitle">{business.name}</p>
 
-        <ul className="hub-card-list">
-          {SETTINGS_SECTIONS.map(({ to, label, desc, icon: Icon }) => (
+        <ul className="hub-card-list hub-card-list--lg">
+          {SETTINGS_SECTIONS.map(({ to, label, desc, icon: Icon, ...rest }) => (
             <li key={to}>
-              <Link to={to} className="hub-card">
-                <span className="hub-card-icon" aria-hidden>
-                  <Icon size={22} strokeWidth={1.75} />
+              <Link to={to} className="hub-card hub-card--lg">
+                <span className="hub-card-icon hub-card-icon--lg" aria-hidden>
+                  <Icon size={24} strokeWidth={1.75} />
                 </span>
                 <span className="hub-card-body">
-                  <strong>{label}</strong>
+                  <span className="hub-card-title-row">
+                    <strong>{label}</strong>
+                    {'badge' in rest && rest.badge && (
+                      <span className="hub-badge">{rest.badge}</span>
+                    )}
+                  </span>
                   <span className="hub-card-desc">{desc}</span>
                 </span>
-                <ChevronLeft size={18} className="hub-card-chevron" aria-hidden />
+                <ChevronLeft size={20} className="hub-card-chevron" aria-hidden />
               </Link>
             </li>
           ))}
