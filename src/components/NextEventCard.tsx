@@ -1,4 +1,4 @@
-import { Calendar, Clock, MapPin, User } from 'lucide-react';
+import { Calendar, MapPin, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { formatCurrency, formatDate } from '../lib/finance';
 import type { Event } from '../types/models';
@@ -27,10 +27,9 @@ export function NextEventCard({ event, clientName, amount }: NextEventCardProps)
       <div className="next-event-card-badge">הבא בתור</div>
       <div className="next-event-card-main">
         <p className="next-event-client">
-          <User size={16} strokeWidth={2} aria-hidden />
-          {clientName ?? 'לקוח'}
+          <User size={15} strokeWidth={2} aria-hidden />
+          <strong>{clientName ?? 'לקוח'}</strong>
         </p>
-        <h2 className="next-event-title">{event.title}</h2>
         <div className="next-event-meta">
           <span>
             <Calendar size={14} strokeWidth={2} aria-hidden />
@@ -46,10 +45,7 @@ export function NextEventCard({ event, clientName, amount }: NextEventCardProps)
       </div>
       <div className="next-event-footer">
         <span className="next-event-amount">{formatCurrency(amount)}</span>
-        <span className="next-event-link">
-          <Clock size={14} strokeWidth={2} aria-hidden />
-          פרטים
-        </span>
+        <span className="next-event-link">{event.title}</span>
       </div>
     </Link>
   );

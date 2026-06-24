@@ -2,17 +2,17 @@ import {
   LayoutDashboard,
   Layers,
   FileText,
-  ListTodo,
-  Settings,
+  MoreHorizontal,
+  Users,
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'דשבורד', icon: LayoutDashboard },
   { to: '/activities', label: 'פעילויות', icon: Layers },
+  { to: '/customers', label: 'לקוחות', icon: Users },
   { to: '/invoices', label: 'חשבוניות', icon: FileText },
-  { to: '/today', label: 'משימות', icon: ListTodo },
-  { to: '/settings', label: 'הגדרות', icon: Settings },
+  { to: '/more', label: 'עוד', icon: MoreHorizontal },
 ] as const;
 
 export function BottomNav() {
@@ -28,8 +28,15 @@ export function BottomNav() {
               (pathname.startsWith('/engagements') ||
                 pathname.startsWith('/create') ||
                 pathname.startsWith('/events'))) ||
+            (to === '/customers' && pathname.startsWith('/customers')) ||
             (to === '/invoices' && pathname.startsWith('/invoices')) ||
-            (to === '/today' && pathname === '/today');
+            (to === '/more' &&
+              (pathname === '/settings' ||
+                pathname.startsWith('/settings/') ||
+                pathname === '/today' ||
+                pathname === '/assistant' ||
+                pathname.startsWith('/leads') ||
+                pathname === '/more'));
 
           return (
             <NavLink

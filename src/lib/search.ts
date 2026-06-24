@@ -1,7 +1,22 @@
 import { getClientName } from './events';
-import type { Category, Event, EventValue, Invoice, Lead } from '../types/models';
+import { customerKey } from './customers';
+import type {
+  Category,
+  Engagement,
+  Event,
+  EventValue,
+  Invoice,
+  Lead,
+  Task,
+} from '../types/models';
 
-export type SearchResultKind = 'event' | 'lead' | 'invoice';
+export type SearchResultKind =
+  | 'event'
+  | 'lead'
+  | 'invoice'
+  | 'customer'
+  | 'engagement'
+  | 'task';
 
 export interface SearchResult {
   kind: SearchResultKind;
@@ -18,11 +33,14 @@ export function searchAll(
   invoices: Invoice[],
   categories: Category[],
   eventValues: EventValue[],
+  engagements: Engagement[] = [],
+  tasks: Task[] = [],
 ): SearchResult[] {
   const q = query.trim().toLowerCase();
   if (q.length < 2) return [];
 
   const results: SearchResult[] = [];
+  const seenCustomers = new Set<string>();
 
   for (const ev of events) {
     const client = getClientName(ev.id, categories, eventValues) ?? '';
@@ -31,10 +49,23 @@ export function searchAll(
     results.push({
       kind: 'event',
       id: ev.id,
-      title: ev.title,
+      title: client || ev.title,
       subtitle: new Date(ev.eventDate).toLocaleDateString('he-IL'),
       href: `/events/${ev.id}/edit`,
     });
+    if (client) {
+      const key = customerKey(client);
+      if (!seenCustomers.has(key)) {
+        seenCustomers.add(key);
+        results.push({
+          kind: 'customer',
+          id: key,
+          title: client,
+          subtitle: 'לקוח',
+          href: `/customers/${key}`,
+        });
+      }
+    }
   }
 
   for (const lead of leads) {
@@ -45,7 +76,7 @@ export function searchAll(
       id: lead.id,
       title: lead.name,
       subtitle: 'ליד',
-      href: '/leads',
+      href: `/leads/${lead.id}`,
     });
   }
 
@@ -55,9 +86,34 @@ export function searchAll(
     results.push({
       kind: 'invoice',
       id: inv.id,
-      title: `#${inv.invoiceNumber} · ${inv.clientName}`,
-      subtitle: inv.issuedAt,
+      title: inv.clientName,
+      subtitle: `#${inv.invoiceNumber}`,
       href: `/invoices/${inv.id}`,
+    });
+  }
+
+  for (const eng of engagements) {
+    const hay = `${eng.title} ${eng.clientName} ${eng.notes}`.toLowerCase();
+    if (!hay.includes(q)) continue;
+    results.push({
+      kind: 'engagement',
+      id: eng.id,
+      title: eng.clientName || eng.title,
+      subtitle: 'פעילות',
+      href: `/engagements/${eng.id}`,
+    });
+  }
+
+  for (const task of tasks) {
+    if (task.done) continue;
+    const hay = task.title.toLowerCase();
+    if (!hay.includes(q)) continue;
+    results.push({
+      kind: 'task',
+      id: task.id,
+      title: task.title,
+      subtitle: new Date(task.dueDate).toLocaleDateString('he-IL'),
+      href: '/today',
     });
   }
 

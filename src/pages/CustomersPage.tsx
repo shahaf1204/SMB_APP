@@ -21,24 +21,28 @@ export function CustomersPage() {
     <div className="app-shell">
       <div className="page">
         <h1 className="page-title">לקוחות</h1>
-        <p className="page-subtitle">מאגר לקוחות מאירועים, לידים וחשבוניות</p>
 
         {customers.length === 0 ? (
-          <p className="empty-state">עדיין אין לקוחות — הוסיפו שם לקוח באירוע או ליד</p>
+          <p className="empty-state">עדיין אין לקוחות</p>
         ) : (
           <ul className="customer-list">
             {customers.map((c) => (
               <li key={c.key}>
-                <Link to={`/customers/${c.key}`} className="card customer-row">
-                  <div>
+                <Link to={`/customers/${c.key}`} className="card customer-card">
+                  <div className="customer-card-main">
                     <strong>{c.name}</strong>
-                    <p className="customer-row-meta">
-                      {c.eventIds.length} אירועים · {c.leadIds.length} לידים ·{' '}
-                      {c.invoiceIds.length} חשבוניות
+                    <p className="customer-card-contact">
+                      {c.phone && <span>{c.phone}</span>}
+                      {c.phone && c.email && ' · '}
+                      {c.email && <span>{c.email}</span>}
+                      {!c.phone && !c.email && (
+                        <span className="customer-card-muted">אין פרטי קשר</span>
+                      )}
                     </p>
                   </div>
-                  <div className="customer-row-side">
+                  <div className="customer-card-side">
                     <span className="customer-revenue">{formatCurrency(c.totalRevenue)}</span>
+                    <span className="customer-card-count">{c.activityCount} פעילויות</span>
                   </div>
                 </Link>
               </li>

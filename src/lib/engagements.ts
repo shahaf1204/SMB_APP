@@ -54,3 +54,14 @@ export function isEngagementActive(e: Engagement): boolean {
 export function activeEngagements(engagements: Engagement[] | undefined): Engagement[] {
   return (engagements ?? []).filter(isEngagementActive);
 }
+
+export function nextWeekdayDate(weekday: number): string {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const current = today.getDay();
+  let diff = weekday - current;
+  if (diff <= 0) diff += 7;
+  const next = new Date(today);
+  next.setDate(today.getDate() + diff);
+  return next.toISOString().slice(0, 10);
+}

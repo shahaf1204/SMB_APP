@@ -3,7 +3,6 @@ import { useLocation } from 'react-router-dom';
 import { CalendarExportBanner } from '../components/CalendarExportBanner';
 import type { CalendarExportOutcome } from '../lib/calendarExport';
 import { BottomNav } from '../components/BottomNav';
-import { BusinessHealthCard } from '../components/dashboard/BusinessHealthCard';
 import { DashboardMetricChart } from '../components/dashboard/DashboardMetricChart';
 import { DashboardQuickActions } from '../components/dashboard/DashboardQuickActions';
 import { KpiCards } from '../components/KpiCards';
@@ -65,12 +64,6 @@ export function DashboardPage() {
         <DashboardQuickActions />
 
         <DashboardMetricChart events={events} eventValues={eventValues} period="ytd" />
-
-        <BusinessHealthCard
-          revenue={totals.revenue}
-          profit={totals.profit}
-          invoices={invoices}
-        />
       </div>
       <BottomNav />
     </div>

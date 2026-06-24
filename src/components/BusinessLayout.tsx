@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
+import { GlobalSearch } from './GlobalSearch';
 import { useCloudSync } from '../hooks/useCloudSync';
 import { useCrmSync } from '../hooks/useCrmSync';
 import { useLeadSheetAutoSync } from '../hooks/useLeadSheetAutoSync';
@@ -7,9 +8,12 @@ import { runEventReminderCheck } from '../lib/eventReminders';
 import { useAppStore } from '../store/useAppStore';
 import { AutoSaveIndicator } from './AutoSaveIndicator';
 
+const HIDE_SEARCH_PATHS = ['/auth', '/onboarding'];
+
 export function BusinessLayout() {
   const events = useAppStore((s) => s.events);
   const business = useAppStore((s) => s.business);
+  const { pathname } = useLocation();
 
   useCrmSync();
   useCloudSync();
@@ -30,9 +34,16 @@ export function BusinessLayout() {
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, [business]);
 
+  const showSearch = !HIDE_SEARCH_PATHS.some((p) => pathname.startsWith(p));
+
   return (
     <>
       <AutoSaveIndicator />
+      {showSearch && (
+        <div className="app-global-search-bar">
+          <GlobalSearch />
+        </div>
+      )}
       <Outlet />
     </>
   );

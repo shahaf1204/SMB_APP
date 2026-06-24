@@ -13,7 +13,7 @@ export function DashboardQuickActions() {
           </span>
           <span className="quick-action-btn-label">אירוע חדש</span>
         </Link>
-        <Link to="/invoices" className="quick-action-btn">
+        <Link to="/invoices/new" className="quick-action-btn">
           <span className="quick-action-btn-icon quick-action-btn-icon--success">
             <FileText size={20} strokeWidth={2} />
           </span>

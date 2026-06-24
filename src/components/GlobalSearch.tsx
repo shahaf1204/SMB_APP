@@ -7,6 +7,9 @@ const KIND_LABEL: Record<string, string> = {
   event: 'אירוע',
   lead: 'ליד',
   invoice: 'חשבונית',
+  customer: 'לקוח',
+  engagement: 'פעילות',
+  task: 'משימה',
 };
 
 export function GlobalSearch() {
@@ -15,12 +18,24 @@ export function GlobalSearch() {
   const invoices = useAppStore((s) => s.invoices);
   const categories = useAppStore((s) => s.categories);
   const eventValues = useAppStore((s) => s.eventValues);
+  const engagements = useAppStore((s) => s.engagements ?? []);
+  const tasks = useAppStore((s) => s.tasks ?? []);
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
 
   const results = useMemo(
-    () => searchAll(query, events, leads, invoices, categories, eventValues),
-    [query, events, leads, invoices, categories, eventValues],
+    () =>
+      searchAll(
+        query,
+        events,
+        leads,
+        invoices,
+        categories,
+        eventValues,
+        engagements,
+        tasks,
+      ),
+    [query, events, leads, invoices, categories, eventValues, engagements, tasks],
   );
 
   return (
@@ -28,14 +43,15 @@ export function GlobalSearch() {
       <input
         type="search"
         className="global-search-input"
-        placeholder="חיפוש אירוע, לקוח, ליד..."
+        placeholder="חיפוש לקוחות, פעילויות, חשבוניות..."
         value={query}
         onChange={(e) => {
           setQuery(e.target.value);
           setOpen(e.target.value.length >= 2);
         }}
         onFocus={() => query.length >= 2 && setOpen(true)}
-        aria-label="חיפוש"
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        aria-label="חיפוש גלובלי"
       />
       {open && results.length > 0 && (
         <ul className="global-search-results">
