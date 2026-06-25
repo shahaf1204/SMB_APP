@@ -9,30 +9,33 @@ export function useIntegrationSync(): void {
   const connections = useAppStore((s) => s.integrationConnections);
   const updateIntegrationSync = useAppStore((s) => s.updateIntegrationSync);
 
-  const activeIds = useMemo(
-    () =>
-      connections
-        .filter((c) => c.businessId === business?.id && c.connectionStatus === 'connected')
-        .map((c) => c.id)
-        .sort()
-        .join(','),
-    [connections, business?.id],
-  );
+  const activeKey = useMemo(() => {
+    return connections
+      .filter((c) => c.businessId === business?.id && c.connectionStatus === 'connected')
+      .map((c) => `${c.id}:${c.provider}`)
+      .sort()
+      .join(',');
+  }, [connections, business?.id]);
 
   useEffect(() => {
-    if (!business?.id || !activeIds) return;
-
-    const ids = activeIds.split(',');
+    if (!business?.id || !activeKey) return;
 
     const runSync = async () => {
-      for (const connectionId of ids) {
-        updateIntegrationSync(connectionId, { syncStatus: 'syncing' });
+      const active = useAppStore
+        .getState()
+        .integrationConnections.filter(
+          (c) => c.businessId === business.id && c.connectionStatus === 'connected',
+        );
+
+      for (const conn of active) {
+        updateIntegrationSync(conn.id, { syncStatus: 'syncing' });
         try {
           const result = await syncProvider({
-            connectionId,
+            connectionId: conn.id,
             businessId: business.id,
+            provider: conn.provider,
           });
-          updateIntegrationSync(connectionId, {
+          updateIntegrationSync(conn.id, {
             syncStatus: result.ok ? 'success' : 'error',
             lastSync: result.syncedAt,
             nextSync: new Date(Date.now() + AUTO_SYNC_MS).toISOString(),
@@ -40,7 +43,7 @@ export function useIntegrationSync(): void {
             connectionStatus: result.ok ? 'connected' : 'error',
           });
         } catch (e) {
-          updateIntegrationSync(connectionId, {
+          updateIntegrationSync(conn.id, {
             syncStatus: 'error',
             lastError: e instanceof Error ? e.message : 'Sync failed',
             connectionStatus: 'error',
@@ -52,5 +55,5 @@ export function useIntegrationSync(): void {
     void runSync();
     const interval = setInterval(() => void runSync(), AUTO_SYNC_MS);
     return () => clearInterval(interval);
-  }, [business?.id, activeIds, updateIntegrationSync]);
+  }, [business?.id, activeKey, updateIntegrationSync]);
 }

@@ -53,7 +53,7 @@ export function ConnectionsPage() {
   const handleDisconnect = async (connectionId: string, provider: string) => {
     setBusyId(provider);
     try {
-      await disconnectProvider({ connectionId, businessId: business.id });
+      await disconnectProvider({ connectionId, businessId: business.id, provider: provider as never });
       removeIntegrationConnection(connectionId);
     } finally {
       setBusyId(null);
@@ -64,7 +64,11 @@ export function ConnectionsPage() {
     setBusyId(provider);
     updateIntegrationSync(connectionId, { syncStatus: 'syncing' });
     try {
-      const result = await syncProvider({ connectionId, businessId: business.id });
+      const result = await syncProvider({
+        connectionId,
+        businessId: business.id,
+        provider: provider as never,
+      });
       updateIntegrationSync(connectionId, {
         syncStatus: result.ok ? 'success' : 'error',
         lastSync: result.syncedAt,

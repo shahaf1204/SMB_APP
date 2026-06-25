@@ -30,6 +30,7 @@ export async function connectProvider(params: {
 export async function disconnectProvider(params: {
   connectionId: string;
   businessId: string;
+  provider: ProviderId;
 }): Promise<void> {
   await post('/disconnect', params);
 }
@@ -37,6 +38,7 @@ export async function disconnectProvider(params: {
 export async function syncProvider(params: {
   connectionId: string;
   businessId: string;
+  provider: ProviderId;
 }): Promise<SyncResult> {
   return post('/sync', params);
 }

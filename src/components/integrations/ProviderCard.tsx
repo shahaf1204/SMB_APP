@@ -27,12 +27,13 @@ export function ProviderCard({
 
   const connected = connection?.connectionStatus === 'connected';
   const hasError = connection?.connectionStatus === 'error';
+  const isOAuth = entry.authMethod === 'oauth';
 
   const handleConnect = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     try {
-      await onConnect(apiKey, accountLabel || entry.nameHe);
+      await onConnect(apiKey.trim(), accountLabel.trim() || entry.nameHe);
       setShowConnect(false);
       setApiKey('');
     } catch (err) {
@@ -57,7 +58,7 @@ export function ProviderCard({
           <span
             className={`provider-status ${connected ? 'provider-status--on' : hasError ? 'provider-status--err' : ''}`}
           >
-            {connected ? 'מחובר' : hasError ? 'שגיאה' : entry.comingSoon ? 'בקרוב' : 'לא מחובר'}
+            {connected ? 'מחובר' : hasError ? 'שגיאה' : 'לא מחובר'}
           </span>
         </div>
 
@@ -85,10 +86,10 @@ export function ProviderCard({
             <button
               type="button"
               className="btn btn-primary btn-sm"
-              disabled={busy || entry.comingSoon}
+              disabled={busy || !entry.available}
               onClick={() => setShowConnect(true)}
             >
-              {entry.comingSoon ? 'בקרוב' : 'חיבור'}
+              חיבור
             </button>
           )}
         </div>
@@ -96,21 +97,27 @@ export function ProviderCard({
 
       <Modal open={showConnect} onClose={() => setShowConnect(false)} title={`חיבור ${entry.nameHe}`}>
         <form onSubmit={(e) => void handleConnect(e)}>
-          {entry.authMethod === 'oauth' ? (
+          {isOAuth ? (
             <p className="field-hint" style={{ marginBottom: '0.75rem' }}>
-              OAuth יופעל בשלב הבא. לבדיקות — הזיני מפתח API או השתמשי ב«mock-demo».
+              ניתן להתחבר עכשיו. אם יש לכם Access Token — הזינו אותו. אחרת לחצו «חבר ספק» לחיבור ראשוני.
             </p>
-          ) : null}
+          ) : (
+            <p className="field-hint" style={{ marginBottom: '0.75rem' }}>
+              הזינו את מפתח ה-API מהספק. המפתח נשמר מוצפן בשרת ולא בדפדפן.
+            </p>
+          )}
           <div className="field">
-            <label htmlFor={`key-${entry.id}`}>מפתח API</label>
+            <label htmlFor={`key-${entry.id}`}>
+              {isOAuth ? 'Access Token (אופציונלי)' : 'מפתח API'}
+            </label>
             <input
               id={`key-${entry.id}`}
               type="password"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
-              placeholder={entry.id === 'mock' ? 'mock-demo' : '••••••••'}
+              placeholder={entry.id === 'mock' ? 'mock-demo' : isOAuth ? 'אופציונלי' : '••••••••'}
               autoComplete="off"
-              required
+              required={!isOAuth}
             />
           </div>
           <div className="field">

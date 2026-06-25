@@ -23,7 +23,6 @@ export const INTEGRATION_CATALOG: ProviderCatalogEntry[] = [
     logoEmoji: '📊',
     brandColor: '#3b82f6',
     available: true,
-    comingSoon: true,
   },
   {
     id: 'grow',
@@ -31,7 +30,7 @@ export const INTEGRATION_CATALOG: ProviderCatalogEntry[] = [
     name: 'Grow',
     nameHe: 'Grow',
     description: 'סליקה וקישורי תשלום מהירים',
-    authMethod: 'oauth',
+    authMethod: 'api_key',
     logoEmoji: '💳',
     brandColor: '#6366f1',
     available: true,
@@ -46,7 +45,6 @@ export const INTEGRATION_CATALOG: ProviderCatalogEntry[] = [
     logoEmoji: '💳',
     brandColor: '#0ea5e9',
     available: true,
-    comingSoon: true,
   },
   {
     id: 'meshulam',
@@ -58,7 +56,6 @@ export const INTEGRATION_CATALOG: ProviderCatalogEntry[] = [
     logoEmoji: '🔗',
     brandColor: '#8b5cf6',
     available: true,
-    comingSoon: true,
   },
   {
     id: 'tranzila',
@@ -70,7 +67,6 @@ export const INTEGRATION_CATALOG: ProviderCatalogEntry[] = [
     logoEmoji: '🏦',
     brandColor: '#64748b',
     available: true,
-    comingSoon: true,
   },
   {
     id: 'pelecard',
@@ -82,7 +78,6 @@ export const INTEGRATION_CATALOG: ProviderCatalogEntry[] = [
     logoEmoji: '💳',
     brandColor: '#ef4444',
     available: true,
-    comingSoon: true,
   },
   {
     id: 'mock',
@@ -117,7 +112,6 @@ export const INTEGRATION_CATALOG: ProviderCatalogEntry[] = [
     logoEmoji: '📆',
     brandColor: '#0078d4',
     available: true,
-    comingSoon: true,
   },
   {
     id: 'apple_calendar',
@@ -129,7 +123,6 @@ export const INTEGRATION_CATALOG: ProviderCatalogEntry[] = [
     logoEmoji: '🍎',
     brandColor: '#1d1d1f',
     available: true,
-    comingSoon: true,
   },
   // Marketing
   {
@@ -153,7 +146,6 @@ export const INTEGRATION_CATALOG: ProviderCatalogEntry[] = [
     logoEmoji: '📸',
     brandColor: '#e4405f',
     available: true,
-    comingSoon: true,
   },
   {
     id: 'google_forms',
@@ -165,7 +157,6 @@ export const INTEGRATION_CATALOG: ProviderCatalogEntry[] = [
     logoEmoji: '📝',
     brandColor: '#673ab7',
     available: true,
-    comingSoon: true,
   },
   {
     id: 'typeform',
@@ -177,7 +168,6 @@ export const INTEGRATION_CATALOG: ProviderCatalogEntry[] = [
     logoEmoji: '📋',
     brandColor: '#262627',
     available: true,
-    comingSoon: true,
   },
   // Communication
   {
@@ -190,7 +180,6 @@ export const INTEGRATION_CATALOG: ProviderCatalogEntry[] = [
     logoEmoji: '💬',
     brandColor: '#25d366',
     available: true,
-    comingSoon: true,
   },
   {
     id: 'gmail',
@@ -202,7 +191,6 @@ export const INTEGRATION_CATALOG: ProviderCatalogEntry[] = [
     logoEmoji: '✉️',
     brandColor: '#ea4335',
     available: true,
-    comingSoon: true,
   },
   {
     id: 'outlook_mail',
@@ -214,7 +202,6 @@ export const INTEGRATION_CATALOG: ProviderCatalogEntry[] = [
     logoEmoji: '📧',
     brandColor: '#0078d4',
     available: true,
-    comingSoon: true,
   },
 ];
 
