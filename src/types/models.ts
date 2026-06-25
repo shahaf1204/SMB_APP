@@ -1,3 +1,5 @@
+import type { IntegrationConnection } from './integrations';
+
 export type ValueType = 'text' | 'number' | 'date' | 'duration';
 export type MetricRole = 'revenue' | 'expense' | 'neutral';
 
@@ -171,6 +173,8 @@ export interface Lead {
   convertedToCustomerId?: string;
 }
 
+export type InvoicePaymentStatus = 'none' | 'pending' | 'paid' | 'failed' | 'cancelled';
+
 export interface Invoice {
   id: string;
   businessId: string;
@@ -186,6 +190,14 @@ export interface Invoice {
   dueDate: string;
   status: InvoiceStatus;
   notes: string;
+  provider?: string;
+  providerDocumentId?: string;
+  providerInvoiceNumber?: string;
+  officialPdfUrl?: string;
+  paymentUrl?: string;
+  paymentTransactionId?: string;
+  paymentStatus?: InvoicePaymentStatus;
+  providerSyncedAt?: string;
 }
 
 export interface UserSession {
@@ -245,6 +257,7 @@ export interface EventValue {
   metricRole: MetricRole;
 }
 
+
 export interface AppState {
   user: UserSession | null;
   business: Business | null;
@@ -260,4 +273,5 @@ export interface AppState {
   engagements: Engagement[];
   milestones: Milestone[];
   engagementSessions: EngagementSession[];
+  integrationConnections: IntegrationConnection[];
 }

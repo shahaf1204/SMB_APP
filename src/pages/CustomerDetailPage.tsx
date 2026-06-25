@@ -71,6 +71,26 @@ export function CustomerDetailPage() {
     [tasks, customer],
   );
 
+  const outstandingBalance = useMemo(
+    () =>
+      customerInvoices
+        .filter((i) => i.status !== 'paid')
+        .reduce((sum, i) => sum + i.amount, 0),
+    [customerInvoices],
+  );
+
+  const paidInvoices = useMemo(
+    () => customerInvoices.filter((i) => i.status === 'paid'),
+    [customerInvoices],
+  );
+
+  const upcomingActivities = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return customerEvents
+      .filter((e) => e.eventDate >= today)
+      .sort((a, b) => a.eventDate.localeCompare(b.eventDate));
+  }, [customerEvents]);
+
   if (!customer) {
     return (
       <div className="app-shell">
@@ -111,10 +131,14 @@ export function CustomerDetailPage() {
           </div>
         </header>
 
-        <div className="kpi-row kpi-row--client">
+        <div className="kpi-row kpi-row--client kpi-row--4">
           <div className="kpi-card kpi-card--revenue">
             <span className="kpi-card-label">הכנסות</span>
             <span className="kpi-card-value">{formatCurrency(customer.totalRevenue)}</span>
+          </div>
+          <div className="kpi-card kpi-card--danger">
+            <span className="kpi-card-label">יתרה לגבייה</span>
+            <span className="kpi-card-value">{formatCurrency(outstandingBalance)}</span>
           </div>
           <div className="kpi-card kpi-card--profit">
             <span className="kpi-card-label">פעילויות</span>
@@ -131,11 +155,28 @@ export function CustomerDetailPage() {
         <div className="client-tab-panel">
           {tab === 'activities' && (
             <>
+              {upcomingActivities.length > 0 && (
+                <>
+                  <h3 className="section-title-sm">קרובות</h3>
+                  <ul className="link-list" style={{ marginBottom: '1rem' }}>
+                    {upcomingActivities.map((ev) => (
+                      <li key={ev.id}>
+                        <Link to={`/events/${ev.id}/edit`} className="card compact-link-row">
+                          {ev.title} · {formatDate(ev.eventDate)} ·{' '}
+                          {formatCurrency(getEventRevenueTotal(ev.id, eventValues))}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
               {customerEvents.length === 0 && customerEngagements.length === 0 ? (
                 <p className="empty-state empty-state--compact">אין פעילויות ללקוח זה</p>
               ) : (
                 <ul className="link-list">
-                  {customerEvents.map((ev) => (
+                  {customerEvents
+                    .filter((ev) => !upcomingActivities.some((u) => u.id === ev.id))
+                    .map((ev) => (
                     <li key={ev.id}>
                       <Link to={`/events/${ev.id}/edit`} className="card compact-link-row">
                         {ev.title} · {formatDate(ev.eventDate)} ·{' '}
@@ -160,7 +201,24 @@ export function CustomerDetailPage() {
               {customerInvoices.length === 0 ? (
                 <p className="empty-state empty-state--compact">אין חשבוניות</p>
               ) : (
-                <ul className="link-list">
+                <>
+                  {paidInvoices.length > 0 && (
+                    <>
+                      <h3 className="section-title-sm">היסטוריית תשלומים</h3>
+                      <ul className="link-list" style={{ marginBottom: '1rem' }}>
+                        {paidInvoices.map((inv) => (
+                          <li key={`paid-${inv.id}`}>
+                            <Link to={`/invoices/${inv.id}`} className="card compact-link-row">
+                              {formatCurrency(inv.amount)} · {formatDate(inv.issuedAt)} · שולם
+                              {inv.provider && <> · {inv.provider}</>}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+                  <h3 className="section-title-sm">כל החשבוניות</h3>
+                  <ul className="link-list">
                   {customerInvoices.map((inv) => {
                     const overdue = isInvoiceOverdue(inv);
                     const status = overdue ? 'באיחור' : STATUS_HE[inv.status];
@@ -168,11 +226,13 @@ export function CustomerDetailPage() {
                       <li key={inv.id}>
                         <Link to={`/invoices/${inv.id}`} className="card compact-link-row">
                           {formatCurrency(inv.amount)} · {formatDate(inv.issuedAt)} · {status}
+                          {inv.paymentUrl && inv.status !== 'paid' && ' · קישור תשלום'}
                         </Link>
                       </li>
                     );
                   })}
-                </ul>
+                  </ul>
+                </>
               )}
             </>
           )}

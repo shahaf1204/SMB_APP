@@ -44,6 +44,7 @@ import type {
   WorkConcept,
   Task,
 } from '../types/models';
+import type { IntegrationConnection } from '../types/integrations';
 
 interface AppActions {
   register: (
@@ -124,7 +125,33 @@ interface AppActions {
   updateInvoiceStatus: (id: string, status: Invoice['status']) => void;
   updateInvoice: (
     id: string,
-    patch: Partial<Pick<Invoice, 'clientEmail' | 'notes'>>,
+    patch: Partial<
+      Pick<
+        Invoice,
+        | 'clientEmail'
+        | 'notes'
+        | 'provider'
+        | 'providerDocumentId'
+        | 'providerInvoiceNumber'
+        | 'officialPdfUrl'
+        | 'paymentUrl'
+        | 'paymentTransactionId'
+        | 'paymentStatus'
+        | 'providerSyncedAt'
+        | 'status'
+      >
+    >,
+  ) => void;
+  upsertIntegrationConnection: (connection: IntegrationConnection) => void;
+  removeIntegrationConnection: (connectionId: string) => void;
+  updateIntegrationSync: (
+    connectionId: string,
+    patch: Partial<
+      Pick<
+        IntegrationConnection,
+        'lastSync' | 'nextSync' | 'syncStatus' | 'lastError' | 'connectionStatus'
+      >
+    >,
   ) => void;
   addEventTemplate: (template: Omit<EventTemplate, 'id' | 'businessId'>) => void;
   deleteEventTemplate: (id: string) => void;
@@ -181,6 +208,7 @@ const initialState: AppState = {
   engagements: [],
   milestones: [],
   engagementSessions: [],
+  integrationConnections: [],
 };
 
 export const useAppStore = create<Store>()(
@@ -841,6 +869,29 @@ export const useAppStore = create<Store>()(
         });
       },
 
+      upsertIntegrationConnection: (connection) => {
+        const list = get().integrationConnections.filter(
+          (c) => c.provider !== connection.provider || c.businessId !== connection.businessId,
+        );
+        set({ integrationConnections: [connection, ...list] });
+      },
+
+      removeIntegrationConnection: (connectionId) => {
+        set({
+          integrationConnections: get().integrationConnections.filter(
+            (c) => c.id !== connectionId,
+          ),
+        });
+      },
+
+      updateIntegrationSync: (connectionId, patch) => {
+        set({
+          integrationConnections: get().integrationConnections.map((c) =>
+            c.id === connectionId ? { ...c, ...patch, updatedAt: new Date().toISOString() } : c,
+          ),
+        });
+      },
+
       addEventTemplate: (partial) => {
         const business = get().business;
         if (!business) return;
@@ -906,6 +957,7 @@ export const useAppStore = create<Store>()(
           engagements: state.engagements ?? [],
           milestones: state.milestones ?? [],
           engagementSessions: state.engagementSessions ?? [],
+          integrationConnections: state.integrationConnections ?? [],
         });
       },
 
@@ -941,7 +993,7 @@ export const useAppStore = create<Store>()(
     }),
     {
       name: STORAGE_KEY,
-      version: 7,
+      version: 8,
       storage: createJSONStorage(() => safeJsonStorage),
       onRehydrateStorage: () => (_state, err) => {
         if (err) {
@@ -968,6 +1020,9 @@ export const useAppStore = create<Store>()(
             events: Array.isArray(p.events) ? p.events : [],
             eventValues: Array.isArray(p.eventValues) ? p.eventValues : [],
             categories: Array.isArray(p.categories) ? p.categories : [],
+            integrationConnections: Array.isArray(p.integrationConnections)
+              ? p.integrationConnections
+              : [],
           };
         } catch {
           return current;

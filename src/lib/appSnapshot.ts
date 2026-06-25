@@ -18,5 +18,6 @@ export function getAppSnapshot(): AppState {
     engagements: s.engagements,
     milestones: s.milestones,
     engagementSessions: s.engagementSessions,
+    integrationConnections: s.integrationConnections ?? [],
   };
 }

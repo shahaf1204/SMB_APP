@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FileText } from 'lucide-react';
+import { FileText, Plug } from 'lucide-react';
 import { BottomNav } from '../components/BottomNav';
 import { EmptyState } from '../components/ui/EmptyState';
 import { PillTabs } from '../components/ui/PillTabs';
+import { getCatalogEntry } from '../integrations/catalog';
 import { formatCurrency } from '../lib/finance';
 import { isInvoiceOverdue } from '../lib/invoices';
 import {
@@ -11,6 +12,7 @@ import {
   summarizeInvoicesPage,
   type InvoiceFilterTab,
 } from '../lib/invoiceSummary';
+import { getActiveFinanceConnection } from '../lib/integrations/client';
 import { useAppStore } from '../store/useAppStore';
 import type { Invoice } from '../types/models';
 
@@ -27,15 +29,63 @@ function statusChip(inv: Invoice) {
   return { label: 'ממתין', className: 'chip-warning' };
 }
 
+function providerLabel(inv: Invoice): string | null {
+  if (!inv.provider) return null;
+  return getCatalogEntry(inv.provider)?.nameHe ?? inv.provider;
+}
+
 export function InvoicesPage() {
+  const business = useAppStore((s) => s.business)!;
   const invoices = useAppStore((s) => s.invoices);
+  const connections = useAppStore((s) => s.integrationConnections);
   const [filter, setFilter] = useState<InvoiceFilterTab>('all');
+
+  const financeConnected = !!getActiveFinanceConnection(connections, business.id);
 
   const summary = useMemo(() => summarizeInvoicesPage(invoices), [invoices]);
   const filteredInvoices = useMemo(
     () => filterInvoicesByTab(invoices, filter),
     [invoices, filter],
   );
+
+  if (!financeConnected) {
+    return (
+      <div className="app-shell">
+        <div className="page">
+          <h1 className="page-title">חשבוניות</h1>
+          <EmptyState
+            icon={Plug}
+            title="חברו ספק חשבוניות"
+            message="חברו Morning, Grow או ספק אחר כדי להפיק חשבוניות מס רשמיות וקישורי תשלום"
+            actionLabel="חיבור ספק"
+            actionTo="/settings/connections"
+          />
+          {invoices.length > 0 && (
+            <>
+              <p className="section-title-sm" style={{ marginTop: '1.5rem' }}>
+                טיוטות מקומיות ({invoices.length})
+              </p>
+              <ul className="invoice-list invoice-list--slim">
+                {invoices.slice(0, 5).map((inv) => (
+                  <li key={inv.id}>
+                    <Link to={`/invoices/${inv.id}`} className="card invoice-slim-row">
+                      <div className="invoice-slim-main">
+                        <strong>{inv.clientName}</strong>
+                        <span className="invoice-slim-date">
+                          {formatCurrency(inv.amount)}
+                        </span>
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
 
   return (
     <div className="app-shell">
@@ -72,7 +122,7 @@ export function InvoicesPage() {
           <EmptyState
             icon={FileText}
             title="אין חשבוניות"
-            message="הפיקו חשבונית מאירוע קיים"
+            message="החשבוניות יופיעו כאן אוטומטית לאחר הפקה"
             actionLabel="+ חשבונית חדשה"
             actionTo="/invoices/new"
           />
@@ -80,13 +130,15 @@ export function InvoicesPage() {
           <ul className="invoice-list invoice-list--slim">
             {filteredInvoices.map((inv) => {
               const chip = statusChip(inv);
+              const prov = providerLabel(inv);
               return (
                 <li key={inv.id}>
-                  <Link to={`/invoices/${inv.id}`} className="card invoice-slim-row">
+                  <Link to={`/invoices/${inv.id}`} className="card invoice-slim-row invoice-slim-row--rich">
                     <div className="invoice-slim-main">
                       <strong className="invoice-slim-client">{inv.clientName}</strong>
                       <span className="invoice-slim-date">
                         {new Date(inv.issuedAt).toLocaleDateString('he-IL')}
+                        {prov && <> · {prov}</>}
                       </span>
                     </div>
                     <div className="invoice-slim-side">

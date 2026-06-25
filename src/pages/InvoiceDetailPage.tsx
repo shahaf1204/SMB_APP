@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
+import { getCatalogEntry } from '../integrations/catalog';
 import { formatCurrency } from '../lib/finance';
+import {
+  createProviderPaymentLink,
+  getActiveFinanceConnection,
+  pushInvoiceToProvider,
+  whatsAppShareUrl,
+} from '../lib/integrations/client';
 import { invoiceMailtoHref, resolveInvoiceClientEmail } from '../lib/invoices';
 import { useAppStore } from '../store/useAppStore';
 
@@ -10,10 +17,15 @@ export function InvoiceDetailPage() {
   const business = useAppStore((s) => s.business)!;
   const events = useAppStore((s) => s.events);
   const invoices = useAppStore((s) => s.invoices);
+  const connections = useAppStore((s) => s.integrationConnections);
   const updateInvoiceStatus = useAppStore((s) => s.updateInvoiceStatus);
   const updateInvoice = useAppStore((s) => s.updateInvoice);
   const invoice = invoices.find((i) => i.id === id);
   const [emailDraft, setEmailDraft] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [actionMsg, setActionMsg] = useState<string | null>(null);
+
+  const financeConn = getActiveFinanceConnection(connections, business.id);
 
   useEffect(() => {
     if (!invoice) return;
@@ -22,19 +34,6 @@ export function InvoiceDetailPage() {
       : undefined;
     setEmailDraft(invoice.clientEmail ?? fromEvent ?? '');
   }, [invoice, events]);
-
-  const invoiceForContact = invoice
-    ? {
-        ...invoice,
-        clientEmail: emailDraft.trim() || invoice.clientEmail,
-      }
-    : null;
-  const clientEmail = invoiceForContact
-    ? resolveInvoiceClientEmail(invoiceForContact, events)
-    : undefined;
-  const mailtoHref = invoiceForContact
-    ? invoiceMailtoHref(invoiceForContact, business, events)
-    : null;
 
   if (!invoice) {
     return (
@@ -45,15 +44,86 @@ export function InvoiceDetailPage() {
     );
   }
 
-  const handlePrint = () => window.print();
+  const invoiceForContact = {
+    ...invoice,
+    clientEmail: emailDraft.trim() || invoice.clientEmail,
+  };
+  const clientEmail = resolveInvoiceClientEmail(invoiceForContact, events);
+  const mailtoHref = invoiceMailtoHref(invoiceForContact, business, events);
+  const providerName = invoice.provider
+    ? getCatalogEntry(invoice.provider)?.nameHe
+    : financeConn
+      ? getCatalogEntry(financeConn.provider)?.nameHe
+      : null;
 
   const saveClientEmail = () => {
     const trimmed = emailDraft.trim();
-    const current = invoice.clientEmail ?? '';
-    if (trimmed !== current) {
+    if (trimmed !== (invoice.clientEmail ?? '')) {
       updateInvoice(invoice.id, { clientEmail: trimmed });
     }
   };
+
+  const handlePushToProvider = async () => {
+    if (!financeConn) return;
+    setBusy(true);
+    setActionMsg(null);
+    try {
+      const result = await pushInvoiceToProvider({
+        businessId: business.id,
+        connectionId: financeConn.id,
+        provider: financeConn.provider,
+        invoice: {
+          clientName: invoice.clientName,
+          clientEmail: invoice.clientEmail,
+          amount: invoice.amount,
+          dueDate: invoice.dueDate,
+          notes: invoice.notes,
+        },
+      });
+      updateInvoice(invoice.id, {
+        provider: financeConn.provider,
+        providerDocumentId: result.providerDocumentId,
+        providerInvoiceNumber: result.providerInvoiceNumber,
+        officialPdfUrl: result.officialPdfUrl,
+        paymentUrl: result.paymentUrl,
+        paymentStatus: result.paymentUrl ? 'pending' : 'none',
+        providerSyncedAt: new Date().toISOString(),
+        status: 'sent',
+      });
+      setActionMsg('חשבונית הופקה אצל הספק');
+    } catch (e) {
+      setActionMsg(e instanceof Error ? e.message : 'שגיאה');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handlePaymentLink = async () => {
+    if (!financeConn || !invoice.providerDocumentId) return;
+    setBusy(true);
+    try {
+      const result = await createProviderPaymentLink({
+        connectionId: financeConn.id,
+        provider: financeConn.provider,
+        providerDocumentId: invoice.providerDocumentId,
+        amount: invoice.amount,
+      });
+      updateInvoice(invoice.id, {
+        paymentUrl: result.paymentUrl,
+        paymentTransactionId: result.providerTransactionId,
+        paymentStatus: 'pending',
+      });
+      setActionMsg('קישור תשלום נוצר');
+    } catch (e) {
+      setActionMsg(e instanceof Error ? e.message : 'שגיאה');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const paymentLinkText = invoice.paymentUrl
+    ? `שלום ${invoice.clientName}, קישור לתשלום: ${invoice.paymentUrl}`
+    : '';
 
   return (
     <div className="app-shell">
@@ -62,10 +132,17 @@ export function InvoiceDetailPage() {
           <Link to="/invoices">← חזרה לחשבוניות</Link>
         </div>
 
+        {providerName && (
+          <p className="provider-badge-inline">ספק: {providerName}</p>
+        )}
+
         <article className="invoice-print card">
           <header className="invoice-print-header">
             <h1>{business.name}</h1>
-            <p>חשבונית מס׳ {invoice.invoiceNumber}</p>
+            <p>
+              חשבונית מס׳{' '}
+              {invoice.providerInvoiceNumber ?? invoice.invoiceNumber}
+            </p>
             <p>תאריך הפקה: {new Date(invoice.issuedAt).toLocaleDateString('he-IL')}</p>
             <p>לתשלום עד: {new Date(invoice.dueDate).toLocaleDateString('he-IL')}</p>
           </header>
@@ -83,13 +160,66 @@ export function InvoiceDetailPage() {
             </p>
             {invoice.notes && <p>{invoice.notes}</p>}
           </section>
-          <footer className="invoice-print-footer">
-            <p>תודה על העסקה!</p>
-          </footer>
         </article>
 
-        <div className="no-print" style={{ marginTop: '1rem' }}>
-          <div className="field">
+        <div className="no-print invoice-actions-panel">
+          {!financeConn ? (
+            <Link to="/settings/connections" className="btn btn-primary" style={{ width: '100%' }}>
+              חברו ספק חשבוניות
+            </Link>
+          ) : (
+            <>
+              {!invoice.providerDocumentId && (
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  disabled={busy}
+                  onClick={() => void handlePushToProvider()}
+                >
+                  הפקה אצל {providerName}
+                </button>
+              )}
+              {invoice.providerDocumentId && !invoice.paymentUrl && (
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  disabled={busy}
+                  onClick={() => void handlePaymentLink()}
+                >
+                  צור קישור תשלום
+                </button>
+              )}
+              {invoice.officialPdfUrl && (
+                <a
+                  href={invoice.officialPdfUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn btn-ghost"
+                >
+                  פתיחת PDF רשמי
+                </a>
+              )}
+              {invoice.paymentUrl && (
+                <>
+                  <a href={invoice.paymentUrl} target="_blank" rel="noreferrer" className="btn btn-ghost">
+                    פתיחת קישור תשלום
+                  </a>
+                  <a
+                    href={whatsAppShareUrl('', paymentLinkText)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn btn-ghost"
+                  >
+                    שליחה בוואטסאפ
+                  </a>
+                </>
+              )}
+            </>
+          )}
+
+          {actionMsg && <p className="field-hint">{actionMsg}</p>}
+
+          <div className="field" style={{ marginTop: '0.75rem' }}>
             <label htmlFor="inv-client-email">אימייל לקוח</label>
             <input
               id="inv-client-email"
@@ -97,12 +227,7 @@ export function InvoiceDetailPage() {
               value={emailDraft}
               onChange={(e) => setEmailDraft(e.target.value)}
               onBlur={saveClientEmail}
-              placeholder="לדוגמה: client@example.com"
-              autoComplete="email"
             />
-            <p className="field-hint">
-              ניתן להוסיף או לעדכן כאן — נשמר בחשבונית לשליחה במייל
-            </p>
           </div>
           <div className="field">
             <label htmlFor="inv-status">סטטוס</label>
@@ -118,27 +243,13 @@ export function InvoiceDetailPage() {
               <option value="paid">שולמה</option>
             </select>
           </div>
-          <button type="button" className="btn btn-primary" onClick={handlePrint}>
-            הדפסה / שמירה כ-PDF
+          <button type="button" className="btn btn-ghost" onClick={() => window.print()}>
+            הדפסה / PDF
           </button>
-          {mailtoHref ? (
-            <a
-              href={mailtoHref}
-              className="btn btn-ghost"
-              style={{ marginTop: '0.5rem', display: 'inline-block' }}
-              onClick={() => {
-                saveClientEmail();
-                if (invoice.status === 'draft') {
-                  updateInvoiceStatus(invoice.id, 'sent');
-                }
-              }}
-            >
-              שליחה לאימייל הלקוח
+          {mailtoHref && (
+            <a href={mailtoHref} className="btn btn-ghost" onClick={saveClientEmail}>
+              שליחה במייל
             </a>
-          ) : (
-            <p className="empty-state" style={{ marginTop: '0.75rem', fontSize: '0.85rem' }}>
-              להפעלת שליחה במייל — הזיני אימייל לקוח בשדה למעלה
-            </p>
           )}
         </div>
       </div>

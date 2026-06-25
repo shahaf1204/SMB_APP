@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { GlobalSearch } from './GlobalSearch';
 import { useCloudSync } from '../hooks/useCloudSync';
 import { useCrmSync } from '../hooks/useCrmSync';
+import { useIntegrationSync } from '../hooks/useIntegrationSync';
 import { useLeadSheetAutoSync } from '../hooks/useLeadSheetAutoSync';
 import { runEventReminderCheck } from '../lib/eventReminders';
 import { useAppStore } from '../store/useAppStore';
@@ -17,6 +18,7 @@ export function BusinessLayout() {
 
   useCrmSync();
   useCloudSync();
+  useIntegrationSync();
   useLeadSheetAutoSync();
 
   useEffect(() => {

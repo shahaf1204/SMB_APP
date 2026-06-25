@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { findAccountSnapshot } from '../lib/accountArchive';
 import { findAccountByEmail } from '../lib/accountsRegistry';
 import {
@@ -27,6 +27,7 @@ function navigateAfterAuth(navigate: ReturnType<typeof useNavigate>) {
 
 export function AuthPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const hydrated = useStoreHydration();
   const autoLoginReady = useAutoLoginFromRememberMe();
   const user = useAppStore((s) => s.user);
@@ -56,6 +57,12 @@ export function AuthPage() {
       setEmail(remembered.email);
     }
   }, [remembered]);
+
+  useEffect(() => {
+    const wantsRegister =
+      searchParams.get('register') === '1' || searchParams.get('mode') === 'register';
+    if (wantsRegister) setMode('register');
+  }, [searchParams]);
 
   useEffect(() => {
     if (!cloudEnabled) return;

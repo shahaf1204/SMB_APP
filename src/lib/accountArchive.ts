@@ -41,6 +41,7 @@ export function snapshotFromState(state: AppState): AccountSnapshot {
     engagements: state.engagements,
     milestones: state.milestones,
     engagementSessions: state.engagementSessions,
+    integrationConnections: state.integrationConnections,
   };
 }
 
@@ -61,6 +62,9 @@ function normalizeSnapshot(data: AccountSnapshot): AccountSnapshot {
     milestones: Array.isArray(data.milestones) ? data.milestones : [],
     engagementSessions: Array.isArray(data.engagementSessions)
       ? data.engagementSessions
+      : [],
+    integrationConnections: Array.isArray(data.integrationConnections)
+      ? data.integrationConnections
       : [],
     nextInvoiceNumber: data.nextInvoiceNumber ?? 1001,
   };

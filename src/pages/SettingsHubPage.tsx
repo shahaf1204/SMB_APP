@@ -1,4 +1,4 @@
-import { Briefcase, ChevronLeft, Database, User, Zap } from 'lucide-react';
+import { Briefcase, ChevronLeft, Database, Plug, User, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
 import { useAppStore } from '../store/useAppStore';
@@ -9,6 +9,12 @@ const SETTINGS_SECTIONS = [
     label: 'העסק שלי',
     desc: 'קונספט עבודה, תבניות והגדרות',
     icon: Briefcase,
+  },
+  {
+    to: '/settings/connections',
+    label: 'חיבורים',
+    desc: 'חשבוניות, יומן, שיווק ותקשורת',
+    icon: Plug,
   },
   {
     to: '/settings/automation',
