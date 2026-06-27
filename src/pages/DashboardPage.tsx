@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { CalendarExportBanner } from '../components/CalendarExportBanner';
 import type { CalendarExportOutcome } from '../lib/calendarExport';
 import { BottomNav } from '../components/BottomNav';
@@ -11,12 +11,7 @@ import { NextEventCard } from '../components/NextEventCard';
 import { PageHeader } from '../components/PageHeader';
 import { buildCustomerSummaries } from '../lib/customers';
 import { calculateUnifiedTotals } from '../lib/engagementFinance';
-import {
-  includesMonthlyExpenses,
-  resolveExpenseTrackingMode,
-  sumMonthlyExpensesForMonth,
-  currentMonthKey,
-} from '../lib/monthlyExpenses';
+import { resolveExpenseTrackingMode } from '../lib/monthlyExpenses';
 import {
   findNextEvent,
   getClientName,
@@ -71,10 +66,6 @@ export function DashboardPage() {
     return parts.length ? parts.join(' · ') : undefined;
   }, [totals.directExpense, totals.monthlyExpense]);
 
-  const showMonthlyExpensePrompt =
-    includesMonthlyExpenses(expenseMode) &&
-    sumMonthlyExpensesForMonth(monthlyExpenses, currentMonthKey()) === 0;
-
   const customerCount = useMemo(
     () => buildCustomerSummaries(events, leads, invoices, categories, eventValues).length,
     [events, leads, invoices, categories, eventValues],
@@ -93,13 +84,6 @@ export function DashboardPage() {
         {calendarExport && <CalendarExportBanner outcome={calendarExport} />}
 
         <NextEventCard event={nextEvent} clientName={clientName} amount={nextAmount} />
-
-        {showMonthlyExpensePrompt && (
-          <Link to="/settings/monthly-expenses" className="card monthly-expense-prompt">
-            <strong>לדווח הוצאות חודשיות?</strong>
-            <span>הוסיפו שכירות, פרסום ומנויים — לסיכום רווח מדויק</span>
-          </Link>
-        )}
 
         <KpiCards
           revenue={totals.revenue}

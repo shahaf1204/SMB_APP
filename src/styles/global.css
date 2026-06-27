@@ -4998,6 +4998,52 @@ a {
   color: var(--color-text-secondary);
 }
 
+.activities-monthly-expenses-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  margin-bottom: 1rem;
+  text-decoration: none;
+  color: inherit;
+  border-color: color-mix(in srgb, var(--color-primary) 20%, var(--color-border));
+  background: color-mix(in srgb, var(--color-primary) 5%, var(--color-card));
+}
+
+.activities-monthly-expenses-bar-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.activities-monthly-expenses-bar-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.activities-monthly-expenses-bar-body strong {
+  font-size: 0.9375rem;
+}
+
+.activities-monthly-expenses-bar-meta {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.activities-monthly-expenses-bar-chevron {
+  flex-shrink: 0;
+  color: var(--color-text-secondary);
+}
+
 .kpi-card-hint {
   display: block;
   margin-top: 0.2rem;

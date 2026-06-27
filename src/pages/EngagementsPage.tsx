@@ -7,6 +7,7 @@ import {
   Ticket,
   Users,
 } from 'lucide-react';
+import { MonthlyExpensesBar } from '../components/MonthlyExpensesBar';
 import { BottomNav } from '../components/BottomNav';
 import { CollapsibleSection } from '../components/ui/CollapsibleSection';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -215,6 +216,8 @@ export function EngagementsPage() {
         </div>
 
         <PillTabs tabs={FILTER_TABS} active={filter} onChange={setFilter} ariaLabel="סינון פעילויות" />
+
+        <MonthlyExpensesBar />
 
         {totalVisible === 0 ? (
           <EmptyState

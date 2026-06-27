@@ -80,8 +80,8 @@ export function MonthlyExpensesPage() {
   return (
     <div className="app-shell">
       <div className="page">
-        <Link to="/settings/business" className="back-link">
-          ← העסק שלי
+        <Link to="/activities" className="back-link">
+          ← פעילויות
         </Link>
         <h1 className="page-title">הוצאות חודשיות</h1>
         <p className="page-subtitle">
