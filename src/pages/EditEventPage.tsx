@@ -4,6 +4,7 @@ import { BottomNav } from '../components/BottomNav';
 import { EventForm, type EventFormValues } from '../components/EventForm';
 import { eventFormToEventPayload } from '../lib/eventForm';
 import { confirmEventSaveDespiteWarnings, getEventSaveWarnings } from '../lib/eventWarnings';
+import { FormSourceChip } from '../components/externalForms/FormSourceChip';
 import { afterEventSaved } from '../lib/postEventSave';
 import { useAppStore } from '../store/useAppStore';
 
@@ -61,7 +62,10 @@ export function EditEventPage() {
     <div className="app-shell">
       <div className="page">
         <h1 className="page-title">עריכת אירוע</h1>
-        <p className="page-subtitle">{event.title}</p>
+        <p className="page-subtitle">
+          {event.title}
+          <FormSourceChip event={event} />
+        </p>
 
         <EventForm
           categories={categories}

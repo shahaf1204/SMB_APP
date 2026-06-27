@@ -1,4 +1,9 @@
 import type { IntegrationConnection } from './integrations';
+import type {
+  ExternalFormConnection,
+  ExternalFormSubmission,
+  FormActivityNotification,
+} from './externalForms';
 
 export type ValueType = 'text' | 'number' | 'date' | 'duration';
 export type MetricRole = 'revenue' | 'expense' | 'neutral';
@@ -240,6 +245,10 @@ export interface Event {
   notes: string;
   clientEmail?: string;
   clientPhone?: string;
+  source?: 'manual' | 'external_form';
+  externalFormConnectionId?: string;
+  externalSubmissionId?: string;
+  externalFormProvider?: string;
 }
 
 export interface EventValue {
@@ -274,4 +283,7 @@ export interface AppState {
   milestones: Milestone[];
   engagementSessions: EngagementSession[];
   integrationConnections: IntegrationConnection[];
+  externalFormConnections: ExternalFormConnection[];
+  externalFormSubmissions: ExternalFormSubmission[];
+  formNotifications: FormActivityNotification[];
 }

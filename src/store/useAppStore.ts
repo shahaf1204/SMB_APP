@@ -45,6 +45,18 @@ import type {
   Task,
 } from '../types/models';
 import type { IntegrationConnection } from '../types/integrations';
+import type {
+  ExternalFormConnection,
+  ExternalFormSubmission,
+  FormActivityNotification,
+  NormalizedFormPayload,
+} from '../types/externalForms';
+import {
+  buildEventFromSubmission,
+  buildEventValuesForSubmission,
+} from '../lib/externalForms/processSubmission';
+import { normalizeSubmission } from '../lib/externalForms/connectionWebhook';
+import { registerExternalFormConnection } from '../lib/externalForms/clientApi';
 
 interface AppActions {
   register: (
@@ -153,6 +165,17 @@ interface AppActions {
       >
     >,
   ) => void;
+  upsertExternalFormConnection: (connection: ExternalFormConnection) => void;
+  removeExternalFormConnection: (connectionId: string) => void;
+  activateExternalFormConnection: (connectionId: string) => Promise<void>;
+  processExternalFormSubmission: (params: {
+    connectionId: string;
+    rawPayload: unknown;
+    externalSubmissionId?: string;
+    submissionId?: string;
+  }) => string | null;
+  retryExternalFormSubmission: (submissionId: string) => string | null;
+  dismissFormNotification: (id: string) => void;
   addEventTemplate: (template: Omit<EventTemplate, 'id' | 'businessId'>) => void;
   deleteEventTemplate: (id: string) => void;
   addTask: (title: string, dueDate: string) => void;
@@ -209,6 +232,9 @@ const initialState: AppState = {
   milestones: [],
   engagementSessions: [],
   integrationConnections: [],
+  externalFormConnections: [],
+  externalFormSubmissions: [],
+  formNotifications: [],
 };
 
 export const useAppStore = create<Store>()(
@@ -892,6 +918,225 @@ export const useAppStore = create<Store>()(
         });
       },
 
+      upsertExternalFormConnection: (connection) => {
+        const list = get().externalFormConnections.filter((c) => c.id !== connection.id);
+        set({ externalFormConnections: [connection, ...list] });
+      },
+
+      removeExternalFormConnection: (connectionId) => {
+        set({
+          externalFormConnections: get().externalFormConnections.filter(
+            (c) => c.id !== connectionId,
+          ),
+        });
+      },
+
+      activateExternalFormConnection: async (connectionId) => {
+        const conn = get().externalFormConnections.find((c) => c.id === connectionId);
+        if (!conn) return;
+        const updated: ExternalFormConnection = {
+          ...conn,
+          isActive: true,
+          updatedAt: new Date().toISOString(),
+        };
+        get().upsertExternalFormConnection(updated);
+        try {
+          await registerExternalFormConnection(updated);
+        } catch {
+          /* local fallback — poll may miss until re-register */
+        }
+      },
+
+      processExternalFormSubmission: (params) => {
+        const business = get().business;
+        const user = get().user;
+        if (!business || !user) return null;
+
+        const connection = get().externalFormConnections.find(
+          (c) => c.id === params.connectionId,
+        );
+        if (!connection) return null;
+
+        const now = new Date().toISOString();
+        const submissionId = params.submissionId ?? createId();
+        let normalized: NormalizedFormPayload;
+        try {
+          normalized = normalizeSubmission(connection, params.rawPayload);
+          if (params.externalSubmissionId) {
+            normalized.externalSubmissionId = params.externalSubmissionId;
+          }
+        } catch (e) {
+          const failed: ExternalFormSubmission = {
+            id: submissionId,
+            businessId: business.id,
+            connectionId: connection.id,
+            provider: connection.provider,
+            externalSubmissionId: params.externalSubmissionId,
+            rawPayload: params.rawPayload,
+            normalizedPayload: {
+              fields: {},
+              unmapped: {},
+              sourceProvider: connection.provider,
+            },
+            status: 'failed',
+            errorMessage: e instanceof Error ? e.message : 'Mapping failed',
+            createdAt: now,
+            updatedAt: now,
+          };
+          set({
+            externalFormSubmissions: [failed, ...get().externalFormSubmissions],
+          });
+          return null;
+        }
+
+        const dup = get().externalFormSubmissions.find(
+          (s) =>
+            s.connectionId === connection.id &&
+            s.status === 'created' &&
+            (s.externalSubmissionId === normalized.externalSubmissionId ||
+              (normalized.externalSubmissionId &&
+                s.externalSubmissionId === normalized.externalSubmissionId)),
+        );
+        if (dup?.createdActivityId) return dup.createdActivityId;
+
+        try {
+          const { event, categoryInputs, clientKey } = buildEventFromSubmission({
+            connection,
+            submission: {
+              id: submissionId,
+              rawPayload: params.rawPayload,
+              normalizedPayload: normalized,
+              externalSubmissionId: normalized.externalSubmissionId,
+            },
+            categories: get().categories,
+            events: get().events,
+            leads: get().leads,
+            businessId: business.id,
+            userId: user.id,
+          });
+
+          const values = buildEventValuesForSubmission(
+            '',
+            business.id,
+            user.id,
+            get().categories,
+            categoryInputs,
+          );
+          const eventId = get().addEvent(event, values);
+          if (!eventId) throw new Error('יצירת פעילות נכשלה');
+
+          const phone = normalized.fields.clientPhone?.trim();
+          const email = normalized.fields.clientEmail?.trim();
+          const name = normalized.fields.clientName?.trim();
+          if (name && (phone || email)) {
+            const exists = get().leads.some(
+              (l) =>
+                (phone && l.phone?.replace(/\D/g, '') === phone.replace(/\D/g, '')) ||
+                (email && l.email?.trim().toLowerCase() === email.toLowerCase()),
+            );
+            if (!exists) {
+              get().addLead({
+                name,
+                phone: phone ?? '',
+                email: email ?? '',
+                source: 'website',
+                serviceInterest: connection.formName,
+                notes: 'נוצר מטופס חיצוני',
+                externalProvider: 'website',
+                externalFormId: connection.id,
+                externalFormName: connection.formName,
+                formAnswers: Object.entries(normalized.fields).map(([field, value]) => ({
+                  field,
+                  value: value ?? '',
+                })),
+              });
+            }
+          }
+
+          const record: ExternalFormSubmission = {
+            id: submissionId,
+            businessId: business.id,
+            connectionId: connection.id,
+            provider: connection.provider,
+            externalSubmissionId: normalized.externalSubmissionId,
+            rawPayload: params.rawPayload,
+            normalizedPayload: normalized,
+            createdActivityId: eventId,
+            createdClientId: clientKey,
+            status: 'created',
+            createdAt: now,
+            updatedAt: now,
+          };
+
+          const notification: FormActivityNotification = {
+            id: createId(),
+            message: 'נוצר אירוע חדש מטופס חיצוני',
+            connectionId: connection.id,
+            activityId: eventId,
+            createdAt: now,
+            read: false,
+          };
+
+          set({
+            externalFormSubmissions: [record, ...get().externalFormSubmissions],
+            externalFormConnections: get().externalFormConnections.map((c) =>
+              c.id === connection.id
+                ? {
+                    ...c,
+                    submissionCount: c.submissionCount + 1,
+                    lastSubmissionAt: now,
+                    updatedAt: now,
+                  }
+                : c,
+            ),
+            formNotifications: [notification, ...get().formNotifications].slice(0, 20),
+          });
+          return eventId;
+        } catch (e) {
+          const failed: ExternalFormSubmission = {
+            id: submissionId,
+            businessId: business.id,
+            connectionId: connection.id,
+            provider: connection.provider,
+            externalSubmissionId: normalized.externalSubmissionId,
+            rawPayload: params.rawPayload,
+            normalizedPayload: normalized,
+            status: 'failed',
+            errorMessage: e instanceof Error ? e.message : 'Create activity failed',
+            createdAt: now,
+            updatedAt: now,
+          };
+          set({
+            externalFormSubmissions: [failed, ...get().externalFormSubmissions],
+          });
+          return null;
+        }
+      },
+
+      retryExternalFormSubmission: (submissionId) => {
+        const sub = get().externalFormSubmissions.find((s) => s.id === submissionId);
+        if (!sub || sub.status !== 'failed') return null;
+        set({
+          externalFormSubmissions: get().externalFormSubmissions.filter(
+            (s) => s.id !== submissionId,
+          ),
+        });
+        return get().processExternalFormSubmission({
+          connectionId: sub.connectionId,
+          rawPayload: sub.rawPayload,
+          externalSubmissionId: sub.externalSubmissionId,
+          submissionId: sub.id,
+        });
+      },
+
+      dismissFormNotification: (id) => {
+        set({
+          formNotifications: get().formNotifications.map((n) =>
+            n.id === id ? { ...n, read: true } : n,
+          ),
+        });
+      },
+
       addEventTemplate: (partial) => {
         const business = get().business;
         if (!business) return;
@@ -958,6 +1203,9 @@ export const useAppStore = create<Store>()(
           milestones: state.milestones ?? [],
           engagementSessions: state.engagementSessions ?? [],
           integrationConnections: state.integrationConnections ?? [],
+          externalFormConnections: state.externalFormConnections ?? [],
+          externalFormSubmissions: state.externalFormSubmissions ?? [],
+          formNotifications: state.formNotifications ?? [],
         });
       },
 
@@ -993,7 +1241,7 @@ export const useAppStore = create<Store>()(
     }),
     {
       name: STORAGE_KEY,
-      version: 8,
+      version: 9,
       storage: createJSONStorage(() => safeJsonStorage),
       onRehydrateStorage: () => (_state, err) => {
         if (err) {
@@ -1023,6 +1271,13 @@ export const useAppStore = create<Store>()(
             integrationConnections: Array.isArray(p.integrationConnections)
               ? p.integrationConnections
               : [],
+            externalFormConnections: Array.isArray(p.externalFormConnections)
+              ? p.externalFormConnections
+              : [],
+            externalFormSubmissions: Array.isArray(p.externalFormSubmissions)
+              ? p.externalFormSubmissions
+              : [],
+            formNotifications: Array.isArray(p.formNotifications) ? p.formNotifications : [],
           };
         } catch {
           return current;

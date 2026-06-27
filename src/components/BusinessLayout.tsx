@@ -4,6 +4,8 @@ import { GlobalSearch } from './GlobalSearch';
 import { useCloudSync } from '../hooks/useCloudSync';
 import { useCrmSync } from '../hooks/useCrmSync';
 import { useIntegrationSync } from '../hooks/useIntegrationSync';
+import { useExternalFormSync } from '../hooks/useExternalFormSync';
+import { FormNotificationBanner } from './externalForms/FormNotificationBanner';
 import { useLeadSheetAutoSync } from '../hooks/useLeadSheetAutoSync';
 import { runEventReminderCheck } from '../lib/eventReminders';
 import { useAppStore } from '../store/useAppStore';
@@ -19,6 +21,7 @@ export function BusinessLayout() {
   useCrmSync();
   useCloudSync();
   useIntegrationSync();
+  useExternalFormSync();
   useLeadSheetAutoSync();
 
   useEffect(() => {
@@ -41,6 +44,7 @@ export function BusinessLayout() {
   return (
     <>
       <AutoSaveIndicator />
+      <FormNotificationBanner />
       {showSearch && (
         <div className="app-global-search-bar">
           <GlobalSearch />

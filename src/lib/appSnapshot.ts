@@ -19,5 +19,8 @@ export function getAppSnapshot(): AppState {
     milestones: s.milestones,
     engagementSessions: s.engagementSessions,
     integrationConnections: s.integrationConnections ?? [],
+    externalFormConnections: s.externalFormConnections ?? [],
+    externalFormSubmissions: s.externalFormSubmissions ?? [],
+    formNotifications: s.formNotifications ?? [],
   };
 }

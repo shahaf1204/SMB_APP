@@ -18,6 +18,7 @@ import {
   packProgress,
 } from '../lib/engagements';
 import { getClientName, getEventRevenueTotal } from '../lib/events';
+import { externalFormEventBadge } from '../lib/externalForms/badges';
 import type { Engagement } from '../types/models';
 import { useAppStore } from '../store/useAppStore';
 
@@ -30,6 +31,7 @@ interface ActivityItem {
   dateLabel: string;
   valueLabel: string;
   typeLabel: string;
+  formBadge?: string;
   href: string;
   icon: typeof Calendar;
   sortDate: string;
@@ -108,6 +110,9 @@ function ActivityCard({ item, highlight }: { item: ActivityItem; highlight?: boo
         </div>
         <p className="activity-card-v2-meta">
           {item.dateLabel} · {item.valueLabel}
+          {item.formBadge && (
+            <span className="form-source-chip">{item.formBadge}</span>
+          )}
         </p>
       </div>
       <span className="activity-card-v2-type">{item.typeLabel}</span>
@@ -155,6 +160,7 @@ export function EngagementsPage() {
         dateLabel: formatDate(ev.eventDate),
         valueLabel: amount > 0 ? formatCurrency(amount) : '—',
         typeLabel: 'אירוע',
+        formBadge: externalFormEventBadge(ev) ?? undefined,
         href: `/events/${ev.id}/edit`,
         icon: Calendar,
         sortDate: ev.eventDate,

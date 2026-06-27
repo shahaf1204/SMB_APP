@@ -1,6 +1,7 @@
 import { Calendar, MapPin, Sparkles, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { EmptyState } from './ui/EmptyState';
+import { FormSourceChip } from './externalForms/FormSourceChip';
 import { formatCurrency, formatDate } from '../lib/finance';
 import type { Event } from '../types/models';
 
@@ -32,6 +33,7 @@ export function NextEventCard({ event, clientName, amount }: NextEventCardProps)
           <Sparkles size={12} strokeWidth={2.5} aria-hidden />
           האירוע הבא
         </span>
+        <FormSourceChip event={event} />
       </div>
       <p className="hero-event-client">
         <User size={16} strokeWidth={2} aria-hidden />

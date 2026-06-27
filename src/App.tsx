@@ -72,6 +72,12 @@ import { SettingsDataPage } from './pages/SettingsDataPage';
 
 import { SettingsHubPage } from './pages/SettingsHubPage';
 
+import { ExternalFormsPage } from './pages/ExternalFormsPage';
+
+import { ExternalFormWizardPage } from './pages/ExternalFormWizardPage';
+
+import { ExternalFormManagePage } from './pages/ExternalFormManagePage';
+
 import { TodayPage } from './pages/TodayPage';
 
 
@@ -123,6 +129,12 @@ export default function App() {
           <Route path="/settings" element={<SettingsHubPage />} />
 
           <Route path="/settings/connections" element={<ConnectionsPage />} />
+
+          <Route path="/settings/external-forms" element={<ExternalFormsPage />} />
+
+          <Route path="/settings/external-forms/new" element={<ExternalFormWizardPage />} />
+
+          <Route path="/settings/external-forms/:id" element={<ExternalFormManagePage />} />
 
           <Route path="/settings/business" element={<SettingsBusinessPage />} />
 

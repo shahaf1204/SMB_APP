@@ -8,6 +8,7 @@ import { buildCustomerSummaries, findCustomerByParamKey } from '../lib/customers
 import { formatCurrency, formatDate } from '../lib/finance';
 import { getEventRevenueTotal } from '../lib/events';
 import { isInvoiceOverdue } from '../lib/invoices';
+import { FormSourceChip } from '../components/externalForms/FormSourceChip';
 import { useAppStore } from '../store/useAppStore';
 
 type ClientTab = 'activities' | 'invoices' | 'tasks' | 'notes';
@@ -162,8 +163,11 @@ export function CustomerDetailPage() {
                     {upcomingActivities.map((ev) => (
                       <li key={ev.id}>
                         <Link to={`/events/${ev.id}/edit`} className="card compact-link-row">
-                          {ev.title} · {formatDate(ev.eventDate)} ·{' '}
-                          {formatCurrency(getEventRevenueTotal(ev.id, eventValues))}
+                          <span className="compact-link-row-main">
+                            {ev.title} · {formatDate(ev.eventDate)} ·{' '}
+                            {formatCurrency(getEventRevenueTotal(ev.id, eventValues))}
+                          </span>
+                          <FormSourceChip event={ev} />
                         </Link>
                       </li>
                     ))}
@@ -179,8 +183,11 @@ export function CustomerDetailPage() {
                     .map((ev) => (
                     <li key={ev.id}>
                       <Link to={`/events/${ev.id}/edit`} className="card compact-link-row">
-                        {ev.title} · {formatDate(ev.eventDate)} ·{' '}
-                        {formatCurrency(getEventRevenueTotal(ev.id, eventValues))}
+                        <span className="compact-link-row-main">
+                          {ev.title} · {formatDate(ev.eventDate)} ·{' '}
+                          {formatCurrency(getEventRevenueTotal(ev.id, eventValues))}
+                        </span>
+                        <FormSourceChip event={ev} />
                       </Link>
                     </li>
                   ))}

@@ -42,6 +42,9 @@ export function snapshotFromState(state: AppState): AccountSnapshot {
     milestones: state.milestones,
     engagementSessions: state.engagementSessions,
     integrationConnections: state.integrationConnections,
+    externalFormConnections: state.externalFormConnections,
+    externalFormSubmissions: state.externalFormSubmissions,
+    formNotifications: state.formNotifications,
   };
 }
 
@@ -66,6 +69,13 @@ function normalizeSnapshot(data: AccountSnapshot): AccountSnapshot {
     integrationConnections: Array.isArray(data.integrationConnections)
       ? data.integrationConnections
       : [],
+    externalFormConnections: Array.isArray(data.externalFormConnections)
+      ? data.externalFormConnections
+      : [],
+    externalFormSubmissions: Array.isArray(data.externalFormSubmissions)
+      ? data.externalFormSubmissions
+      : [],
+    formNotifications: Array.isArray(data.formNotifications) ? data.formNotifications : [],
     nextInvoiceNumber: data.nextInvoiceNumber ?? 1001,
   };
 }

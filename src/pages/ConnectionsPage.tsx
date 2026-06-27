@@ -102,6 +102,18 @@ export function ConnectionsPage() {
 
         {globalError && <p className="import-feedback">{globalError}</p>}
 
+        <section className="connections-category external-forms-promo">
+          <Link to="/settings/external-forms" className="card hub-card hub-card--inline">
+            <span className="hub-card-body">
+              <strong>טפסים חיצוניים</strong>
+              <span className="hub-card-desc">
+                חברי טופס קיים — כל מילוי ייצור פעילות אוטומטית
+              </span>
+            </span>
+            <span className="text-link-muted">←</span>
+          </Link>
+        </section>
+
         {CATEGORIES.map((cat) => (
           <section key={cat} className="connections-category">
             <h2 className="section-title-sm">{CATEGORY_LABELS[cat]}</h2>

@@ -1,4 +1,4 @@
-import { Briefcase, ChevronLeft, Database, Plug, User, Zap } from 'lucide-react';
+import { Briefcase, ChevronLeft, Database, FileInput, Plug, User, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
 import { useAppStore } from '../store/useAppStore';
@@ -15,6 +15,12 @@ const SETTINGS_SECTIONS = [
     label: 'חיבורים',
     desc: 'חשבוניות, יומן, שיווק ותקשורת',
     icon: Plug,
+  },
+  {
+    to: '/settings/external-forms',
+    label: 'טפסים חיצוניים',
+    desc: 'מילוי טופס → פעילות אוטומטית',
+    icon: FileInput,
   },
   {
     to: '/settings/automation',
