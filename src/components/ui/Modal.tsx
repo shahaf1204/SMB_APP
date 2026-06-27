@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 interface ModalProps {
@@ -24,7 +25,7 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
 
   if (!open) return null;
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={onClose} role="presentation">
       <div
         className="modal-sheet"
@@ -43,6 +44,7 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
         </div>
         <div className="modal-body">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

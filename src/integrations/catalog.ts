@@ -12,6 +12,12 @@ export const INTEGRATION_CATALOG: ProviderCatalogEntry[] = [
     logoEmoji: '🌿',
     brandColor: '#22c55e',
     available: true,
+    connectSteps: [
+      'היכנסו לחשבון Green Invoice / Morning',
+      'הגדרות → חשבוניות ומסמכים → API',
+      'צרו מפתח API חדש והעתיקו אותו',
+      'הדביקו את המפתח כאן ולחצו «חבר ספק»',
+    ],
   },
   {
     id: 'icount',
@@ -101,6 +107,11 @@ export const INTEGRATION_CATALOG: ProviderCatalogEntry[] = [
     logoEmoji: '📅',
     brandColor: '#4285f4',
     available: true,
+    connectSteps: [
+      'לחצו «חבר ספק» — החיבור הראשוני יופעל',
+      'בגרסה הבאה: חלון «התחברות עם Google» יבקש הרשאות ליומן',
+      'לאחר אישור — אירועים מהיומן יסונכרנו אוטומטית ל«פעילויות»',
+    ],
   },
   {
     id: 'outlook_calendar',

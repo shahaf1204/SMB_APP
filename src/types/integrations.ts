@@ -41,6 +41,8 @@ export interface ProviderCatalogEntry {
   brandColor: string;
   available: boolean;
   comingSoon?: boolean;
+  /** Step-by-step connection guide shown in connect modal */
+  connectSteps?: string[];
 }
 
 export interface IntegrationConnection {

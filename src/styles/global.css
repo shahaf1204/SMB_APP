@@ -4036,7 +4036,7 @@ a {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: 200;
   background: rgba(17, 24, 39, 0.45);
   display: flex;
   align-items: flex-end;
@@ -4047,10 +4047,19 @@ a {
 .modal-sheet {
   width: 100%;
   max-width: 430px;
+  max-height: min(90dvh, calc(100dvh - 1rem));
+  overflow-y: auto;
   background: var(--color-card);
   border-radius: 20px 20px 0 0;
-  padding: 1rem 1.125rem 1.5rem;
+  padding: 1rem 1.125rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
   animation: slideUp var(--transition-base);
+  -webkit-overflow-scrolling: touch;
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .modal-header {
@@ -4479,9 +4488,22 @@ a {
   text-align: center;
 }
 
-.kpi-row--client.kpi-row--4 {
-  grid-template-columns: repeat(2, 1fr);
+.connect-steps {
+  margin: 0 0 0.25rem;
+  padding-right: 1.125rem;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
 }
+
+.connect-steps li {
+  margin-bottom: 0.35rem;
+}
+
+.connect-provider-form .btn-primary {
+  margin-top: 0.25rem;
+}
+
 
 @media (min-width: 480px) {
   .kpi-row--client.kpi-row--4 {

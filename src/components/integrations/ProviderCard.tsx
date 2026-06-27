@@ -96,14 +96,23 @@ export function ProviderCard({
       </article>
 
       <Modal open={showConnect} onClose={() => setShowConnect(false)} title={`חיבור ${entry.nameHe}`}>
-        <form onSubmit={(e) => void handleConnect(e)}>
+        <form onSubmit={(e) => void handleConnect(e)} className="connect-provider-form">
+          {entry.connectSteps && entry.connectSteps.length > 0 && (
+            <ol className="connect-steps">
+              {entry.connectSteps.map((step) => (
+                <li key={step}>{step}</li>
+              ))}
+            </ol>
+          )}
           {isOAuth ? (
-            <p className="field-hint" style={{ marginBottom: '0.75rem' }}>
-              ניתן להתחבר עכשיו. אם יש לכם Access Token — הזינו אותו. אחרת לחצו «חבר ספק» לחיבור ראשוני.
+            <p className="field-hint">
+              {entry.connectSteps
+                ? 'אם יש לכם Access Token — ניתן להדביק למטה. אחרת «חבר ספק» מספיק לחיבור ראשוני.'
+                : 'ניתן להתחבר עכשיו. אם יש לכם Access Token — הזינו אותו. אחרת לחצו «חבר ספק».'}
             </p>
           ) : (
-            <p className="field-hint" style={{ marginBottom: '0.75rem' }}>
-              הזינו את מפתח ה-API מהספק. המפתח נשמר מוצפן בשרת ולא בדפדפן.
+            <p className="field-hint">
+              המפתח נשמר מוצפן בשרת ולא בדפדפן.
             </p>
           )}
           <div className="field">
