@@ -5,6 +5,7 @@ interface KpiCardsProps {
   revenue: number;
   expense: number;
   profit: number;
+  expenseHint?: string;
 }
 
 const KPI_CONFIG = [
@@ -13,7 +14,7 @@ const KPI_CONFIG = [
   { key: 'profit' as const, label: 'רווח', icon: TrendingUp, variant: 'profit' },
 ];
 
-export function KpiCards({ revenue, expense, profit }: KpiCardsProps) {
+export function KpiCards({ revenue, expense, profit, expenseHint }: KpiCardsProps) {
   const values = { revenue, expense, profit };
 
   return (
@@ -25,6 +26,9 @@ export function KpiCards({ revenue, expense, profit }: KpiCardsProps) {
           </span>
           <span className="kpi-card-label">{label}</span>
           <span className="kpi-card-value">{formatCurrency(values[key])}</span>
+          {key === 'expense' && expenseHint && (
+            <span className="kpi-card-hint">{expenseHint}</span>
+          )}
         </div>
       ))}
     </section>

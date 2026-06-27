@@ -45,6 +45,7 @@ export function snapshotFromState(state: AppState): AccountSnapshot {
     externalFormConnections: state.externalFormConnections,
     externalFormSubmissions: state.externalFormSubmissions,
     formNotifications: state.formNotifications,
+    monthlyExpenses: state.monthlyExpenses ?? [],
   };
 }
 
@@ -76,6 +77,7 @@ function normalizeSnapshot(data: AccountSnapshot): AccountSnapshot {
       ? data.externalFormSubmissions
       : [],
     formNotifications: Array.isArray(data.formNotifications) ? data.formNotifications : [],
+    monthlyExpenses: Array.isArray(data.monthlyExpenses) ? data.monthlyExpenses : [],
     nextInvoiceNumber: data.nextInvoiceNumber ?? 1001,
   };
 }

@@ -22,5 +22,6 @@ export function getAppSnapshot(): AppState {
     externalFormConnections: s.externalFormConnections ?? [],
     externalFormSubmissions: s.externalFormSubmissions ?? [],
     formNotifications: s.formNotifications ?? [],
+    monthlyExpenses: s.monthlyExpenses ?? [],
   };
 }

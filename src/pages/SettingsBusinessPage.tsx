@@ -2,9 +2,12 @@ import { FormEvent, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
 import { WorkModelSettings } from '../components/WorkModelSettings';
+import { ExpenseTrackingSettings } from '../components/ExpenseTrackingSettings';
 import { useAppStore } from '../store/useAppStore';
+import { includesMonthlyExpenses, resolveExpenseTrackingMode } from '../lib/monthlyExpenses';
 
 export function SettingsBusinessPage() {
+  const business = useAppStore((s) => s.business)!;
   const eventTemplates = useAppStore((s) => s.eventTemplates);
   const addEventTemplate = useAppStore((s) => s.addEventTemplate);
   const deleteEventTemplate = useAppStore((s) => s.deleteEventTemplate);
@@ -38,11 +41,19 @@ export function SettingsBusinessPage() {
 
         <WorkModelSettings />
 
+        <ExpenseTrackingSettings />
+
         <nav className="settings-links card" style={{ marginTop: '0.75rem' }}>
           <Link to="/categories" className="settings-link-row">
             <span>📋</span>
             <span>ניהול קטגוריות</span>
           </Link>
+          {includesMonthlyExpenses(resolveExpenseTrackingMode(business)) && (
+            <Link to="/settings/monthly-expenses" className="settings-link-row">
+              <span>💸</span>
+              <span>הוצאות חודשיות</span>
+            </Link>
+          )}
         </nav>
 
         <section className="card" style={{ marginTop: '0.75rem' }}>

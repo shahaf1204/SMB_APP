@@ -1,14 +1,17 @@
 import { activeEngagements, packProgress } from './engagements';
 import type { FinancialTotals } from './finance';
-import { calculateTotals, calculateTotalsByEventIds } from './finance';
+import { calculateTotals, calculateTotalsByEventIds, mergeFinancialTotals } from './finance';
 import { getPeriodRange } from './period';
+import { sumMonthlyExpensesInPeriod } from './monthlyExpenses';
 import type {
   Engagement,
   EngagementSession,
   Event,
   EventValue,
+  ExpenseTrackingMode,
   Invoice,
   Milestone,
+  MonthlyExpense,
   PeriodFilter,
 } from '../types/models';
 
@@ -56,17 +59,21 @@ export function calculateUnifiedTotals(
   sessions: EngagementSession[],
   filter: PeriodFilter,
   scopedEventIds?: Set<string>,
+  monthlyExpenses: MonthlyExpense[] = [],
+  expenseMode: ExpenseTrackingMode = 'both',
 ): FinancialTotals {
   const eventTotals = scopedEventIds
     ? calculateTotalsByEventIds(scopedEventIds, eventValues)
     : calculateTotals(events, eventValues, filter);
   const engagementRevenue = engagementRevenueInPeriod(invoices, sessions, filter);
   const revenue = eventTotals.revenue + engagementRevenue;
-  return {
-    revenue,
-    expense: eventTotals.expense,
-    profit: revenue - eventTotals.expense,
-  };
+  const monthlyTotal = sumMonthlyExpensesInPeriod(monthlyExpenses, filter);
+  const merged = mergeFinancialTotals(
+    { ...eventTotals, revenue },
+    monthlyTotal,
+    expenseMode,
+  );
+  return merged;
 }
 
 export interface PackDashboardStats {

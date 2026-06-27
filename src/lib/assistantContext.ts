@@ -1,11 +1,11 @@
 import { findNextEvent } from './events';
+import { calculateUnifiedTotals } from './engagementFinance';
 import {
-  calculateTotals,
   filterEventsByPeriod,
   formatDate,
-  getAllTimeTotals,
 } from './finance';
 import { isInvoiceOverdue } from './invoices';
+import { resolveExpenseTrackingMode } from './monthlyExpenses';
 import { buildDailyTasks } from './tasks';
 import type { AppState, Event, Invoice } from '../types/models';
 
@@ -51,12 +51,36 @@ export function buildAssistantContext(state: Pick<
   | 'invoices'
   | 'tasks'
   | 'dismissedAutoTasks'
+  | 'engagementSessions'
+  | 'monthlyExpenses'
 >): AssistantContextSnapshot | null {
   const business = state.business;
   if (!business) return null;
 
-  const totalsThisMonth = calculateTotals(state.events, state.eventValues, 'thisMonth');
-  const totalsAllTime = getAllTimeTotals(state.events, state.eventValues);
+  const expenseMode = resolveExpenseTrackingMode(business);
+  const monthlyExpenses = state.monthlyExpenses ?? [];
+  const sessions = state.engagementSessions ?? [];
+
+  const totalsThisMonth = calculateUnifiedTotals(
+    state.events,
+    state.eventValues,
+    state.invoices,
+    sessions,
+    'thisMonth',
+    undefined,
+    monthlyExpenses,
+    expenseMode,
+  );
+  const totalsAllTime = calculateUnifiedTotals(
+    state.events,
+    state.eventValues,
+    state.invoices,
+    sessions,
+    'allTime',
+    undefined,
+    monthlyExpenses,
+    expenseMode,
+  );
   const openLeads = state.leads.filter(
     (l) => l.status === 'new' || l.status === 'contacted',
   ).length;

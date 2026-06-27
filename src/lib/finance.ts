@@ -1,10 +1,19 @@
-import type { ChartMetric, Event, EventValue, PeriodFilter } from '../types/models';
+import type { ChartMetric, Event, EventValue, MonthlyExpense, PeriodFilter } from '../types/models';
+import {
+  includesDirectExpenses,
+  includesMonthlyExpenses,
+  monthKeyInPeriod,
+  overheadByMonth,
+} from './monthlyExpenses';
+import type { ExpenseTrackingMode } from '../types/models';
 import { eventInRange, getPeriodRange } from './period';
 
 export interface FinancialTotals {
   revenue: number;
   expense: number;
   profit: number;
+  directExpense?: number;
+  monthlyExpense?: number;
 }
 
 export interface MonthlyPoint {
@@ -70,14 +79,67 @@ export function getMonthlySeries(
   events: Event[],
   eventValues: EventValue[],
   filter: PeriodFilter,
+  monthlyExpenses: MonthlyExpense[] = [],
+  expenseMode: ExpenseTrackingMode = 'both',
 ): MonthlyPoint[] {
   const filtered = filterEventsByPeriod(events, filter);
-  return getMonthlySeriesForEvents(filtered, eventValues);
+  return getUnifiedMonthlySeries(
+    filtered,
+    eventValues,
+    monthlyExpenses,
+    expenseMode,
+    filter,
+  );
+}
+
+export function getUnifiedMonthlySeries(
+  events: Event[],
+  eventValues: EventValue[],
+  monthlyExpenses: MonthlyExpense[],
+  expenseMode: ExpenseTrackingMode,
+  filter: PeriodFilter,
+): MonthlyPoint[] {
+  const base = getMonthlySeriesForEvents(
+    events,
+    eventValues,
+    includesDirectExpenses(expenseMode),
+  );
+
+  if (!includesMonthlyExpenses(expenseMode) || monthlyExpenses.length === 0) {
+    return base.filter((p) => monthKeyInPeriod(p.month, filter));
+  }
+
+  const overhead = overheadByMonth(monthlyExpenses);
+  const byMonth = new Map<string, MonthlyPoint>();
+
+  for (const point of base) {
+    byMonth.set(point.month, { ...point });
+  }
+
+  for (const [month, amount] of overhead) {
+    if (!monthKeyInPeriod(month, filter)) continue;
+    const existing = byMonth.get(month);
+    if (existing) {
+      existing.expense += amount;
+      existing.profit = existing.revenue - existing.expense;
+    } else {
+      byMonth.set(month, {
+        month,
+        label: monthLabel(month),
+        revenue: 0,
+        expense: amount,
+        profit: -amount,
+      });
+    }
+  }
+
+  return [...byMonth.values()].sort((a, b) => a.month.localeCompare(b.month));
 }
 
 export function getMonthlySeriesForEvents(
   events: Event[],
   eventValues: EventValue[],
+  includeDirectExpense = true,
 ): MonthlyPoint[] {
   const filtered = events;
   const byMonth = new Map<string, MonthlyPoint>();
@@ -105,7 +167,9 @@ export function getMonthlySeriesForEvents(
     const point = byMonth.get(key);
     if (!point) continue;
     point.revenue += ev.revenueValue ?? 0;
-    point.expense += ev.expenseValue ?? 0;
+    if (includeDirectExpense) {
+      point.expense += ev.expenseValue ?? 0;
+    }
     point.profit = point.revenue - point.expense;
   }
 
@@ -140,6 +204,23 @@ export function getCumulativeMonthlySeries(
       cumProfit: cumRevenue - cumExpense,
     };
   });
+}
+
+export function mergeFinancialTotals(
+  eventTotals: FinancialTotals,
+  monthlyExpenseTotal: number,
+  expenseMode: ExpenseTrackingMode,
+): FinancialTotals {
+  const directExpense = includesDirectExpenses(expenseMode) ? eventTotals.expense : 0;
+  const monthlyExpense = includesMonthlyExpenses(expenseMode) ? monthlyExpenseTotal : 0;
+  const expense = directExpense + monthlyExpense;
+  return {
+    revenue: eventTotals.revenue,
+    expense,
+    profit: eventTotals.revenue - expense,
+    directExpense,
+    monthlyExpense,
+  };
 }
 
 export function getChartValue(point: MonthlyPoint, metric: ChartMetric): number {

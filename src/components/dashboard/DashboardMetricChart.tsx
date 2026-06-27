@@ -9,7 +9,9 @@ import {
   YAxis,
 } from 'recharts';
 import { formatCurrency, getMonthlySeries } from '../../lib/finance';
-import type { Event, EventValue, PeriodFilter } from '../../types/models';
+import { resolveExpenseTrackingMode } from '../../lib/monthlyExpenses';
+import type { Event, EventValue, MonthlyExpense, PeriodFilter } from '../../types/models';
+import { useAppStore } from '../../store/useAppStore';
 
 type MetricTab = 'revenue' | 'expense' | 'profit';
 
@@ -31,19 +33,23 @@ const CHART_THEME: Record<
 interface DashboardMetricChartProps {
   events: Event[];
   eventValues: EventValue[];
+  monthlyExpenses?: MonthlyExpense[];
   period?: PeriodFilter;
 }
 
 export function DashboardMetricChart({
   events,
   eventValues,
+  monthlyExpenses = [],
   period = 'ytd',
 }: DashboardMetricChartProps) {
+  const business = useAppStore((s) => s.business);
+  const expenseMode = resolveExpenseTrackingMode(business);
   const [tab, setTab] = useState<MetricTab>('revenue');
 
   const data = useMemo(
-    () => getMonthlySeries(events, eventValues, period),
-    [events, eventValues, period],
+    () => getMonthlySeries(events, eventValues, period, monthlyExpenses, expenseMode),
+    [events, eventValues, period, monthlyExpenses, expenseMode],
   );
 
   const hasData = data.some((d) => d.revenue > 0 || d.expense > 0);

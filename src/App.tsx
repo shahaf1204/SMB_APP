@@ -67,6 +67,7 @@ import { ConnectionsPage } from './pages/ConnectionsPage';
 import { SettingsAutomationPage } from './pages/SettingsAutomationPage';
 
 import { SettingsBusinessPage } from './pages/SettingsBusinessPage';
+import { MonthlyExpensesPage } from './pages/MonthlyExpensesPage';
 
 import { SettingsDataPage } from './pages/SettingsDataPage';
 
@@ -137,6 +138,8 @@ export default function App() {
           <Route path="/settings/external-forms/:id" element={<ExternalFormManagePage />} />
 
           <Route path="/settings/business" element={<SettingsBusinessPage />} />
+
+          <Route path="/settings/monthly-expenses" element={<MonthlyExpensesPage />} />
 
           <Route path="/settings/automation" element={<SettingsAutomationPage />} />
 

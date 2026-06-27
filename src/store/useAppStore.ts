@@ -46,6 +46,8 @@ import type {
   Lead,
   LeadStatus,
   Milestone,
+  ExpenseTrackingMode,
+  MonthlyExpense,
   WorkConcept,
   Task,
 } from '../types/models';
@@ -85,6 +87,15 @@ interface AppActions {
     primaryWorkModel?: WorkConcept | 'mixed';
   }) => void;
   updateWorkModels: (models: WorkConcept[]) => void;
+  updateExpenseTrackingMode: (mode: ExpenseTrackingMode) => void;
+  addMonthlyExpense: (
+    expense: Omit<MonthlyExpense, 'id' | 'businessId' | 'createdAt' | 'updatedAt'>,
+  ) => void;
+  updateMonthlyExpense: (
+    id: string,
+    patch: Partial<Pick<MonthlyExpense, 'month' | 'category' | 'amount' | 'notes'>>,
+  ) => void;
+  deleteMonthlyExpense: (id: string) => void;
   ensureCustomerSourceCategory: () => void;
   addCategory: (category: Omit<Category, 'id' | 'businessId' | 'isActive' | 'sortOrder'> & { isActive?: boolean; sortOrder?: number }) => void;
   deleteCategory: (id: string) => void;
@@ -245,6 +256,7 @@ const initialState: AppState = {
   externalFormConnections: [],
   externalFormSubmissions: [],
   formNotifications: [],
+  monthlyExpenses: [],
 };
 
 export const useAppStore = create<Store>()(
@@ -521,6 +533,50 @@ export const useAppStore = create<Store>()(
             ...business,
             workModels: models,
           })!,
+        });
+      },
+
+      updateExpenseTrackingMode: (mode) => {
+        const business = get().business;
+        if (!business) return;
+        set({
+          business: normalizeBusiness({
+            ...business,
+            expenseTrackingMode: mode,
+          })!,
+        });
+      },
+
+      addMonthlyExpense: (partial) => {
+        const business = get().business;
+        if (!business) return;
+        const now = new Date().toISOString();
+        const expense: MonthlyExpense = {
+          id: createId(),
+          businessId: business.id,
+          month: partial.month,
+          category: partial.category,
+          amount: partial.amount,
+          notes: partial.notes ?? '',
+          createdAt: now,
+          updatedAt: now,
+        };
+        set({ monthlyExpenses: [expense, ...get().monthlyExpenses] });
+      },
+
+      updateMonthlyExpense: (id, patch) => {
+        set({
+          monthlyExpenses: get().monthlyExpenses.map((e) =>
+            e.id === id
+              ? { ...e, ...patch, updatedAt: new Date().toISOString() }
+              : e,
+          ),
+        });
+      },
+
+      deleteMonthlyExpense: (id) => {
+        set({
+          monthlyExpenses: get().monthlyExpenses.filter((e) => e.id !== id),
         });
       },
 
@@ -1251,6 +1307,7 @@ export const useAppStore = create<Store>()(
           externalFormConnections: state.externalFormConnections ?? [],
           externalFormSubmissions: state.externalFormSubmissions ?? [],
           formNotifications: state.formNotifications ?? [],
+          monthlyExpenses: state.monthlyExpenses ?? [],
         });
       },
 
@@ -1286,7 +1343,7 @@ export const useAppStore = create<Store>()(
     }),
     {
       name: STORAGE_KEY,
-      version: 10,
+      version: 11,
       storage: createJSONStorage(() => safeJsonStorage),
       onRehydrateStorage: () => (_state, err) => {
         if (err) {
@@ -1325,6 +1382,13 @@ export const useAppStore = create<Store>()(
               ? p.externalFormSubmissions
               : [],
             formNotifications: Array.isArray(p.formNotifications) ? p.formNotifications : [],
+            monthlyExpenses: Array.isArray(p.monthlyExpenses) ? p.monthlyExpenses : [],
+            business: p.business
+              ? normalizeBusiness({
+                  ...p.business,
+                  expenseTrackingMode: p.business.expenseTrackingMode ?? 'both',
+                })
+              : current.business,
           };
         } catch {
           return current;

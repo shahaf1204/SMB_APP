@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { CalendarExportBanner } from '../components/CalendarExportBanner';
 import type { CalendarExportOutcome } from '../lib/calendarExport';
 import { BottomNav } from '../components/BottomNav';
@@ -11,6 +11,12 @@ import { NextEventCard } from '../components/NextEventCard';
 import { PageHeader } from '../components/PageHeader';
 import { buildCustomerSummaries } from '../lib/customers';
 import { calculateUnifiedTotals } from '../lib/engagementFinance';
+import {
+  includesMonthlyExpenses,
+  resolveExpenseTrackingMode,
+  sumMonthlyExpensesForMonth,
+  currentMonthKey,
+} from '../lib/monthlyExpenses';
 import {
   findNextEvent,
   getClientName,
@@ -24,6 +30,8 @@ export function DashboardPage() {
     ?.calendarExport;
 
   const events = useAppStore((s) => s.events);
+  const business = useAppStore((s) => s.business);
+  const monthlyExpenses = useAppStore((s) => s.monthlyExpenses ?? []);
   const leads = useAppStore((s) => s.leads);
   const categories = useAppStore((s) => s.categories);
   const eventValues = useAppStore((s) => s.eventValues);
@@ -35,6 +43,8 @@ export function DashboardPage() {
     ensureCustomerSourceCategory();
   }, [ensureCustomerSourceCategory]);
 
+  const expenseMode = resolveExpenseTrackingMode(business);
+
   const totals = useMemo(
     () =>
       calculateUnifiedTotals(
@@ -43,9 +53,27 @@ export function DashboardPage() {
         invoices,
         engagementSessions,
         'thisMonth',
+        undefined,
+        monthlyExpenses,
+        expenseMode,
       ),
-    [events, eventValues, invoices, engagementSessions],
+    [events, eventValues, invoices, engagementSessions, monthlyExpenses, expenseMode],
   );
+
+  const expenseHint = useMemo(() => {
+    const parts: string[] = [];
+    if (totals.directExpense != null && totals.directExpense > 0) {
+      parts.push(`ישירות ${totals.directExpense.toLocaleString('he-IL')} ₪`);
+    }
+    if (totals.monthlyExpense != null && totals.monthlyExpense > 0) {
+      parts.push(`חודשיות ${totals.monthlyExpense.toLocaleString('he-IL')} ₪`);
+    }
+    return parts.length ? parts.join(' · ') : undefined;
+  }, [totals.directExpense, totals.monthlyExpense]);
+
+  const showMonthlyExpensePrompt =
+    includesMonthlyExpenses(expenseMode) &&
+    sumMonthlyExpensesForMonth(monthlyExpenses, currentMonthKey()) === 0;
 
   const customerCount = useMemo(
     () => buildCustomerSummaries(events, leads, invoices, categories, eventValues).length,
@@ -66,7 +94,19 @@ export function DashboardPage() {
 
         <NextEventCard event={nextEvent} clientName={clientName} amount={nextAmount} />
 
-        <KpiCards revenue={totals.revenue} expense={totals.expense} profit={totals.profit} />
+        {showMonthlyExpensePrompt && (
+          <Link to="/settings/monthly-expenses" className="card monthly-expense-prompt">
+            <strong>לדווח הוצאות חודשיות?</strong>
+            <span>הוסיפו שכירות, פרסום ומנויים — לסיכום רווח מדויק</span>
+          </Link>
+        )}
+
+        <KpiCards
+          revenue={totals.revenue}
+          expense={totals.expense}
+          profit={totals.profit}
+          expenseHint={expenseHint}
+        />
 
         <DashboardInsights
           events={events}
@@ -78,7 +118,12 @@ export function DashboardPage() {
 
         <DashboardQuickActions />
 
-        <DashboardMetricChart events={events} eventValues={eventValues} period="ytd" />
+        <DashboardMetricChart
+          events={events}
+          eventValues={eventValues}
+          monthlyExpenses={monthlyExpenses}
+          period="ytd"
+        />
       </div>
       <BottomNav />
     </div>

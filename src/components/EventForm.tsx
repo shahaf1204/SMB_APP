@@ -1,8 +1,11 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Banknote, Calendar, StickyNote, User } from 'lucide-react';
 import { LEAD_SOURCE_OPTIONS } from '../data/leadSources';
 import { sortCategories } from '../lib/categories';
+import { includesDirectExpenses, resolveExpenseTrackingMode } from '../lib/monthlyExpenses';
 import { FormSection } from './ui/FormSection';
+import { useAppStore } from '../store/useAppStore';
 import { eventValueToInput, type EventFormValues } from '../lib/eventForm';
 import { isSourceCategory } from '../lib/sources';
 import { getEventSaveWarnings } from '../lib/eventWarnings';
@@ -38,6 +41,9 @@ export function EventForm({
   submitLabel,
   onSubmit,
 }: EventFormProps) {
+  const business = useAppStore((s) => s.business);
+  const showDirectExpenses = includesDirectExpenses(resolveExpenseTrackingMode(business));
+
   const activeCategories = useMemo(
     () => sortCategories(categories.filter((c) => c.isActive)),
     [categories],
@@ -61,7 +67,9 @@ export function EventForm({
   const [categoryInputs, setCategoryInputs] = useState(buildInitialInputs);
 
   const paymentCategories = activeCategories.filter(
-    (c) => c.metricRole === 'revenue' || c.metricRole === 'expense',
+    (c) =>
+      c.metricRole === 'revenue' ||
+      (showDirectExpenses && c.metricRole === 'expense'),
   );
   const otherCategories = activeCategories.filter(
     (c) => c.metricRole === 'neutral' && !isSourceCategory(c.name),
@@ -244,6 +252,12 @@ export function EventForm({
         <FormSection title="תשלום" icon={Banknote}>
           {paymentCategories.map(renderCategoryField)}
           {sourceCategory && renderCategoryField(sourceCategory)}
+          {!showDirectExpenses && (
+            <p className="field-hint" style={{ marginBottom: 0 }}>
+              הוצאות העסק מדווחות ב
+              <Link to="/settings/monthly-expenses"> הוצאות חודשיות</Link>
+            </p>
+          )}
         </FormSection>
       )}
 

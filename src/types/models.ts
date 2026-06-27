@@ -20,6 +20,30 @@ export type PeriodFilter =
 
 export type ChartMetric = 'revenue' | 'expense' | 'profit';
 
+/** How the business tracks expenses in P&L and forms. */
+export type ExpenseTrackingMode = 'per_activity' | 'monthly' | 'both';
+
+export type MonthlyExpenseCategoryId =
+  | 'rent'
+  | 'marketing'
+  | 'subscriptions'
+  | 'travel'
+  | 'equipment'
+  | 'professional'
+  | 'other';
+
+export interface MonthlyExpense {
+  id: string;
+  businessId: string;
+  /** Calendar month YYYY-MM */
+  month: string;
+  category: MonthlyExpenseCategoryId;
+  amount: number;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type LeadStatus =
   | 'new'
   | 'in_progress'
@@ -224,6 +248,8 @@ export interface Business {
   workModels?: WorkConcept[];
   /** @deprecated — ממופה ל-workModels בטעינה */
   primaryWorkModel?: PrimaryWorkModel;
+  /** How expenses appear in forms and dashboard totals. */
+  expenseTrackingMode?: ExpenseTrackingMode;
 }
 
 export interface Category {
@@ -288,4 +314,5 @@ export interface AppState {
   externalFormConnections: ExternalFormConnection[];
   externalFormSubmissions: ExternalFormSubmission[];
   formNotifications: FormActivityNotification[];
+  monthlyExpenses: MonthlyExpense[];
 }

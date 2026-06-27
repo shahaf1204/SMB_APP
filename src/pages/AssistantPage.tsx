@@ -27,6 +27,8 @@ export function AssistantPage() {
     invoices,
     tasks,
     dismissedAutoTasks,
+    engagementSessions,
+    monthlyExpenses,
     categories,
     user,
     addTask,
@@ -42,6 +44,8 @@ export function AssistantPage() {
       invoices: s.invoices,
       tasks: s.tasks,
       dismissedAutoTasks: s.dismissedAutoTasks,
+      engagementSessions: s.engagementSessions,
+      monthlyExpenses: s.monthlyExpenses,
       categories: s.categories,
       user: s.user,
       addTask: s.addTask,
@@ -75,6 +79,8 @@ export function AssistantPage() {
         invoices,
         tasks,
         dismissedAutoTasks,
+        engagementSessions,
+        monthlyExpenses,
       }),
     [
       business,
@@ -84,6 +90,8 @@ export function AssistantPage() {
       invoices,
       tasks,
       dismissedAutoTasks,
+      engagementSessions,
+      monthlyExpenses,
     ],
   );
 
