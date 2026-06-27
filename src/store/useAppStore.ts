@@ -22,6 +22,11 @@ import {
 import { CUSTOMER_SOURCE_CATEGORY_NAME } from '../data/leadSources';
 import { buildEventValuesFromInputs } from '../lib/eventForm';
 import {
+  nextCategorySortOrder,
+  normalizeCategorySortOrders,
+  sortCategories,
+} from '../lib/categories';
+import {
   importEventsIntoState,
   type HistoricalEventRow,
 } from '../lib/historicalImport';
@@ -81,8 +86,10 @@ interface AppActions {
   }) => void;
   updateWorkModels: (models: WorkConcept[]) => void;
   ensureCustomerSourceCategory: () => void;
-  addCategory: (category: Omit<Category, 'id' | 'businessId' | 'isActive'> & { isActive?: boolean }) => void;
+  addCategory: (category: Omit<Category, 'id' | 'businessId' | 'isActive' | 'sortOrder'> & { isActive?: boolean; sortOrder?: number }) => void;
   deleteCategory: (id: string) => void;
+  reorderCategories: (orderedActiveIds: string[]) => void;
+  moveCategory: (categoryId: string, direction: 'up' | 'down') => void;
   addEvent: (
     event: Omit<Event, 'id' | 'businessId' | 'userId'>,
     values: EventValue[],
@@ -213,6 +220,9 @@ function normalizeEngagementState(p: Partial<AppState>): Partial<AppState> {
     milestones: Array.isArray(p.milestones) ? p.milestones : [],
     engagementSessions: Array.isArray(p.engagementSessions) ? p.engagementSessions : [],
     business: p.business ? normalizeBusiness(p.business) : p.business,
+    categories: Array.isArray(p.categories)
+      ? normalizeCategorySortOrders(p.categories as Category[])
+      : p.categories,
   };
 }
 
@@ -528,6 +538,7 @@ export const useAppStore = create<Store>()(
           valueType: 'text',
           metricRole: 'neutral',
           isActive: true,
+          sortOrder: nextCategorySortOrder(get().categories),
         };
         set({ categories: [...get().categories, category] });
       },
@@ -542,21 +553,55 @@ export const useAppStore = create<Store>()(
           valueType: partial.valueType,
           metricRole: partial.metricRole,
           isActive: partial.isActive ?? true,
+          sortOrder: partial.sortOrder ?? nextCategorySortOrder(get().categories),
         };
-        set({ categories: [...get().categories, category] });
+        set({ categories: sortCategories([...get().categories, category]) });
       },
 
       deleteCategory: (id) => {
         const hasValues = get().eventValues.some((ev) => ev.categoryId === id);
         if (hasValues) {
           set({
-            categories: get().categories.map((c) =>
-              c.id === id ? { ...c, isActive: false } : c,
+            categories: normalizeCategorySortOrders(
+              get().categories.map((c) =>
+                c.id === id ? { ...c, isActive: false } : c,
+              ),
             ),
           });
         } else {
-          set({ categories: get().categories.filter((c) => c.id !== id) });
+          set({
+            categories: normalizeCategorySortOrders(
+              get().categories.filter((c) => c.id !== id),
+            ),
+          });
         }
+      },
+
+      reorderCategories: (orderedActiveIds) => {
+        const categories = get().categories;
+        const inactive = sortCategories(categories.filter((c) => !c.isActive));
+        const activeUpdated = orderedActiveIds
+          .map((id, i) => {
+            const cat = categories.find((c) => c.id === id);
+            return cat ? { ...cat, sortOrder: i } : null;
+          })
+          .filter((c): c is Category => c != null);
+        const inactiveUpdated = inactive.map((c, i) => ({
+          ...c,
+          sortOrder: activeUpdated.length + i,
+        }));
+        set({ categories: [...activeUpdated, ...inactiveUpdated] });
+      },
+
+      moveCategory: (categoryId, direction) => {
+        const active = sortCategories(get().categories.filter((c) => c.isActive));
+        const idx = active.findIndex((c) => c.id === categoryId);
+        if (idx < 0) return;
+        const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+        if (targetIdx < 0 || targetIdx >= active.length) return;
+        const ids = active.map((c) => c.id);
+        [ids[idx], ids[targetIdx]] = [ids[targetIdx], ids[idx]];
+        get().reorderCategories(ids);
       },
 
       addEvent: (partial, values) => {
@@ -1241,7 +1286,7 @@ export const useAppStore = create<Store>()(
     }),
     {
       name: STORAGE_KEY,
-      version: 9,
+      version: 10,
       storage: createJSONStorage(() => safeJsonStorage),
       onRehydrateStorage: () => (_state, err) => {
         if (err) {
@@ -1267,7 +1312,9 @@ export const useAppStore = create<Store>()(
               : [],
             events: Array.isArray(p.events) ? p.events : [],
             eventValues: Array.isArray(p.eventValues) ? p.eventValues : [],
-            categories: Array.isArray(p.categories) ? p.categories : [],
+            categories: normalizeCategorySortOrders(
+              Array.isArray(p.categories) ? (p.categories as Category[]) : [],
+            ),
             integrationConnections: Array.isArray(p.integrationConnections)
               ? p.integrationConnections
               : [],

@@ -1,4 +1,5 @@
 import { applyValueToEventValue } from './events';
+import { sortCategories } from './categories';
 import { createId } from './ids';
 import type { Category, Event, EventValue } from '../types/models';
 
@@ -57,7 +58,7 @@ export function buildEventValuesFromInputs(
   categoryInputs: Record<string, string>,
   existingValues: EventValue[],
 ): EventValue[] {
-  const active = categories.filter((c) => c.isActive);
+  const active = sortCategories(categories.filter((c) => c.isActive));
   return active.map((cat) => {
     const raw = categoryInputs[cat.id] ?? '';
     const existing = existingValues.find(

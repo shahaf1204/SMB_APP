@@ -1,4 +1,5 @@
 import { leadSourceLabel } from '../data/leadSources';
+import { sortCategories } from './categories';
 import { formatCurrency } from './finance';
 import { isSourceCategory } from './sources';
 import type { Category, Event, EventValue } from '../types/models';
@@ -69,7 +70,7 @@ export function getEventDetailFields(
     fields.push({ label: 'טלפון לקוח', value: event.clientPhone.trim() });
   }
 
-  const activeCats = categories.filter((c) => c.isActive);
+  const activeCats = sortCategories(categories.filter((c) => c.isActive));
   for (const cat of activeCats) {
     const val = eventValues.find(
       (ev) => ev.eventId === event.id && ev.categoryId === cat.id,

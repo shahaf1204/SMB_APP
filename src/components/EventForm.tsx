@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Banknote, Calendar, StickyNote, User } from 'lucide-react';
 import { LEAD_SOURCE_OPTIONS } from '../data/leadSources';
+import { sortCategories } from '../lib/categories';
 import { FormSection } from './ui/FormSection';
 import { eventValueToInput, type EventFormValues } from '../lib/eventForm';
 import { isSourceCategory } from '../lib/sources';
@@ -38,7 +39,7 @@ export function EventForm({
   onSubmit,
 }: EventFormProps) {
   const activeCategories = useMemo(
-    () => categories.filter((c) => c.isActive),
+    () => sortCategories(categories.filter((c) => c.isActive)),
     [categories],
   );
 

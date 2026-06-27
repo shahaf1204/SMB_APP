@@ -233,6 +233,8 @@ export interface Category {
   valueType: ValueType;
   metricRole: MetricRole;
   isActive: boolean;
+  /** User-defined display order (lower = first). */
+  sortOrder: number;
 }
 
 export interface Event {

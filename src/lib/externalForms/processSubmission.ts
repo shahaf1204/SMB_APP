@@ -1,4 +1,5 @@
 import { buildEventValuesFromInputs } from '../eventForm';
+import { sortCategories } from '../categories';
 import { customerKey } from '../customers';
 import type {
   ExternalFormConnection,
@@ -111,7 +112,7 @@ export function buildEventFromSubmission(input: ProcessSubmissionInput): {
   );
 
   const categoryInputs: Record<string, string> = {};
-  for (const cat of categories.filter((c) => c.isActive)) {
+  for (const cat of sortCategories(categories.filter((c) => c.isActive))) {
     if (CLIENT_CATEGORY_NAMES.some((n) => cat.name.includes(n))) {
       categoryInputs[cat.id] = clientName;
     }

@@ -1,6 +1,8 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
+import { ChevronDown, ChevronUp, GripVertical } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
+import { sortCategories } from '../lib/categories';
 import { useAppStore } from '../store/useAppStore';
 import type { MetricRole, ValueType } from '../types/models';
 
@@ -21,14 +23,23 @@ export function CategoriesPage() {
   const categories = useAppStore((s) => s.categories);
   const addCategory = useAppStore((s) => s.addCategory);
   const deleteCategory = useAppStore((s) => s.deleteCategory);
+  const reorderCategories = useAppStore((s) => s.reorderCategories);
+  const moveCategory = useAppStore((s) => s.moveCategory);
 
   const [name, setName] = useState('');
   const [valueType, setValueType] = useState<ValueType>('text');
   const [metricRole, setMetricRole] = useState<MetricRole>('neutral');
   const [showForm, setShowForm] = useState(false);
+  const [dragId, setDragId] = useState<string | null>(null);
 
-  const active = categories.filter((c) => c.isActive);
-  const inactive = categories.filter((c) => !c.isActive);
+  const active = useMemo(
+    () => sortCategories(categories.filter((c) => c.isActive)),
+    [categories],
+  );
+  const inactive = useMemo(
+    () => sortCategories(categories.filter((c) => !c.isActive)),
+    [categories],
+  );
 
   const handleAdd = (e: FormEvent) => {
     e.preventDefault();
@@ -38,6 +49,24 @@ export function CategoriesPage() {
     setShowForm(false);
   };
 
+  const handleDrop = (targetId: string) => {
+    if (!dragId || dragId === targetId) {
+      setDragId(null);
+      return;
+    }
+    const ids = active.map((c) => c.id);
+    const fromIdx = ids.indexOf(dragId);
+    const toIdx = ids.indexOf(targetId);
+    if (fromIdx < 0 || toIdx < 0) {
+      setDragId(null);
+      return;
+    }
+    ids.splice(fromIdx, 1);
+    ids.splice(toIdx, 0, dragId);
+    reorderCategories(ids);
+    setDragId(null);
+  };
+
   return (
     <div className="app-shell">
       <div className="page">
@@ -45,39 +74,63 @@ export function CategoriesPage() {
           ← הגדרות
         </Link>
         <h1 className="page-title">קטגוריות</h1>
-        <p className="page-subtitle">הגדרת שדות מותאמים לעסק שלך</p>
+        <p className="page-subtitle">הגדרת שדות מותאמים לעסק שלך — גררו או השתמשו בחצים לשינוי סדר</p>
 
-        <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1rem' }}>
-          {active.map((c) => (
-            <li key={c.id} className="card" style={{ marginBottom: '0.5rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                <div>
+        {active.length > 0 && (
+          <ul className="category-reorder-list">
+            {active.map((c, index) => (
+              <li
+                key={c.id}
+                className={`card category-reorder-item ${dragId === c.id ? 'category-reorder-item--dragging' : ''}`}
+                draggable
+                onDragStart={() => setDragId(c.id)}
+                onDragEnd={() => setDragId(null)}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={() => handleDrop(c.id)}
+              >
+                <span className="category-reorder-grip" aria-hidden>
+                  <GripVertical size={18} strokeWidth={2} />
+                </span>
+                <div className="category-reorder-body">
                   <strong>{c.name}</strong>
-                  <p
-                    style={{
-                      margin: '0.25rem 0 0',
-                      fontSize: '0.85rem',
-                      color: 'var(--color-text-secondary)',
-                    }}
-                  >
+                  <p className="category-reorder-meta">
                     {VALUE_TYPE_LABELS[c.valueType]} · {METRIC_LABELS[c.metricRole]}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  className="btn btn-ghost"
-                  style={{ minHeight: 36, padding: '0 0.75rem', fontSize: '0.8rem' }}
-                  onClick={() => deleteCategory(c.id)}
-                >
-                  מחק
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
+                <div className="category-reorder-actions">
+                  <button
+                    type="button"
+                    className="btn btn-icon btn-ghost"
+                    aria-label="הזז למעלה"
+                    disabled={index === 0}
+                    onClick={() => moveCategory(c.id, 'up')}
+                  >
+                    <ChevronUp size={18} strokeWidth={2} />
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-icon btn-ghost"
+                    aria-label="הזז למטה"
+                    disabled={index === active.length - 1}
+                    onClick={() => moveCategory(c.id, 'down')}
+                  >
+                    <ChevronDown size={18} strokeWidth={2} />
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm category-reorder-delete"
+                    onClick={() => deleteCategory(c.id)}
+                  >
+                    מחק
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
 
         {inactive.length > 0 && (
-          <p style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>
+          <p className="category-inactive-note">
             {inactive.length} קטגוריות מושבתות (בשימוש באירועים קיימים)
           </p>
         )}
@@ -121,16 +174,11 @@ export function CategoriesPage() {
                 ))}
               </select>
             </div>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
+            <div className="wizard-nav-row">
+              <button type="submit" className="btn btn-primary">
                 שמור
               </button>
-              <button
-                type="button"
-                className="btn btn-ghost"
-                style={{ flex: 1 }}
-                onClick={() => setShowForm(false)}
-              >
+              <button type="button" className="btn btn-ghost" onClick={() => setShowForm(false)}>
                 ביטול
               </button>
             </div>

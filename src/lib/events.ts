@@ -1,4 +1,5 @@
 import type { Category, Event, EventValue } from '../types/models';
+import { sortCategories } from './categories';
 import { createId } from './ids';
 
 const CLIENT_CATEGORY_NAMES = ['שם לקוח', 'לקוח', 'שם מטופל', 'שם מתאמן', 'שם תלמיד'];
@@ -7,7 +8,7 @@ export function createEventValuesForEvent(
   event: Event,
   categories: Category[],
 ): EventValue[] {
-  return categories
+  return sortCategories(categories)
     .filter((c) => c.isActive)
     .map((category) => ({
       id: createId(),

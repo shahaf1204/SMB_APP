@@ -1,4 +1,5 @@
 import { CUSTOMER_SOURCE_CATEGORY_NAME } from './leadSources';
+import { withCategorySortOrders } from '../lib/categories';
 import type { Category, MetricRole, ValueType } from '../types/models';
 
 export interface BusinessTypePreset {
@@ -124,7 +125,7 @@ export function buildCategoriesFromPreset(
   if (!mapped.some((c) => c.name === CUSTOMER_SOURCE_CATEGORY_NAME)) {
     mapped.splice(1, 0, { businessId, ...sourceCategory, isActive: true });
   }
-  return mapped;
+  return withCategorySortOrders(mapped);
 }
 
 export function buildGenericCategories(businessId: string): Omit<Category, 'id'>[] {
