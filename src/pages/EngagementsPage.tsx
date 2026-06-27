@@ -233,7 +233,6 @@ export function EngagementsPage() {
               <CollapsibleSection
                 title="השבוע הקרוב"
                 count={thisWeek.length}
-                defaultOpen
                 variant="highlight"
               >
                 <ActivityList items={thisWeek} highlight />
@@ -244,7 +243,6 @@ export function EngagementsPage() {
               <CollapsibleSection
                 title="ליוויים פעילים"
                 count={activeEng.length}
-                defaultOpen
               >
                 <ActivityList items={activeEng} />
               </CollapsibleSection>
@@ -254,7 +252,6 @@ export function EngagementsPage() {
               <CollapsibleSection
                 title="אירועים עתידיים"
                 count={later.length}
-                defaultOpen={false}
               >
                 <ActivityList items={later} />
               </CollapsibleSection>
@@ -264,7 +261,6 @@ export function EngagementsPage() {
               <CollapsibleSection
                 title="עבר"
                 count={past.length}
-                defaultOpen={false}
                 variant="muted"
               >
                 <ActivityList items={past.slice(0, 20)} />

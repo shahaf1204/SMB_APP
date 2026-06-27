@@ -12,7 +12,7 @@ interface CollapsibleSectionProps {
 export function CollapsibleSection({
   title,
   count,
-  defaultOpen = true,
+  defaultOpen = false,
   variant = 'default',
   children,
 }: CollapsibleSectionProps) {
