@@ -22,20 +22,36 @@ export function ProviderCard({
 }: ProviderCardProps) {
   const [showConnect, setShowConnect] = useState(false);
   const [apiKey, setApiKey] = useState('');
+  const [apiKeyId, setApiKeyId] = useState('');
+  const [apiKeySecret, setApiKeySecret] = useState('');
   const [accountLabel, setAccountLabel] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const connected = connection?.connectionStatus === 'connected';
   const hasError = connection?.connectionStatus === 'error';
   const isOAuth = entry.authMethod === 'oauth';
+  const isDualKey = entry.credentialFields === 'dual';
 
   const handleConnect = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    const credential = isDualKey
+      ? `${apiKeyId.trim()}:${apiKeySecret.trim()}`
+      : apiKey.trim();
+    if (!isOAuth && !isDualKey && !credential) {
+      setError('נדרש מפתח API');
+      return;
+    }
+    if (isDualKey && (!apiKeyId.trim() || !apiKeySecret.trim())) {
+      setError('נדרשים גם API Key ID וגם Secret');
+      return;
+    }
     try {
-      await onConnect(apiKey.trim(), accountLabel.trim() || entry.nameHe);
+      await onConnect(credential, accountLabel.trim() || entry.nameHe);
       setShowConnect(false);
       setApiKey('');
+      setApiKeyId('');
+      setApiKeySecret('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'שגיאת חיבור');
     }
@@ -112,9 +128,39 @@ export function ProviderCard({
             </p>
           ) : (
             <p className="field-hint">
-              המפתח נשמר מוצפן בשרת ולא בדפדפן.
+              {isDualKey
+                ? 'המפתחות נשמרים מוצפנים בשרת. אין גישה? השתמשו ב«ספק דמו» לבדיקות.'
+                : 'המפתח נשמר מוצפן בשרת ולא בדפדפן.'}
             </p>
           )}
+          {isDualKey ? (
+            <>
+              <div className="field">
+                <label htmlFor={`key-id-${entry.id}`}>API Key ID</label>
+                <input
+                  id={`key-id-${entry.id}`}
+                  type="text"
+                  value={apiKeyId}
+                  onChange={(e) => setApiKeyId(e.target.value)}
+                  placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                  autoComplete="off"
+                  required
+                />
+              </div>
+              <div className="field">
+                <label htmlFor={`key-secret-${entry.id}`}>API Key Secret</label>
+                <input
+                  id={`key-secret-${entry.id}`}
+                  type="password"
+                  value={apiKeySecret}
+                  onChange={(e) => setApiKeySecret(e.target.value)}
+                  placeholder="מוצג פעם אחת ב-Morning"
+                  autoComplete="off"
+                  required
+                />
+              </div>
+            </>
+          ) : (
           <div className="field">
             <label htmlFor={`key-${entry.id}`}>
               {isOAuth ? 'Access Token (אופציונלי)' : 'מפתח API'}
@@ -129,6 +175,7 @@ export function ProviderCard({
               required={!isOAuth}
             />
           </div>
+          )}
           <div className="field">
             <label htmlFor={`label-${entry.id}`}>שם חשבון (אופציונלי)</label>
             <input

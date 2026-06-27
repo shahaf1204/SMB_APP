@@ -12,11 +12,14 @@ export const INTEGRATION_CATALOG: ProviderCatalogEntry[] = [
     logoEmoji: '🌿',
     brandColor: '#22c55e',
     available: true,
+    credentialFields: 'dual',
     connectSteps: [
-      'היכנסו לחשבון Green Invoice / Morning',
-      'הגדרות → חשבוניות ומסמכים → API',
-      'צרו מפתח API חדש והעתיקו אותו',
-      'הדביקו את המפתח כאן ולחצו «חבר ספק»',
+      'מפתח API לא קיים באפליקציה הניידת — יש להיכנס מהדפדפן',
+      'פתחו: app.greeninvoice.co.il (או sandbox לבדיקות)',
+      'הגדרות → מתקדם → מפתחים → «צור מפתח API»',
+      'נדרש מסלול Best ומעלה (כולל גישת API)',
+      'העתיקו את ה-ID וה-Secret (Secret מוצג פעם אחת בלבד)',
+      'הדביקו למטה ולחצו «חבר ספק»',
     ],
   },
   {

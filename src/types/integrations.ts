@@ -43,6 +43,8 @@ export interface ProviderCatalogEntry {
   comingSoon?: boolean;
   /** Step-by-step connection guide shown in connect modal */
   connectSteps?: string[];
+  /** Morning-style dual credentials (API Key ID + Secret) */
+  credentialFields?: 'single' | 'dual';
 }
 
 export interface IntegrationConnection {
