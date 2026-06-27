@@ -1,25 +1,14 @@
-import {
-  createConnection,
-  isKnownProvider,
-  type IntegrationConnection,
-} from '../_lib/integrationServer';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { createConnection, isKnownProvider } from '../_lib/integrationServer';
 
-export const config = { runtime: 'edge' };
-
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json; charset=utf-8' },
-  });
-}
-
-export default async function handler(request: Request): Promise<Response> {
-  if (request.method !== 'POST') {
-    return json({ error: 'Method not allowed' }, 405);
+export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
   }
 
   try {
-    const body = (await request.json()) as {
+    const body = req.body as {
       businessId?: string;
       userId?: string;
       provider?: string;
@@ -28,14 +17,16 @@ export default async function handler(request: Request): Promise<Response> {
     };
 
     if (!body.businessId || !body.userId || !body.provider) {
-      return json({ error: 'Missing businessId, userId, or provider' }, 400);
+      res.status(400).json({ error: 'Missing businessId, userId, or provider' });
+      return;
     }
 
     if (!isKnownProvider(body.provider)) {
-      return json({ error: `Unknown provider: ${body.provider}` }, 400);
+      res.status(400).json({ error: `Unknown provider: ${body.provider}` });
+      return;
     }
 
-    const connection: IntegrationConnection = createConnection({
+    const connection = createConnection({
       businessId: body.businessId,
       userId: body.userId,
       provider: body.provider,
@@ -43,8 +34,8 @@ export default async function handler(request: Request): Promise<Response> {
       accountLabel: body.accountLabel,
     });
 
-    return json({ connection });
+    res.status(200).json({ connection });
   } catch (e) {
-    return json({ error: e instanceof Error ? e.message : 'Connect failed' }, 500);
+    res.status(500).json({ error: e instanceof Error ? e.message : 'Connect failed' });
   }
 }
