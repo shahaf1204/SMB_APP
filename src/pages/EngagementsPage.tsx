@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Calendar,
@@ -8,8 +8,8 @@ import {
   Users,
 } from 'lucide-react';
 import { MonthlyExpensesBar } from '../components/MonthlyExpensesBar';
-import { BottomNav } from '../components/BottomNav';
-import { CollapsibleSection } from '../components/ui/CollapsibleSection';
+import { ThisWeekEventsShowcase } from '../components/activities/ThisWeekEventsShowcase';
+import { BottomNav } from '../components/BottomNav';import { CollapsibleSection } from '../components/ui/CollapsibleSection';
 import { EmptyState } from '../components/ui/EmptyState';
 import { PillTabs } from '../components/ui/PillTabs';
 import { formatCurrency, formatDate } from '../lib/finance';
@@ -20,15 +20,22 @@ import {
 } from '../lib/engagements';
 import { getClientName, getEventRevenueTotal } from '../lib/events';
 import { externalFormEventBadge } from '../lib/externalForms/badges';
-import type { Engagement } from '../types/models';
+import {
+  activityEmptyMessage,
+  allowedActivityFilters,
+  buildActivityFilterTabs,
+  type ActivityFilter,
+  usesEngagementActivities,
+  usesEventActivities,
+} from '../lib/workModel';
+import type { Engagement, Event } from '../types/models';
 import { useAppStore } from '../store/useAppStore';
-
-type ActivityFilter = 'all' | 'event' | 'session_pack' | 'recurring_group' | 'project';
-
 interface ActivityItem {
   id: string;
   kind: ActivityFilter;
   client: string;
+  title: string;
+  location?: string;
   dateLabel: string;
   valueLabel: string;
   typeLabel: string;
@@ -38,15 +45,8 @@ interface ActivityItem {
   sortDate: string;
   isEvent: boolean;
   isPast: boolean;
+  event?: Event;
 }
-
-const FILTER_TABS: Array<{ id: ActivityFilter; label: string }> = [
-  { id: 'all', label: 'הכל' },
-  { id: 'event', label: 'אירועים' },
-  { id: 'session_pack', label: 'כרטיסיות' },
-  { id: 'recurring_group', label: 'חוגים' },
-  { id: 'project', label: 'ליווי' },
-];
 
 const KIND_ICON: Record<Exclude<ActivityFilter, 'all'>, typeof Calendar> = {
   event: Calendar,
@@ -84,6 +84,7 @@ function engagementItem(e: Engagement): ActivityItem {
     id: e.id,
     kind: e.kind,
     client: e.clientName || e.title,
+    title: e.title,
     dateLabel,
     valueLabel,
     typeLabel: ENGAGEMENT_KIND_LABEL[e.kind],
@@ -135,14 +136,26 @@ function ActivityList({ items, highlight }: { items: ActivityItem[]; highlight?:
 }
 
 export function EngagementsPage() {
+  const business = useAppStore((s) => s.business);
   const events = useAppStore((s) => s.events);
   const categories = useAppStore((s) => s.categories);
   const eventValues = useAppStore((s) => s.eventValues);
   const engagements = useAppStore((s) => s.engagements ?? []);
 
+  const allowedKinds = useMemo(() => allowedActivityFilters(business), [business]);
+  const filterTabs = useMemo(() => buildActivityFilterTabs(business), [business]);
+  const showEventSections = usesEventActivities(business);
+  const showEngagementSections = usesEngagementActivities(business);
+
   const [filter, setFilter] = useState<ActivityFilter>('all');
   const todayIso = new Date().toISOString().slice(0, 10);
   const weekEnd = weekEndIso();
+
+  useEffect(() => {
+    if (filter !== 'all' && !allowedKinds.has(filter)) {
+      setFilter('all');
+    }
+  }, [filter, allowedKinds]);
 
   const sections = useMemo(() => {
     const thisWeekEvents: ActivityItem[] = [];
@@ -151,30 +164,36 @@ export function EngagementsPage() {
     const activeEngagements: ActivityItem[] = [];
     const pastEngagements: ActivityItem[] = [];
 
-    for (const ev of events) {
-      const client = getClientName(ev.id, categories, eventValues);
-      const amount = getEventRevenueTotal(ev.id, eventValues);
-      const item: ActivityItem = {
-        id: `ev-${ev.id}`,
-        kind: 'event',
-        client: client ?? 'לקוח',
-        dateLabel: formatDate(ev.eventDate),
-        valueLabel: amount > 0 ? formatCurrency(amount) : '—',
-        typeLabel: 'אירוע',
-        formBadge: externalFormEventBadge(ev) ?? undefined,
-        href: `/events/${ev.id}/edit`,
-        icon: Calendar,
-        sortDate: ev.eventDate,
-        isEvent: true,
-        isPast: ev.eventDate < todayIso,
-      };
+    if (allowedKinds.has('event')) {
+      for (const ev of events) {
+        const client = getClientName(ev.id, categories, eventValues);
+        const amount = getEventRevenueTotal(ev.id, eventValues);
+        const item: ActivityItem = {
+          id: `ev-${ev.id}`,
+          kind: 'event',
+          client: client ?? 'לקוח',
+          title: ev.title,
+          location: ev.location.trim() || undefined,
+          dateLabel: formatDate(ev.eventDate),
+          valueLabel: amount > 0 ? formatCurrency(amount) : '—',
+          typeLabel: 'אירוע',
+          formBadge: externalFormEventBadge(ev) ?? undefined,
+          href: `/events/${ev.id}/edit`,
+          icon: Calendar,
+          sortDate: ev.eventDate,
+          isEvent: true,
+          isPast: ev.eventDate < todayIso,
+          event: ev,
+        };
 
-      if (ev.eventDate < todayIso) pastEvents.push(item);
-      else if (ev.eventDate <= weekEnd) thisWeekEvents.push(item);
-      else laterEvents.push(item);
+        if (ev.eventDate < todayIso) pastEvents.push(item);
+        else if (ev.eventDate <= weekEnd) thisWeekEvents.push(item);
+        else laterEvents.push(item);
+      }
     }
 
     for (const e of engagements) {
+      if (!allowedKinds.has(e.kind)) continue;
       const item = engagementItem(e);
       if (item.isPast) pastEngagements.push(item);
       else activeEngagements.push(item);
@@ -188,7 +207,7 @@ export function EngagementsPage() {
     pastEngagements.sort((a, b) => b.sortDate.localeCompare(a.sortDate));
 
     return { thisWeekEvents, laterEvents, pastEvents, activeEngagements, pastEngagements };
-  }, [events, categories, eventValues, engagements, todayIso, weekEnd]);
+  }, [events, categories, eventValues, engagements, todayIso, weekEnd, allowedKinds]);
 
   const applyFilter = (items: ActivityItem[]) => {
     if (filter === 'all') return items;
@@ -201,6 +220,24 @@ export function EngagementsPage() {
   const activeEng = applyFilter(sections.activeEngagements);
   const pastEng = applyFilter(sections.pastEngagements);
   const past = [...pastEvents, ...pastEng].sort((a, b) => b.sortDate.localeCompare(a.sortDate));
+
+  const showWeekShowcase =
+    showEventSections &&
+    thisWeek.length > 0 &&
+    (filter === 'all' || filter === 'event');
+
+  const weekShowcaseItems = thisWeek.map((item) => ({
+    id: item.id,
+    href: item.href,
+    sortDate: item.sortDate,
+    client: item.client,
+    title: item.title,
+    location: item.location,
+    dateLabel: item.dateLabel,
+    valueLabel: item.valueLabel,
+    formBadge: item.formBadge,
+    event: item.event,
+  }));
 
   const totalVisible =
     thisWeek.length + later.length + activeEng.length + past.length;
@@ -215,7 +252,14 @@ export function EngagementsPage() {
           </Link>
         </div>
 
-        <PillTabs tabs={FILTER_TABS} active={filter} onChange={setFilter} ariaLabel="סינון פעילויות" />
+        {filterTabs.length > 0 && (
+          <PillTabs
+            tabs={filterTabs}
+            active={filter}
+            onChange={setFilter}
+            ariaLabel="סינון פעילויות"
+          />
+        )}
 
         <MonthlyExpensesBar />
 
@@ -223,23 +267,17 @@ export function EngagementsPage() {
           <EmptyState
             icon={Layers}
             title="אין פעילויות עדיין"
-            message="הוסיפו אירוע, כרטיסייה או חוג כדי להתחיל"
+            message={activityEmptyMessage(business)}
             actionLabel="+ פעילות חדשה"
             actionTo="/create"
           />
         ) : (
           <div className="activity-sections">
-            {thisWeek.length > 0 && (
-              <CollapsibleSection
-                title="השבוע הקרוב"
-                count={thisWeek.length}
-                variant="highlight"
-              >
-                <ActivityList items={thisWeek} highlight />
-              </CollapsibleSection>
+            {showWeekShowcase && (
+              <ThisWeekEventsShowcase items={weekShowcaseItems} todayIso={todayIso} />
             )}
 
-            {activeEng.length > 0 && (
+            {showEngagementSections && activeEng.length > 0 && (
               <CollapsibleSection
                 title="ליוויים פעילים"
                 count={activeEng.length}
@@ -248,7 +286,7 @@ export function EngagementsPage() {
               </CollapsibleSection>
             )}
 
-            {later.length > 0 && (
+            {showEventSections && later.length > 0 && (
               <CollapsibleSection
                 title="אירועים עתידיים"
                 count={later.length}

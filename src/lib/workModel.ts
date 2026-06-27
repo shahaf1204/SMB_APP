@@ -176,3 +176,53 @@ export function toggleWorkModel(models: WorkConcept[], id: WorkConcept): WorkCon
   }
   return [...models, id];
 }
+
+/** Activity list filter ids used on the Activities page. */
+export type ActivityFilter = 'all' | 'event' | 'session_pack' | 'recurring_group' | 'project';
+
+export const WORK_CONCEPT_ACTIVITY_FILTER: Record<WorkConcept, Exclude<ActivityFilter, 'all'>> = {
+  single_event: 'event',
+  session_pack: 'session_pack',
+  recurring_group: 'recurring_group',
+  project: 'project',
+};
+
+const ACTIVITY_FILTER_LABEL: Record<Exclude<ActivityFilter, 'all'>, string> = {
+  event: 'אירועים',
+  session_pack: 'כרטיסיות',
+  recurring_group: 'חוגים',
+  project: 'ליווי',
+};
+
+export function allowedActivityFilters(business: Business | null): Set<Exclude<ActivityFilter, 'all'>> {
+  return new Set(resolveWorkModels(business).map((m) => WORK_CONCEPT_ACTIVITY_FILTER[m]));
+}
+
+export function buildActivityFilterTabs(
+  business: Business | null,
+): Array<{ id: ActivityFilter; label: string }> {
+  const kinds = resolveWorkModels(business).map((m) => WORK_CONCEPT_ACTIVITY_FILTER[m]);
+  const unique = [...new Set(kinds)];
+  if (unique.length <= 1) return [];
+  return [
+    { id: 'all', label: 'הכל' },
+    ...unique.map((id) => ({ id, label: ACTIVITY_FILTER_LABEL[id] })),
+  ];
+}
+
+export function usesEventActivities(business: Business | null): boolean {
+  return allowedActivityFilters(business).has('event');
+}
+
+export function usesEngagementActivities(business: Business | null): boolean {
+  const allowed = allowedActivityFilters(business);
+  return allowed.has('session_pack') || allowed.has('recurring_group') || allowed.has('project');
+}
+
+export function activityEmptyMessage(business: Business | null): string {
+  const models = resolveWorkModels(business);
+  if (models.length === 1 && models[0] === 'single_event') {
+    return 'הוסיפו אירוע כדי להתחיל';
+  }
+  return `הוסיפו ${workModelsLabel(models).toLowerCase()} כדי להתחיל`;
+}

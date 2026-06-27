@@ -5052,6 +5052,191 @@ a {
   line-height: 1.3;
 }
 
+/* This week events showcase (Activities) */
+.week-events-showcase {
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+  border-radius: var(--radius-card);
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--color-primary) 8%, var(--color-card)) 0%,
+    var(--color-card) 55%,
+    color-mix(in srgb, var(--color-accent, #8b5cf6) 6%, var(--color-card)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-primary) 18%, var(--color-border));
+  box-shadow: var(--shadow-card);
+}
+
+.week-events-showcase-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.875rem;
+}
+
+.week-events-showcase-intro {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  min-width: 0;
+}
+
+.week-events-showcase-glow {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  background: var(--gradient-primary);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+}
+
+.week-events-showcase-title {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.week-events-showcase-subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  line-height: 1.45;
+}
+
+.week-events-showcase-badge {
+  flex-shrink: 0;
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+}
+
+.week-events-track {
+  display: flex;
+  gap: 0.625rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+  margin: 0 -0.25rem;
+  padding-inline: 0.25rem;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.week-events-track::-webkit-scrollbar {
+  display: none;
+}
+
+.week-events-track-item {
+  flex: 0 0 min(82%, 280px);
+  scroll-snap-align: start;
+}
+
+.week-event-card {
+  display: block;
+  height: 100%;
+  padding: 0.875rem 1rem;
+  border-radius: 16px;
+  text-decoration: none;
+  color: #fff;
+  background: var(--gradient-primary);
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.28);
+  transition: transform var(--transition-fast), box-shadow var(--transition-base);
+}
+
+.week-event-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(99, 102, 241, 0.36);
+}
+
+.week-event-card--featured {
+  box-shadow: 0 10px 32px rgba(99, 102, 241, 0.35);
+}
+
+.week-event-card--today {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+}
+
+.week-event-card-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+.week-event-day-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.week-event-day-chip--today {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.week-event-card .form-source-chip {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+
+.week-event-client {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.week-event-title {
+  margin: 0.35rem 0 0;
+  font-size: 0.8125rem;
+  opacity: 0.9;
+  line-height: 1.35;
+}
+
+.week-event-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  opacity: 0.92;
+}
+
+.week-event-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.week-event-amount {
+  margin: 0.65rem 0 0;
+  padding-top: 0.55rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.22);
+  font-size: 1.125rem;
+  font-weight: 800;
+}
+
 @media (min-width: 480px) {
   .kpi-row--client.kpi-row--4 {
     grid-template-columns: repeat(4, 1fr);
