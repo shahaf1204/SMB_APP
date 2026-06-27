@@ -1,14 +1,12 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getBusinessProvider, isFinanceProvider } from '../../src/integrations/core/registry';
-import type { ProviderId } from '../../src/types/integrations';
+import { isFinanceProvider, isKnownProvider, parseWebhook } from '../_lib/integrationServer';
 import { markWebhookProcessed, webhookEventLog } from '../_lib/integrationStore';
-import { createId } from '../../src/lib/ids';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
-  const provider = (req.query.provider ?? req.url?.split('/').pop()) as ProviderId | undefined;
+  const provider = String(req.query.provider ?? '').trim();
 
-  if (!provider) {
-    res.status(400).json({ error: 'Missing provider' });
+  if (!provider || !isKnownProvider(provider)) {
+    res.status(400).json({ error: 'Missing or unknown provider' });
     return;
   }
 
@@ -22,13 +20,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     const externalId =
       (payload as { event_id?: string; id?: string })?.event_id ??
       (payload as { id?: string })?.id ??
-      createId();
+      crypto.randomUUID();
 
     const dedupKey = `${provider}:${externalId}`;
     const isNew = markWebhookProcessed(dedupKey);
 
     webhookEventLog.push({
-      id: createId(),
+      id: crypto.randomUUID(),
       provider,
       externalEventId: externalId,
       receivedAt: new Date().toISOString(),
@@ -40,17 +38,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       return;
     }
 
-    let result = { processed: true, duplicate: false, paymentStatus: 'paid' };
-
-    if (isFinanceProvider(provider)) {
-      const fp = getBusinessProvider(provider);
-      if ('handleWebhook' in fp && typeof fp.handleWebhook === 'function') {
-        result = await (fp as { handleWebhook: (p: unknown, h: Record<string, string>) => Promise<typeof result> }).handleWebhook(
-          payload,
-          req.headers as Record<string, string>,
-        );
-      }
-    }
+    const result = isFinanceProvider(provider) ? parseWebhook(payload) : { processed: true, duplicate: false };
 
     res.status(200).json(result);
   } catch (e) {

@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getBusinessProvider } from '../../src/integrations/core/registry';
+import { isKnownProvider } from '../_lib/integrationServer';
 import { deleteCredentials } from '../_lib/integrationStore';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
@@ -20,10 +20,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       return;
     }
 
-    const p = getBusinessProvider(provider as never);
-    await p.disconnect(connectionId);
-    deleteCredentials(connectionId);
+    if (!isKnownProvider(provider)) {
+      res.status(400).json({ error: `Unknown provider: ${provider}` });
+      return;
+    }
 
+    deleteCredentials(connectionId);
     res.status(200).json({ ok: true });
   } catch (e) {
     res.status(500).json({ error: e instanceof Error ? e.message : 'Disconnect failed' });

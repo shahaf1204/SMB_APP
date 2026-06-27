@@ -12,8 +12,22 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-  const data = (await res.json()) as T & { error?: string };
-  if (!res.ok) throw new Error((data as { error?: string }).error ?? 'Integration request failed');
+
+  const text = await res.text();
+  let data: T & { error?: string };
+  try {
+    data = JSON.parse(text) as T & { error?: string };
+  } catch {
+    const friendly =
+      text.includes('A server error') || text.includes('Internal Server Error')
+        ? 'שגיאת שרת — נסו שוב בעוד רגע'
+        : res.status === 404
+          ? 'שירות החיבורים לא זמין — ודאו שהאפליקציה מפורסמת ב-Vercel'
+          : `שגיאת רשת (${res.status})`;
+    throw new Error(friendly);
+  }
+
+  if (!res.ok) throw new Error(data.error ?? 'Integration request failed');
   return data;
 }
 
@@ -24,7 +38,8 @@ export async function connectProvider(params: {
   apiKey?: string;
   accountLabel?: string;
 }): Promise<IntegrationConnection> {
-  return post('/connect', params);
+  const data = await post<{ connection: IntegrationConnection }>('/connect', params);
+  return data.connection;
 }
 
 export async function disconnectProvider(params: {

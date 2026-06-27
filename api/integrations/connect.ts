@@ -1,8 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getBusinessProvider } from '../../src/integrations/core/registry';
-import type { ProviderId } from '../../src/types/integrations';
+import { createConnection, isKnownProvider } from '../_lib/integrationServer';
 import { encryptApiKey, storeCredentials } from '../_lib/integrationStore';
-import { createId } from '../../src/lib/ids';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (req.method !== 'POST') {
@@ -14,7 +12,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     const body = req.body as {
       businessId?: string;
       userId?: string;
-      provider?: ProviderId;
+      provider?: string;
       apiKey?: string;
       accountLabel?: string;
     };
@@ -24,22 +22,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       return;
     }
 
-    const provider = getBusinessProvider(body.provider);
-    const connection = await provider.connect({
+    if (!isKnownProvider(body.provider)) {
+      res.status(400).json({ error: `Unknown provider: ${body.provider}` });
+      return;
+    }
+
+    const connection = createConnection({
+      businessId: body.businessId,
+      userId: body.userId,
+      provider: body.provider,
       apiKey: body.apiKey,
-      accountLabel: body.accountLabel ?? body.provider,
+      accountLabel: body.accountLabel,
     });
 
-    connection.businessId = body.businessId;
-    connection.userId = body.userId;
-    connection.id = createId();
-
-    if (body.apiKey) {
+    if (body.apiKey?.trim()) {
       storeCredentials({
         connectionId: connection.id,
         businessId: body.businessId,
         provider: body.provider,
-        apiKeyEncrypted: encryptApiKey(body.apiKey),
+        apiKeyEncrypted: encryptApiKey(body.apiKey.trim()),
       });
     }
 
