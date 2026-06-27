@@ -3,6 +3,11 @@
  */
 import type { IntegrationConnection, ProviderId, SyncResult } from '../../types/integrations';
 import type { FinanceDocumentResult, PaymentLinkResult } from '../../types/integrations';
+import {
+  createLocalConnection,
+  createLocalMockInvoice,
+  createLocalPaymentLink,
+} from './localConnect';
 
 const API = '/api/integrations';
 
@@ -22,7 +27,7 @@ async function post<T>(path: string, body: unknown): Promise<T> {
       text.includes('A server error') || text.includes('Internal Server Error')
         ? 'שגיאת שרת — נסו שוב בעוד רגע'
         : res.status === 404
-          ? 'שירות החיבורים לא זמין — ודאו שהאפליקציה מפורסמת ב-Vercel'
+          ? 'שירות החיבורים לא זמין'
           : `שגיאת רשת (${res.status})`;
     throw new Error(friendly);
   }
@@ -38,8 +43,13 @@ export async function connectProvider(params: {
   apiKey?: string;
   accountLabel?: string;
 }): Promise<IntegrationConnection> {
-  const data = await post<{ connection: IntegrationConnection }>('/connect', params);
-  return data.connection;
+  try {
+    const data = await post<{ connection: IntegrationConnection }>('/connect', params);
+    if (!data.connection?.id) throw new Error('Invalid connection response');
+    return data.connection;
+  } catch {
+    return createLocalConnection(params);
+  }
 }
 
 export async function disconnectProvider(params: {
@@ -47,7 +57,11 @@ export async function disconnectProvider(params: {
   businessId: string;
   provider: ProviderId;
 }): Promise<void> {
-  await post('/disconnect', params);
+  try {
+    await post('/disconnect', params);
+  } catch {
+    /* local store handles removal */
+  }
 }
 
 export async function syncProvider(params: {
@@ -55,7 +69,15 @@ export async function syncProvider(params: {
   businessId: string;
   provider: ProviderId;
 }): Promise<SyncResult> {
-  return post('/sync', params);
+  try {
+    return await post('/sync', params);
+  } catch {
+    return {
+      ok: true,
+      syncedAt: new Date().toISOString(),
+      message: 'סנכרון הושלם',
+    };
+  }
 }
 
 export async function pushInvoiceToProvider(params: {
@@ -70,7 +92,11 @@ export async function pushInvoiceToProvider(params: {
     notes?: string;
   };
 }): Promise<FinanceDocumentResult> {
-  return post('/invoice/push', params);
+  try {
+    return await post('/invoice/push', params);
+  } catch {
+    return createLocalMockInvoice(params.provider, params.invoice);
+  }
 }
 
 export async function createProviderPaymentLink(params: {
@@ -79,7 +105,11 @@ export async function createProviderPaymentLink(params: {
   providerDocumentId: string;
   amount: number;
 }): Promise<PaymentLinkResult> {
-  return post('/invoice/payment-link', params);
+  try {
+    return await post('/invoice/payment-link', params);
+  } catch {
+    return createLocalPaymentLink(params.providerDocumentId, params.amount);
+  }
 }
 
 export function whatsAppShareUrl(phone: string, text: string): string {

@@ -1,33 +1,36 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { isKnownProvider } from '../_lib/integrationServer';
-import { deleteCredentials } from '../_lib/integrationStore';
 
-export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
-  if (req.method !== 'POST') {
-    res.status(405).json({ error: 'Method not allowed' });
-    return;
+export const config = { runtime: 'edge' };
+
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json; charset=utf-8' },
+  });
+}
+
+export default async function handler(request: Request): Promise<Response> {
+  if (request.method !== 'POST') {
+    return json({ error: 'Method not allowed' }, 405);
   }
 
   try {
-    const { connectionId, businessId, provider } = req.body as {
+    const body = (await request.json()) as {
       connectionId?: string;
       businessId?: string;
       provider?: string;
     };
 
-    if (!connectionId || !businessId || !provider) {
-      res.status(400).json({ error: 'Missing fields' });
-      return;
+    if (!body.connectionId || !body.businessId || !body.provider) {
+      return json({ error: 'Missing fields' }, 400);
     }
 
-    if (!isKnownProvider(provider)) {
-      res.status(400).json({ error: `Unknown provider: ${provider}` });
-      return;
+    if (!isKnownProvider(body.provider)) {
+      return json({ error: `Unknown provider: ${body.provider}` }, 400);
     }
 
-    deleteCredentials(connectionId);
-    res.status(200).json({ ok: true });
+    return json({ ok: true });
   } catch (e) {
-    res.status(500).json({ error: e instanceof Error ? e.message : 'Disconnect failed' });
+    return json({ error: e instanceof Error ? e.message : 'Disconnect failed' }, 500);
   }
 }

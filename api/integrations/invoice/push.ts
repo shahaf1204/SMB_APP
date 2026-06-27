@@ -1,15 +1,21 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createMockInvoice, isFinanceProvider } from '../_lib/integrationServer';
 
-export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
-  if (req.method !== 'POST') {
-    res.status(405).json({ error: 'Method not allowed' });
-    return;
+export const config = { runtime: 'edge' };
+
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json; charset=utf-8' },
+  });
+}
+
+export default async function handler(request: Request): Promise<Response> {
+  if (request.method !== 'POST') {
+    return json({ error: 'Method not allowed' }, 405);
   }
 
   try {
-    const { provider, invoice } = req.body as {
-      connectionId?: string;
+    const body = (await request.json()) as {
       provider?: string;
       invoice?: {
         clientName: string;
@@ -20,19 +26,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       };
     };
 
-    if (!provider || !invoice) {
-      res.status(400).json({ error: 'Missing fields' });
-      return;
+    if (!body.provider || !body.invoice) {
+      return json({ error: 'Missing fields' }, 400);
     }
 
-    if (!isFinanceProvider(provider)) {
-      res.status(400).json({ error: 'Not a finance provider' });
-      return;
+    if (!isFinanceProvider(body.provider)) {
+      return json({ error: 'Not a finance provider' }, 400);
     }
 
-    const result = createMockInvoice(provider, invoice);
-    res.status(200).json(result);
+    return json(createMockInvoice(body.provider, body.invoice));
   } catch (e) {
-    res.status(500).json({ error: e instanceof Error ? e.message : 'Push invoice failed' });
+    return json({ error: e instanceof Error ? e.message : 'Push invoice failed' }, 500);
   }
 }

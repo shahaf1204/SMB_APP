@@ -1,15 +1,25 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createConnection, isKnownProvider } from '../_lib/integrationServer';
-import { encryptApiKey, storeCredentials } from '../_lib/integrationStore';
+import {
+  createConnection,
+  isKnownProvider,
+  type IntegrationConnection,
+} from '../_lib/integrationServer';
 
-export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
-  if (req.method !== 'POST') {
-    res.status(405).json({ error: 'Method not allowed' });
-    return;
+export const config = { runtime: 'edge' };
+
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json; charset=utf-8' },
+  });
+}
+
+export default async function handler(request: Request): Promise<Response> {
+  if (request.method !== 'POST') {
+    return json({ error: 'Method not allowed' }, 405);
   }
 
   try {
-    const body = req.body as {
+    const body = (await request.json()) as {
       businessId?: string;
       userId?: string;
       provider?: string;
@@ -18,16 +28,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     };
 
     if (!body.businessId || !body.userId || !body.provider) {
-      res.status(400).json({ error: 'Missing businessId, userId, or provider' });
-      return;
+      return json({ error: 'Missing businessId, userId, or provider' }, 400);
     }
 
     if (!isKnownProvider(body.provider)) {
-      res.status(400).json({ error: `Unknown provider: ${body.provider}` });
-      return;
+      return json({ error: `Unknown provider: ${body.provider}` }, 400);
     }
 
-    const connection = createConnection({
+    const connection: IntegrationConnection = createConnection({
       businessId: body.businessId,
       userId: body.userId,
       provider: body.provider,
@@ -35,17 +43,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       accountLabel: body.accountLabel,
     });
 
-    if (body.apiKey?.trim()) {
-      storeCredentials({
-        connectionId: connection.id,
-        businessId: body.businessId,
-        provider: body.provider,
-        apiKeyEncrypted: encryptApiKey(body.apiKey.trim()),
-      });
-    }
-
-    res.status(200).json({ connection });
+    return json({ connection });
   } catch (e) {
-    res.status(500).json({ error: e instanceof Error ? e.message : 'Connect failed' });
+    return json({ error: e instanceof Error ? e.message : 'Connect failed' }, 500);
   }
 }
