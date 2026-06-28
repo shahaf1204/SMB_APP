@@ -175,28 +175,6 @@ export async function flushCloudPush(): Promise<void> {
   }
 }
 
-export async function restoreSessionFromSupabase(): Promise<boolean> {
-  if (!isSupabaseConfigured()) return false;
-
-  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-  if (hashParams.get('type') === 'recovery') {
-    return false;
-  }
-
-  const supabase = getSupabase();
-  const { data, error } = await supabase.auth.getSession();
-  if (error || !data.session?.user.email) return false;
-
-  const sessionUser = data.session.user;
-  const email = sessionUser.email!.toLowerCase();
-  const displayName =
-    (sessionUser.user_metadata?.display_name as string | undefined)?.trim() ||
-    email.split('@')[0];
-
-  await hydrateUserFromCloud(sessionUser.id, email, displayName);
-  return true;
-}
-
 export async function cloudSignOut(): Promise<void> {
   if (!isSupabaseConfigured()) return;
   await getSupabase().auth.signOut();

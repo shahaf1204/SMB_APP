@@ -52,11 +52,14 @@ export function AuthPage() {
   }, [autoLoginReady, user, navigate, mode]);
 
   useEffect(() => {
-    if (remembered?.enabled) {
-      setDisplayName(remembered.displayName);
-      setEmail(remembered.email);
+    if (!autoLoginReady || user) return;
+    const prefs = loadRememberMe();
+    if (prefs?.enabled) {
+      setDisplayName(prefs.displayName);
+      setEmail(prefs.email);
+      setRememberMe(true);
     }
-  }, [remembered]);
+  }, [autoLoginReady, user]);
 
   useEffect(() => {
     const wantsRegister =
