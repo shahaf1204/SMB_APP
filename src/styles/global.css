@@ -20,6 +20,7 @@ body {
   color: var(--color-text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
 }
 
 button,
@@ -49,7 +50,7 @@ a {
   background: var(--color-card);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
-  border: 1px solid rgba(99, 102, 241, 0.08);
+  border: 1px solid var(--color-primary-border);
   padding: 1.125rem 1.25rem;
   transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
@@ -90,7 +91,7 @@ a {
 }
 
 .btn-primary:hover:not(:disabled) {
-  box-shadow: 0 4px 16px rgba(91, 108, 249, 0.35);
+  box-shadow: var(--shadow-button);
 }
 
 .btn-danger {
@@ -277,11 +278,11 @@ a {
 .bottom-nav-fab:hover .bottom-nav-fab-btn,
 .bottom-nav-fab.active .bottom-nav-fab-btn {
   transform: scale(1.06);
-  box-shadow: 0 6px 20px rgba(234, 88, 12, 0.4);
+  box-shadow: var(--shadow-fab);
 }
 
 .bottom-nav-fab .nav-label {
-  color: var(--color-accent);
+  color: var(--color-primary);
   font-weight: 700;
 }
 
@@ -294,7 +295,7 @@ a {
 
 .page-title {
   font-size: 1.625rem;
-  font-weight: 800;
+  font-weight: 700;
   margin: 0 0 0.3rem;
   letter-spacing: -0.02em;
   color: var(--color-text);
@@ -314,7 +315,7 @@ a {
 .page-header-welcome {
   margin: 0;
   font-size: 1.375rem;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--color-text);
 }
@@ -595,7 +596,7 @@ a {
 
 .calendar-event-chip.status-future {
   background: #ecfdf5;
-  color: #166534;
+  color: var(--color-success-dark);
 }
 
 .calendar-event-more {
@@ -714,7 +715,7 @@ a {
 
 .event-row.selected {
   border-color: var(--color-primary);
-  background: #f4f6ff;
+  background: var(--color-primary-soft);
 }
 
 .event-drag-handle {
@@ -822,7 +823,7 @@ a {
 
 .status-future {
   background: #ecfdf5;
-  color: #166534;
+  color: var(--color-success-dark);
   border-color: #bbf7d0;
 }
 
@@ -1232,7 +1233,7 @@ a {
   padding: 0.75rem;
   border-radius: var(--radius-card);
   background: var(--color-primary-soft);
-  border: 1px solid #c7d2fe;
+  border: 1px solid var(--color-primary-border-strong);
 }
 
 .lead-sheet-preview-title {
@@ -1306,7 +1307,7 @@ a {
 
 .alert-card {
   background: var(--color-primary-soft);
-  border: 1px solid #c7d2fe;
+  border: 1px solid var(--color-primary-border-strong);
 }
 
 .invoice-list {
@@ -1430,7 +1431,7 @@ a {
 }
 
 .global-search-item:hover {
-  background: #f4f6ff;
+  background: var(--color-primary-soft);
 }
 
 .global-search-kind {
@@ -1686,7 +1687,7 @@ a {
 
 .cumulative-total-profit {
   background: var(--color-primary-soft);
-  border: 1px solid #c7d2fe;
+  border: 1px solid var(--color-primary-border-strong);
 }
 
 .cumulative-total-label {
@@ -1702,7 +1703,7 @@ a {
 }
 
 .cumulative-total-revenue .cumulative-total-value {
-  color: #166534;
+  color: var(--color-success-dark);
 }
 
 .cumulative-total-expense .cumulative-total-value {
@@ -1761,15 +1762,15 @@ a {
 }
 
 .waterfall-bar-decrease {
-  fill: #ea580c;
+  fill: var(--color-warning);
 }
 
 .waterfall-bar-total {
-  fill: #16a34a;
+  fill: var(--color-success);
 }
 
 .waterfall-bar-loss {
-  fill: #dc2626;
+  fill: var(--color-danger);
 }
 
 .waterfall-label {
@@ -2071,8 +2072,8 @@ a {
   margin-bottom: 0.75rem;
   padding: 0;
   overflow: hidden;
-  border: 1px solid rgba(104, 124, 212, 0.2);
-  background: linear-gradient(180deg, #fafbff 0%, var(--color-card) 100%);
+  border: 1px solid var(--color-primary-border);
+  background: var(--gradient-surface);
 }
 
 .assistant-menu-root > summary,
@@ -3113,7 +3114,7 @@ a {
 
 .next-event-card:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(91, 108, 249, 0.35);
+  box-shadow: var(--shadow-hero);
 }
 
 .next-event-card--empty {
@@ -3629,7 +3630,7 @@ a {
 
 .hero-event-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 32px rgba(99, 102, 241, 0.32);
+  box-shadow: var(--shadow-hero);
 }
 
 .hero-event-card--empty {
@@ -4153,15 +4154,15 @@ a {
 }
 
 .kpi-card--dash.kpi-card--revenue {
-  background: linear-gradient(145deg, #ecfdf5 0%, #d1fae5 100%);
+  background: var(--gradient-kpi-revenue);
 }
 
 .kpi-card--dash.kpi-card--expense {
-  background: linear-gradient(145deg, #fff1f2 0%, #ffe4e6 100%);
+  background: var(--gradient-kpi-expense);
 }
 
 .kpi-card--dash.kpi-card--profit {
-  background: linear-gradient(145deg, #eef2ff 0%, #e0e7ff 100%);
+  background: var(--gradient-kpi-profit);
 }
 
 .dash-insights {
@@ -4237,8 +4238,8 @@ a {
 }
 
 .dash-chart-card--premium {
-  background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
-  border: 1px solid rgba(99, 102, 241, 0.1);
+  background: var(--gradient-surface-primary);
+  border: 1px solid var(--color-primary-border);
 }
 
 .dash-chart-peak {
@@ -4260,14 +4261,14 @@ a {
   margin-bottom: 0.65rem;
   border-radius: 16px;
   overflow: hidden;
-  border: 1px solid rgba(99, 102, 241, 0.08);
+  border: 1px solid var(--color-primary-border);
   background: var(--color-card);
   box-shadow: var(--shadow-card);
 }
 
 .collapse-section--highlight {
-  border-color: rgba(99, 102, 241, 0.2);
-  background: linear-gradient(180deg, #ffffff 0%, #f5f7ff 100%);
+  border-color: var(--color-primary-border-strong);
+  background: var(--gradient-surface-primary);
 }
 
 .collapse-section--muted {
@@ -4335,7 +4336,7 @@ a {
 
 .activity-card-v2--highlight {
   border-right: 3px solid var(--color-primary);
-  background: linear-gradient(90deg, rgba(99, 102, 241, 0.06) 0%, #fff 40%);
+  background: linear-gradient(90deg, var(--color-primary-tint) 0%, var(--color-card) 40%);
 }
 
 .activity-card-v2--highlight .activity-card-v2-top strong {
@@ -4343,13 +4344,13 @@ a {
 }
 
 .pill-tab--active {
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 2px 8px var(--color-primary-shadow);
 }
 
 .bottom-nav {
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(99, 102, 241, 0.1);
+  border: 1px solid var(--color-primary-border);
 }
 
 .bottom-nav a.active .nav-icon-wrap {
@@ -4391,12 +4392,12 @@ a {
 }
 
 .provider-card--connected {
-  background: linear-gradient(90deg, rgba(99, 102, 241, 0.04) 0%, #fff 50%);
+  background: linear-gradient(90deg, var(--color-primary-tint-fade) 0%, var(--color-card) 50%);
 }
 
 .provider-card--error {
   border-right-color: var(--color-danger);
-  background: linear-gradient(90deg, rgba(239, 68, 68, 0.04) 0%, #fff 50%);
+  background: linear-gradient(90deg, rgba(192, 117, 117, 0.06) 0%, var(--color-card) 50%);
 }
 
 .provider-card-head {
@@ -5061,9 +5062,9 @@ a {
     145deg,
     color-mix(in srgb, var(--color-primary) 8%, var(--color-card)) 0%,
     var(--color-card) 55%,
-    color-mix(in srgb, var(--color-accent, #8b5cf6) 6%, var(--color-card)) 100%
+    color-mix(in srgb, var(--color-accent) 6%, var(--color-card)) 100%
   );
-  border: 1px solid color-mix(in srgb, var(--color-primary) 18%, var(--color-border));
+  border: 1px solid var(--color-primary-border-strong);
   box-shadow: var(--shadow-card);
 }
 
@@ -5093,7 +5094,7 @@ a {
   font-size: 0.875rem;
   background: var(--gradient-primary);
   color: #fff;
-  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+  box-shadow: var(--shadow-button);
 }
 
 .week-events-showcase-title {
@@ -5154,21 +5155,21 @@ a {
   text-decoration: none;
   color: #fff;
   background: var(--gradient-primary);
-  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.28);
+  box-shadow: 0 8px 24px var(--color-primary-shadow);
   transition: transform var(--transition-fast), box-shadow var(--transition-base);
 }
 
 .week-event-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 28px rgba(99, 102, 241, 0.36);
+  box-shadow: 0 12px 28px var(--color-primary-shadow-strong);
 }
 
 .week-event-card--featured {
-  box-shadow: 0 10px 32px rgba(99, 102, 241, 0.35);
+  box-shadow: 0 10px 32px var(--color-primary-shadow-strong);
 }
 
 .week-event-card--today {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+  background: var(--gradient-featured);
 }
 
 .week-event-card-top {
@@ -5241,4 +5242,49 @@ a {
   .kpi-row--client.kpi-row--4 {
     grid-template-columns: repeat(4, 1fr);
   }
+}
+
+/* ── Calm design polish ── */
+
+.auth-hero-title {
+  font-weight: 700;
+}
+
+.auth-hero {
+  box-shadow: 0 12px 40px rgba(58, 90, 107, 0.12);
+}
+
+.kpi-card-value,
+.dash-insight-value,
+.week-events-showcase-title,
+.week-events-showcase-badge,
+.week-event-amount {
+  font-weight: 700;
+}
+
+.chip.active {
+  box-shadow: var(--shadow-button);
+}
+
+.btn-primary {
+  letter-spacing: 0.01em;
+}
+
+.bottom-nav {
+  background: color-mix(in srgb, var(--color-card) 93%, transparent);
+  border-color: var(--color-border-light);
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: var(--color-primary);
+}
+
+.dash-insight-card {
+  border-color: color-mix(in srgb, var(--color-border) 80%, transparent);
+}
+
+.page-header-welcome {
+  font-weight: 700;
 }
