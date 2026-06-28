@@ -25,9 +25,9 @@ const CHART_THEME: Record<
   MetricTab,
   { stroke: string; fill: string; gradientId: string; gradientColor: string }
 > = {
-  revenue: { stroke: '#5A9A78', fill: '#C5DED0', gradientId: 'gradRevenue', gradientColor: '#7AB896' },
-  expense: { stroke: '#C07575', fill: '#E8D0D0', gradientId: 'gradExpense', gradientColor: '#D49A9A' },
-  profit: { stroke: '#6B95A8', fill: '#C5D8E0', gradientId: 'gradProfit', gradientColor: '#8AADBC' },
+  revenue: { stroke: '#34D399', fill: '#A7F3D0', gradientId: 'gradRevenue', gradientColor: '#6EE7B7' },
+  expense: { stroke: '#F87171', fill: '#FECACA', gradientId: 'gradExpense', gradientColor: '#FCA5A5' },
+  profit: { stroke: '#818CF8', fill: '#C7D2FE', gradientId: 'gradProfit', gradientColor: '#A5B4FC' },
 };
 
 interface DashboardMetricChartProps {
@@ -93,19 +93,19 @@ export function DashboardMetricChart({
             <AreaChart data={data} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="gradRevenue" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={CHART_THEME.revenue.gradientColor} stopOpacity={0.5} />
-                  <stop offset="100%" stopColor={CHART_THEME.revenue.gradientColor} stopOpacity={0.04} />
+                  <stop offset="0%" stopColor={CHART_THEME.revenue.gradientColor} stopOpacity={0.55} />
+                  <stop offset="100%" stopColor={CHART_THEME.revenue.gradientColor} stopOpacity={0.05} />
                 </linearGradient>
                 <linearGradient id="gradExpense" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={CHART_THEME.expense.gradientColor} stopOpacity={0.48} />
+                  <stop offset="0%" stopColor={CHART_THEME.expense.gradientColor} stopOpacity={0.5} />
                   <stop offset="100%" stopColor={CHART_THEME.expense.gradientColor} stopOpacity={0.04} />
                 </linearGradient>
                 <linearGradient id="gradProfit" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={CHART_THEME.profit.gradientColor} stopOpacity={0.5} />
-                  <stop offset="100%" stopColor={CHART_THEME.profit.gradientColor} stopOpacity={0.04} />
+                  <stop offset="0%" stopColor={CHART_THEME.profit.gradientColor} stopOpacity={0.55} />
+                  <stop offset="100%" stopColor={CHART_THEME.profit.gradientColor} stopOpacity={0.05} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="4 6" stroke="rgba(74,113,133,0.08)" vertical={false} />
+              <CartesianGrid strokeDasharray="4 6" stroke="rgba(99,102,241,0.08)" vertical={false} />
               <XAxis
                 dataKey="label"
                 tick={{ fontSize: 11, fill: 'var(--color-text-muted)' }}

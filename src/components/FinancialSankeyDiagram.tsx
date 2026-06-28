@@ -120,9 +120,9 @@ export function FinancialSankeyDiagram({
         >
           <defs>
             <linearGradient id={gradientId} x1="100%" y1="0%" x2="0%" y2="0%">
-              <stop offset="0%" stopColor="#4A7185" />
-              <stop offset="50%" stopColor="#6B95A8" />
-              <stop offset="100%" stopColor="#5A9A78" />
+              <stop offset="0%" stopColor="#687CD4" />
+              <stop offset="50%" stopColor="#6366F1" />
+              <stop offset="100%" stopColor="#10B981" />
             </linearGradient>
           </defs>
 
@@ -160,7 +160,7 @@ export function FinancialSankeyDiagram({
             >
               הכנסות
             </text>
-            <rect x={xRevenue} y={yRevenue} width={NODE_W} height={revH} rx={10} fill="#4A7185" />
+            <rect x={xRevenue} y={yRevenue} width={NODE_W} height={revH} rx={10} fill="#6366F1" />
             {showAmountsOnDiagram && (
               <text
                 x={xRevenue + NODE_W / 2}
@@ -193,7 +193,7 @@ export function FinancialSankeyDiagram({
             </text>
             {profitPositive > 0 ? (
               <>
-                <rect x={xProfit} y={yProfit} width={NODE_W} height={profitH} rx={10} fill="#5A9A78" />
+                <rect x={xProfit} y={yProfit} width={NODE_W} height={profitH} rx={10} fill="#10B981" />
                 {showAmountsOnDiagram && (
                   <text
                     x={xProfit + NODE_W / 2}
