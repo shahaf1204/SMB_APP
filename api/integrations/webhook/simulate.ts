@@ -3,8 +3,8 @@ import {
   createIntegrationLog,
   isFinanceProvider,
   simulateWebhook,
-} from '../_lib/integrationServer';
-import { appendIntegrationLog } from '../_lib/integrationStore';
+} from '../../_lib/integrationServer';
+import { appendIntegrationLog } from '../../_lib/integrationStore';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (req.method !== 'POST') {

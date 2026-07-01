@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { processWebhookPayload } from '../_lib/externalFormsStore';
+import { processWebhookPayload } from '../../_lib/externalFormsStore';
 
 function querySecret(req: VercelRequest): string | undefined {
   const q = req.query.secret;

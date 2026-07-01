@@ -31,10 +31,6 @@ export function encryptApiKey(apiKey: string): string {
   return encryptToken(apiKey);
 }
 
-export function encryptApiKey(apiKey: string): string {
-  return encryptToken(apiKey);
-}
-
 export function decryptApiKey(encrypted: string): string {
   return Buffer.from(encrypted, 'base64').toString('utf8');
 }
