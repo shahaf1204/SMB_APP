@@ -1,4 +1,39 @@
-import type { ExternalFormConnection } from '../../src/types/externalForms';
+type ExternalFormProviderId =
+  | 'forms_app'
+  | 'google_forms'
+  | 'typeform'
+  | 'jotform'
+  | 'tally'
+  | 'custom';
+
+type ExternalFormActivityType = 'event' | 'card' | 'program' | 'course';
+
+type ExternalFormAppField =
+  | 'clientName'
+  | 'clientPhone'
+  | 'clientEmail'
+  | 'activityTitle'
+  | 'activityDate'
+  | 'activityTime'
+  | 'location'
+  | 'amount'
+  | 'notes'
+  | 'participantsCount'
+  | 'childName'
+  | 'childAge'
+  | 'packageName'
+  | 'source';
+
+interface ExternalFormFieldMapping {
+  externalField: string;
+  appField: ExternalFormAppField;
+}
+
+interface ExternalFormConnection {
+  provider: ExternalFormProviderId;
+  activityType: ExternalFormActivityType;
+  fieldMapping: ExternalFormFieldMapping[];
+}
 
 export interface StoredFormConnection {
   id: string;

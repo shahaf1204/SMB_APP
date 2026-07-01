@@ -156,7 +156,7 @@ export async function simulateIntegrationWebhook(params: {
   amount?: number;
 }): Promise<WebhookPaymentUpdate> {
   try {
-    return await post<WebhookPaymentUpdate>('/webhook/simulate', params);
+    return await post<WebhookPaymentUpdate>('/simulate', params);
   } catch {
     const paid = params.event === 'payment.success';
     return {
