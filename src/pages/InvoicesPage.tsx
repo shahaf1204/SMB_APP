@@ -30,8 +30,9 @@ function statusChip(inv: Invoice) {
 }
 
 function providerLabel(inv: Invoice): string | null {
-  if (!inv.provider) return null;
-  return getCatalogEntry(inv.provider)?.nameHe ?? inv.provider;
+  const id = inv.externalProvider ?? inv.provider;
+  if (!id) return null;
+  return getCatalogEntry(id)?.nameHe ?? id;
 }
 
 export function InvoicesPage() {

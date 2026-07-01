@@ -1,8 +1,13 @@
 import { useEffect, useMemo } from 'react';
 import { syncProvider } from '../lib/integrations/client';
+import { normalizeIntegrationConnection } from '../types/integrations';
 import { useAppStore } from '../store/useAppStore';
 
 const AUTO_SYNC_MS = 15 * 60 * 1000;
+
+function isActiveConnection(c: ReturnType<typeof normalizeIntegrationConnection>): boolean {
+  return c.status === 'connected' || c.status === 'mock' || c.status === 'sandbox';
+}
 
 export function useIntegrationSync(): void {
   const business = useAppStore((s) => s.business);
@@ -11,8 +16,9 @@ export function useIntegrationSync(): void {
 
   const activeKey = useMemo(() => {
     return connections
-      .filter((c) => c.businessId === business?.id && c.connectionStatus === 'connected')
-      .map((c) => `${c.id}:${c.provider}`)
+      .map((c) => normalizeIntegrationConnection(c as never))
+      .filter((c) => c.businessId === business?.id && isActiveConnection(c))
+      .map((c) => `${c.id}:${c.providerId}`)
       .sort()
       .join(',');
   }, [connections, business?.id]);
@@ -23,9 +29,8 @@ export function useIntegrationSync(): void {
     const runSync = async () => {
       const active = useAppStore
         .getState()
-        .integrationConnections.filter(
-          (c) => c.businessId === business.id && c.connectionStatus === 'connected',
-        );
+        .integrationConnections.map((c) => normalizeIntegrationConnection(c as never))
+        .filter((c) => c.businessId === business.id && isActiveConnection(c));
 
       for (const conn of active) {
         updateIntegrationSync(conn.id, { syncStatus: 'syncing' });
@@ -33,20 +38,20 @@ export function useIntegrationSync(): void {
           const result = await syncProvider({
             connectionId: conn.id,
             businessId: business.id,
-            provider: conn.provider,
+            provider: conn.providerId,
           });
           updateIntegrationSync(conn.id, {
             syncStatus: result.ok ? 'success' : 'error',
-            lastSync: result.syncedAt,
+            lastSyncAt: result.syncedAt,
             nextSync: new Date(Date.now() + AUTO_SYNC_MS).toISOString(),
             lastError: result.error,
-            connectionStatus: result.ok ? 'connected' : 'error',
+            status: result.ok ? 'connected' : 'error',
           });
         } catch (e) {
           updateIntegrationSync(conn.id, {
             syncStatus: 'error',
             lastError: e instanceof Error ? e.message : 'Sync failed',
-            connectionStatus: 'error',
+            status: 'error',
           });
         }
       }

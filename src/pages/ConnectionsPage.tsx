@@ -2,17 +2,20 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plug } from 'lucide-react';
 import { BottomNav } from '../components/BottomNav';
+import { IntegrationDevPanel } from '../components/integrations/IntegrationDevPanel';
 import { ProviderCard } from '../components/integrations/ProviderCard';
 import { CATEGORY_LABELS, catalogByCategory } from '../integrations/catalog';
 import type { IntegrationCategory } from '../types/integrations';
+import { normalizeIntegrationConnection } from '../types/integrations';
 import {
   connectProvider,
   disconnectProvider,
   syncProvider,
 } from '../lib/integrations/client';
+import { getActiveFinanceConnection } from '../lib/integrations/service';
 import { useAppStore } from '../store/useAppStore';
 
-const CATEGORIES: IntegrationCategory[] = ['finance', 'calendar', 'marketing', 'communication'];
+const CATEGORIES: IntegrationCategory[] = ['finance', 'leads', 'calendar', 'communication'];
 
 export function ConnectionsPage() {
   const business = useAppStore((s) => s.business)!;
@@ -25,13 +28,21 @@ export function ConnectionsPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [globalError, setGlobalError] = useState<string | null>(null);
 
+  const normalized = useMemo(
+    () =>
+      connections
+        .filter((c) => c.businessId === business.id)
+        .map((c) => normalizeIntegrationConnection(c as never)),
+    [connections, business.id],
+  );
+
   const byProvider = useMemo(() => {
-    const map = new Map<string, (typeof connections)[0]>();
-    for (const c of connections) {
-      if (c.businessId === business.id) map.set(c.provider, c);
-    }
+    const map = new Map<string, (typeof normalized)[0]>();
+    for (const c of normalized) map.set(c.providerId, c);
     return map;
-  }, [connections, business.id]);
+  }, [normalized]);
+
+  const financeConn = getActiveFinanceConnection(connections, business.id);
 
   const handleConnect = async (provider: string, apiKey: string, accountLabel?: string) => {
     setBusyId(provider);
@@ -45,6 +56,8 @@ export function ConnectionsPage() {
         accountLabel,
       });
       upsertIntegrationConnection(connection);
+    } catch (e) {
+      setGlobalError(e instanceof Error ? e.message : 'שגיאת חיבור');
     } finally {
       setBusyId(null);
     }
@@ -71,15 +84,15 @@ export function ConnectionsPage() {
       });
       updateIntegrationSync(connectionId, {
         syncStatus: result.ok ? 'success' : 'error',
-        lastSync: result.syncedAt,
+        lastSyncAt: result.syncedAt,
         lastError: result.error,
-        connectionStatus: result.ok ? 'connected' : 'error',
+        status: result.ok ? 'connected' : 'error',
       });
     } catch (e) {
       updateIntegrationSync(connectionId, {
         syncStatus: 'error',
         lastError: e instanceof Error ? e.message : 'Sync failed',
-        connectionStatus: 'error',
+        status: 'error',
       });
     } finally {
       setBusyId(null);
@@ -97,22 +110,10 @@ export function ConnectionsPage() {
           <Plug size={22} className="text-muted" aria-hidden />
         </div>
         <p className="page-subtitle">
-          מרכז האינטגרציות — חברו את המערכות שכבר בשימוש
+          מרכז האינטגרציות — חברו את הכלים שכבר בשימוש ונהלו הכל ממקום אחד
         </p>
 
         {globalError && <p className="import-feedback">{globalError}</p>}
-
-        <section className="connections-category external-forms-promo">
-          <Link to="/settings/external-forms" className="card hub-card hub-card--inline">
-            <span className="hub-card-body">
-              <strong>טפסים חיצוניים</strong>
-              <span className="hub-card-desc">
-                חברי טופס קיים — כל מילוי ייצור פעילות אוטומטית
-              </span>
-            </span>
-            <span className="text-link-muted">←</span>
-          </Link>
-        </section>
 
         {CATEGORIES.map((cat) => (
           <section key={cat} className="connections-category">
@@ -137,6 +138,8 @@ export function ConnectionsPage() {
             </div>
           </section>
         ))}
+
+        <IntegrationDevPanel businessId={business.id} financeConnection={financeConn} />
       </div>
       <BottomNav />
     </div>

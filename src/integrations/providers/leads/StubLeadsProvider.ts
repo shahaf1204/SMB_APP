@@ -1,19 +1,11 @@
 import { createId } from '../../../lib/ids';
-import type {
-  IntegrationConnection,
-  ProviderHealthResult,
-  ProviderId,
-  SyncResult,
-} from '../../../types/integrations';
-import type { CalendarEventPayload, CalendarProvider, ConnectParams } from '../../core/IntegrationProvider';
+import type { IntegrationConnection, ProviderId } from '../../../types/integrations';
+import type { ConnectParams, LeadsProvider } from '../../core/IntegrationProvider';
 
-export class StubCalendarProvider implements CalendarProvider {
-  readonly category = 'calendar' as const;
+export class StubLeadsProvider implements LeadsProvider {
+  readonly category = 'leads' as const;
 
-  constructor(
-    readonly providerId: ProviderId,
-    readonly providerName: string,
-  ) {}
+  constructor(readonly providerId: ProviderId, readonly providerName: string) {}
 
   async connect(params: ConnectParams): Promise<IntegrationConnection> {
     const now = new Date().toISOString();
@@ -23,7 +15,7 @@ export class StubCalendarProvider implements CalendarProvider {
       ownerId: params.ownerId,
       providerId: this.providerId,
       providerName: this.providerName,
-      category: this.category,
+      category: 'leads',
       status: 'connected',
       mode: params.mode ?? 'sandbox',
       authMethod: 'oauth',
@@ -31,17 +23,16 @@ export class StubCalendarProvider implements CalendarProvider {
       createdAt: now,
       updatedAt: now,
       connectedAt: now,
-      accountLabel: params.credentials?.accountLabel,
     };
   }
 
   async disconnect(_connectionId: string): Promise<void> {}
 
-  async testConnection(): Promise<ProviderHealthResult> {
+  async testConnection() {
     return { ok: false, message: `${this.providerName} — בקרוב` };
   }
 
-  async sync(): Promise<SyncResult> {
+  async sync() {
     return { ok: true, syncedAt: new Date().toISOString(), message: 'בקרוב' };
   }
 
@@ -49,7 +40,7 @@ export class StubCalendarProvider implements CalendarProvider {
     return 'disconnected' as const;
   }
 
-  async pushEvent(_connectionId: string, _event: CalendarEventPayload) {
-    return { externalId: `cal_${createId().slice(0, 8)}` };
+  async importLeads() {
+    return { count: 0 };
   }
 }

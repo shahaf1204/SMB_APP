@@ -8,6 +8,7 @@ import { buildCustomerSummaries, findCustomerByParamKey } from '../lib/customers
 import { formatCurrency, formatDate } from '../lib/finance';
 import { getEventRevenueTotal } from '../lib/events';
 import { isInvoiceOverdue } from '../lib/invoices';
+import { getCatalogEntry } from '../integrations/catalog';
 import { FormSourceChip } from '../components/externalForms/FormSourceChip';
 import { useAppStore } from '../store/useAppStore';
 
@@ -217,7 +218,9 @@ export function CustomerDetailPage() {
                           <li key={`paid-${inv.id}`}>
                             <Link to={`/invoices/${inv.id}`} className="card compact-link-row">
                               {formatCurrency(inv.amount)} · {formatDate(inv.issuedAt)} · שולם
-                              {inv.provider && <> · {inv.provider}</>}
+                              {(inv.externalProvider ?? inv.provider) && (
+                                <> · {getCatalogEntry(inv.externalProvider ?? inv.provider!)?.nameHe ?? inv.externalProvider ?? inv.provider}</>
+                              )}
                             </Link>
                           </li>
                         ))}

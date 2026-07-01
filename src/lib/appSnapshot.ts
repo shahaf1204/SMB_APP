@@ -19,6 +19,8 @@ export function getAppSnapshot(): AppState {
     milestones: s.milestones,
     engagementSessions: s.engagementSessions,
     integrationConnections: s.integrationConnections ?? [],
+    integrationLogs: s.integrationLogs ?? [],
+    paymentTransactions: s.paymentTransactions ?? [],
     externalFormConnections: s.externalFormConnections ?? [],
     externalFormSubmissions: s.externalFormSubmissions ?? [],
     formNotifications: s.formNotifications ?? [],

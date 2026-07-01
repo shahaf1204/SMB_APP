@@ -1,17 +1,19 @@
 import { encryptToken } from './supabaseAdmin';
+import type { IntegrationLog } from './integrationServer';
 
 export interface StoredCredentials {
   connectionId: string;
   businessId: string;
-  provider: string;
+  providerId: string;
   apiKeyEncrypted?: string;
   accessTokenEncrypted?: string;
   refreshTokenEncrypted?: string;
   expiresAt?: string;
 }
 
-/** Dev fallback when Supabase unavailable */
 const memoryStore = new Map<string, StoredCredentials>();
+const processedWebhooks = new Set<string>();
+export const integrationLogs: IntegrationLog[] = [];
 
 export function storeCredentials(row: StoredCredentials): void {
   memoryStore.set(row.connectionId, row);
@@ -29,12 +31,22 @@ export function encryptApiKey(apiKey: string): string {
   return encryptToken(apiKey);
 }
 
+export function encryptApiKey(apiKey: string): string {
+  return encryptToken(apiKey);
+}
+
 export function decryptApiKey(encrypted: string): string {
   return Buffer.from(encrypted, 'base64').toString('utf8');
 }
 
-/** Webhook deduplication — in-memory; replace with DB in production */
-const processedWebhooks = new Set<string>();
+export function appendIntegrationLog(log: IntegrationLog): void {
+  integrationLogs.unshift(log);
+  if (integrationLogs.length > 200) integrationLogs.pop();
+}
+
+export function getIntegrationLogs(businessId: string, limit = 50): IntegrationLog[] {
+  return integrationLogs.filter((l) => l.businessId === businessId).slice(0, limit);
+}
 
 export function markWebhookProcessed(key: string): boolean {
   if (processedWebhooks.has(key)) return false;
@@ -42,6 +54,7 @@ export function markWebhookProcessed(key: string): boolean {
   return true;
 }
 
+/** @deprecated use integrationLogs */
 export const webhookEventLog: Array<{
   id: string;
   provider: string;

@@ -14,7 +14,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       amount?: number;
     };
 
-    if (!provider || !providerDocumentId || amount == null) {
+    if (!provider || !providerDocumentId || typeof amount !== 'number') {
       res.status(400).json({ error: 'Missing fields' });
       return;
     }

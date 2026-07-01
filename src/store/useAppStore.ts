@@ -42,6 +42,7 @@ import type {
   EventValue,
   GroupMember,
   Invoice,
+  PaymentTransaction,
   Lead,
   LeadStatus,
   Milestone,
@@ -50,7 +51,9 @@ import type {
   WorkConcept,
   Task,
 } from '../types/models';
-import type { IntegrationConnection } from '../types/integrations';
+import type { IntegrationConnection, IntegrationLog } from '../types/integrations';
+import { applyWebhookPaymentUpdate } from '../lib/integrations/service';
+import { normalizeIntegrationConnection } from '../types/integrations';
 import type {
   ExternalFormConnection,
   ExternalFormSubmission,
@@ -159,15 +162,23 @@ interface AppActions {
         Invoice,
         | 'clientEmail'
         | 'notes'
+        | 'status'
+        | 'externalProvider'
+        | 'externalInvoiceId'
+        | 'externalDocumentNumber'
+        | 'externalPdfUrl'
+        | 'paymentStatus'
+        | 'paymentLink'
+        | 'paymentTransactionId'
+        | 'paidAt'
+        | 'syncStatus'
+        | 'syncError'
         | 'provider'
         | 'providerDocumentId'
         | 'providerInvoiceNumber'
         | 'officialPdfUrl'
         | 'paymentUrl'
-        | 'paymentTransactionId'
-        | 'paymentStatus'
         | 'providerSyncedAt'
-        | 'status'
       >
     >,
   ) => void;
@@ -178,10 +189,19 @@ interface AppActions {
     patch: Partial<
       Pick<
         IntegrationConnection,
-        'lastSync' | 'nextSync' | 'syncStatus' | 'lastError' | 'connectionStatus'
+        | 'lastSyncAt'
+        | 'lastSync'
+        | 'nextSync'
+        | 'syncStatus'
+        | 'lastError'
+        | 'status'
+        | 'connectionStatus'
       >
     >,
   ) => void;
+  addIntegrationLog: (log: IntegrationLog) => void;
+  upsertPaymentTransaction: (tx: PaymentTransaction) => void;
+  applyIntegrationWebhook: (update: import('../types/integrations').WebhookPaymentUpdate) => void;
   upsertExternalFormConnection: (connection: ExternalFormConnection) => void;
   removeExternalFormConnection: (connectionId: string) => void;
   activateExternalFormConnection: (connectionId: string) => Promise<void>;
@@ -214,12 +234,39 @@ function defaultDueDate(): string {
 function migrateInvoices(invoices: unknown): Invoice[] {
   if (!Array.isArray(invoices)) return [];
   return invoices.map((inv) => {
-    const row = inv as Invoice;
+    const row = inv as Invoice & {
+      provider?: string;
+      providerDocumentId?: string;
+      paymentUrl?: string;
+      paymentStatus?: Invoice['paymentStatus'];
+    };
+    const paymentStatus =
+      row.paymentStatus === 'none' || !row.paymentStatus
+        ? 'unpaid'
+        : row.paymentStatus;
     return {
       ...row,
       dueDate: row.dueDate ?? row.issuedAt ?? new Date().toISOString().slice(0, 10),
+      externalProvider: row.externalProvider ?? row.provider,
+      externalInvoiceId: row.externalInvoiceId ?? row.providerDocumentId,
+      externalDocumentNumber: row.externalDocumentNumber ?? row.providerInvoiceNumber,
+      externalPdfUrl: row.externalPdfUrl ?? row.officialPdfUrl,
+      paymentLink: row.paymentLink ?? row.paymentUrl,
+      paymentStatus,
+      syncStatus:
+        row.syncStatus ??
+        (row.providerSyncedAt || row.externalInvoiceId || row.providerDocumentId
+          ? 'synced'
+          : 'not_synced'),
     };
   });
+}
+
+function migrateIntegrationConnections(raw: unknown): IntegrationConnection[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((c) =>
+    normalizeIntegrationConnection(c as IntegrationConnection & { provider?: string; userId?: string }),
+  );
 }
 
 function normalizeEngagementState(p: Partial<AppState>): Partial<AppState> {
@@ -252,6 +299,8 @@ const initialState: AppState = {
   milestones: [],
   engagementSessions: [],
   integrationConnections: [],
+  integrationLogs: [],
+  paymentTransactions: [],
   externalFormConnections: [],
   externalFormSubmissions: [],
   formNotifications: [],
@@ -995,10 +1044,14 @@ export const useAppStore = create<Store>()(
       },
 
       upsertIntegrationConnection: (connection) => {
-        const list = get().integrationConnections.filter(
-          (c) => c.provider !== connection.provider || c.businessId !== connection.businessId,
+        const normalized = normalizeIntegrationConnection(
+          connection as IntegrationConnection & { provider?: string; userId?: string },
         );
-        set({ integrationConnections: [connection, ...list] });
+        const list = get().integrationConnections.filter(
+          (c) =>
+            c.providerId !== normalized.providerId || c.businessId !== normalized.businessId,
+        );
+        set({ integrationConnections: [normalized, ...list] });
       },
 
       removeIntegrationConnection: (connectionId) => {
@@ -1011,9 +1064,39 @@ export const useAppStore = create<Store>()(
 
       updateIntegrationSync: (connectionId, patch) => {
         set({
-          integrationConnections: get().integrationConnections.map((c) =>
-            c.id === connectionId ? { ...c, ...patch, updatedAt: new Date().toISOString() } : c,
-          ),
+          integrationConnections: get().integrationConnections.map((c) => {
+            if (c.id !== connectionId) return c;
+            const lastSyncAt = patch.lastSyncAt ?? patch.lastSync ?? c.lastSyncAt;
+            const status = patch.status ?? patch.connectionStatus ?? c.status;
+            return {
+              ...c,
+              ...patch,
+              lastSyncAt,
+              status,
+              updatedAt: new Date().toISOString(),
+            };
+          }),
+        });
+      },
+
+      addIntegrationLog: (log) => {
+        set({ integrationLogs: [log, ...get().integrationLogs].slice(0, 100) });
+      },
+
+      upsertPaymentTransaction: (tx) => {
+        const list = get().paymentTransactions.filter((t) => t.id !== tx.id);
+        set({ paymentTransactions: [tx, ...list] });
+      },
+
+      applyIntegrationWebhook: (update) => {
+        const result = applyWebhookPaymentUpdate(
+          get().invoices,
+          get().paymentTransactions,
+          update,
+        );
+        set({
+          invoices: result.invoices,
+          paymentTransactions: result.paymentTransactions,
         });
       },
 
@@ -1301,7 +1384,9 @@ export const useAppStore = create<Store>()(
           engagements: state.engagements ?? [],
           milestones: state.milestones ?? [],
           engagementSessions: state.engagementSessions ?? [],
-          integrationConnections: state.integrationConnections ?? [],
+          integrationConnections: migrateIntegrationConnections(state.integrationConnections),
+          integrationLogs: state.integrationLogs ?? [],
+          paymentTransactions: state.paymentTransactions ?? [],
           externalFormConnections: state.externalFormConnections ?? [],
           externalFormSubmissions: state.externalFormSubmissions ?? [],
           formNotifications: state.formNotifications ?? [],
@@ -1341,7 +1426,7 @@ export const useAppStore = create<Store>()(
     }),
     {
       name: STORAGE_KEY,
-      version: 11,
+      version: 12,
       storage: createJSONStorage(() => safeJsonStorage),
       onRehydrateStorage: () => (_state, err) => {
         if (err) {
@@ -1349,7 +1434,19 @@ export const useAppStore = create<Store>()(
           clearAppStorage();
         }
       },
-      migrate: (persisted) => normalizeEngagementState(persisted as Partial<AppState>),
+      migrate: (persisted, version) => {
+        const p = normalizeEngagementState(persisted as Partial<AppState>) as Partial<AppState>;
+        if (version < 12) {
+          return {
+            ...p,
+            invoices: migrateInvoices(p.invoices),
+            integrationConnections: migrateIntegrationConnections(p.integrationConnections),
+            integrationLogs: [],
+            paymentTransactions: [],
+          };
+        }
+        return p;
+      },
       merge: (persisted, current) => {
         try {
           const p = normalizeEngagementState((persisted ?? {}) as Partial<AppState>);
@@ -1371,9 +1468,9 @@ export const useAppStore = create<Store>()(
             categories: normalizeCategorySortOrders(
               Array.isArray(p.categories) ? (p.categories as Category[]) : [],
             ),
-            integrationConnections: Array.isArray(p.integrationConnections)
-              ? p.integrationConnections
-              : [],
+            integrationConnections: migrateIntegrationConnections(p.integrationConnections),
+            integrationLogs: Array.isArray(p.integrationLogs) ? p.integrationLogs : [],
+            paymentTransactions: Array.isArray(p.paymentTransactions) ? p.paymentTransactions : [],
             externalFormConnections: Array.isArray(p.externalFormConnections)
               ? p.externalFormConnections
               : [],

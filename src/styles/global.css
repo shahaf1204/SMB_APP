@@ -5331,3 +5331,61 @@ a {
 .dash-margin-strip strong {
   color: var(--color-primary-dark);
 }
+
+.provider-chip-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
+.provider-mode-chip {
+  font-size: 0.625rem;
+  font-weight: 700;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary-dark);
+}
+
+.provider-category-chip {
+  display: inline-block;
+  margin-top: 0.2rem;
+  font-size: 0.625rem;
+  color: var(--color-text-muted);
+  text-transform: capitalize;
+}
+
+.provider-coming-soon {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.integration-dev-panel {
+  margin-top: 1.25rem;
+  border: 1px dashed var(--color-primary-border-strong);
+  background: var(--gradient-surface-primary);
+}
+
+.integration-dev-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.integration-log-list {
+  margin-top: 0.75rem;
+  font-size: 0.8125rem;
+}
+
+.integration-log-list ul {
+  margin: 0.35rem 0 0;
+  padding: 0 1rem 0 0;
+  list-style: disc;
+}
+
+.integration-log-list li {
+  margin-bottom: 0.25rem;
+}

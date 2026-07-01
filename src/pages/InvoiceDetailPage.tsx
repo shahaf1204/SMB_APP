@@ -1,14 +1,25 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
-import { getCatalogEntry } from '../integrations/catalog';
 import { formatCurrency } from '../lib/finance';
 import {
-  createProviderPaymentLink,
+  getExternalDocumentNumber,
+  getExternalPdfUrl,
+  getExternalProvider,
+  getPaymentLink,
+  normalizePaymentStatus,
+} from '../lib/integrations/invoiceHelpers';
+import {
+  buildIntegrationLog,
+  buildInvoicePatchFromDocument,
+  buildInvoicePatchFromPaymentLink,
+  buildPaymentTransaction,
+  createInvoicePaymentLink,
   getActiveFinanceConnection,
-  pushInvoiceToProvider,
-  whatsAppShareUrl,
-} from '../lib/integrations/client';
+  issueOfficialInvoice,
+  providerDisplayName,
+} from '../lib/integrations/service';
+import { whatsAppShareUrl } from '../lib/integrations/client';
 import { invoiceMailtoHref, resolveInvoiceClientEmail } from '../lib/invoices';
 import { useAppStore } from '../store/useAppStore';
 
@@ -20,10 +31,13 @@ export function InvoiceDetailPage() {
   const connections = useAppStore((s) => s.integrationConnections);
   const updateInvoiceStatus = useAppStore((s) => s.updateInvoiceStatus);
   const updateInvoice = useAppStore((s) => s.updateInvoice);
+  const addIntegrationLog = useAppStore((s) => s.addIntegrationLog);
+  const upsertPaymentTransaction = useAppStore((s) => s.upsertPaymentTransaction);
   const invoice = invoices.find((i) => i.id === id);
   const [emailDraft, setEmailDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
+  const [copyOk, setCopyOk] = useState(false);
 
   const financeConn = getActiveFinanceConnection(connections, business.id);
 
@@ -50,11 +64,16 @@ export function InvoiceDetailPage() {
   };
   const clientEmail = resolveInvoiceClientEmail(invoiceForContact, events);
   const mailtoHref = invoiceMailtoHref(invoiceForContact, business, events);
-  const providerName = invoice.provider
-    ? getCatalogEntry(invoice.provider)?.nameHe
+  const providerName = getExternalProvider(invoice)
+    ? providerDisplayName(getExternalProvider(invoice)!)
     : financeConn
-      ? getCatalogEntry(financeConn.provider)?.nameHe
+      ? providerDisplayName(financeConn.providerId)
       : null;
+  const docNumber = getExternalDocumentNumber(invoice) ?? String(invoice.invoiceNumber);
+  const pdfUrl = getExternalPdfUrl(invoice);
+  const paymentLink = getPaymentLink(invoice);
+  const paymentStatus = normalizePaymentStatus(invoice.paymentStatus);
+  const hasExternalDoc = Boolean(getExternalInvoiceId(invoice));
 
   const saveClientEmail = () => {
     const trimmed = emailDraft.trim();
@@ -68,30 +87,28 @@ export function InvoiceDetailPage() {
     setBusy(true);
     setActionMsg(null);
     try {
-      const result = await pushInvoiceToProvider({
+      const doc = await issueOfficialInvoice({
+        connection: financeConn,
         businessId: business.id,
-        connectionId: financeConn.id,
-        provider: financeConn.provider,
-        invoice: {
-          clientName: invoice.clientName,
-          clientEmail: invoice.clientEmail,
-          amount: invoice.amount,
-          dueDate: invoice.dueDate,
-          notes: invoice.notes,
-        },
+        invoice,
       });
       updateInvoice(invoice.id, {
-        provider: financeConn.provider,
-        providerDocumentId: result.providerDocumentId,
-        providerInvoiceNumber: result.providerInvoiceNumber,
-        officialPdfUrl: result.officialPdfUrl,
-        paymentUrl: result.paymentUrl,
-        paymentStatus: result.paymentUrl ? 'pending' : 'none',
-        providerSyncedAt: new Date().toISOString(),
+        ...buildInvoicePatchFromDocument(financeConn.providerId, doc),
         status: 'sent',
       });
-      setActionMsg('חשבונית הופקה אצל הספק');
+      addIntegrationLog(
+        buildIntegrationLog({
+          businessId: business.id,
+          connectionId: financeConn.id,
+          providerId: financeConn.providerId,
+          action: 'createInvoice',
+          status: 'success',
+          message: `הופקה חשבונית ${doc.externalDocumentNumber ?? doc.providerInvoiceNumber}`,
+        }),
+      );
+      setActionMsg('חשבונית רשמית הופקה בהצלחה');
     } catch (e) {
+      updateInvoice(invoice.id, { syncStatus: 'failed', syncError: e instanceof Error ? e.message : 'שגיאה' });
       setActionMsg(e instanceof Error ? e.message : 'שגיאה');
     } finally {
       setBusy(false);
@@ -99,20 +116,30 @@ export function InvoiceDetailPage() {
   };
 
   const handlePaymentLink = async () => {
-    if (!financeConn || !invoice.providerDocumentId) return;
+    if (!financeConn || !hasExternalDoc) return;
     setBusy(true);
     try {
-      const result = await createProviderPaymentLink({
-        connectionId: financeConn.id,
-        provider: financeConn.provider,
-        providerDocumentId: invoice.providerDocumentId,
-        amount: invoice.amount,
-      });
-      updateInvoice(invoice.id, {
-        paymentUrl: result.paymentUrl,
-        paymentTransactionId: result.providerTransactionId,
-        paymentStatus: 'pending',
-      });
+      const link = await createInvoicePaymentLink({ connection: financeConn, invoice });
+      updateInvoice(invoice.id, buildInvoicePatchFromPaymentLink(link));
+      upsertPaymentTransaction(
+        buildPaymentTransaction({
+          businessId: business.id,
+          invoiceId: invoice.id,
+          providerId: financeConn.providerId,
+          link,
+          amount: invoice.amount,
+        }),
+      );
+      addIntegrationLog(
+        buildIntegrationLog({
+          businessId: business.id,
+          connectionId: financeConn.id,
+          providerId: financeConn.providerId,
+          action: 'createPaymentLink',
+          status: 'success',
+          message: 'קישור תשלום נוצר',
+        }),
+      );
       setActionMsg('קישור תשלום נוצר');
     } catch (e) {
       setActionMsg(e instanceof Error ? e.message : 'שגיאה');
@@ -121,8 +148,19 @@ export function InvoiceDetailPage() {
     }
   };
 
-  const paymentLinkText = invoice.paymentUrl
-    ? `שלום ${invoice.clientName}, קישור לתשלום: ${invoice.paymentUrl}`
+  const copyPaymentLink = async () => {
+    if (!paymentLink) return;
+    try {
+      await navigator.clipboard.writeText(paymentLink);
+      setCopyOk(true);
+      setTimeout(() => setCopyOk(false), 2000);
+    } catch {
+      setActionMsg('לא הצלחנו להעתיק — העתיקו ידנית');
+    }
+  };
+
+  const paymentLinkText = paymentLink
+    ? `שלום ${invoice.clientName}, קישור לתשלום עבור חשבונית ${docNumber}: ${paymentLink}`
     : '';
 
   return (
@@ -132,17 +170,21 @@ export function InvoiceDetailPage() {
           <Link to="/invoices">← חזרה לחשבוניות</Link>
         </div>
 
-        {providerName && (
-          <p className="provider-badge-inline">ספק: {providerName}</p>
+        {providerName && <p className="provider-badge-inline">ספק: {providerName}</p>}
+        {invoice.syncStatus === 'synced' && (
+          <p className="field-hint">מסמך רשמי מסונכרן עם הספק</p>
+        )}
+        {paymentStatus === 'paid' && (
+          <p className="field-hint" style={{ color: 'var(--color-success-dark)' }}>
+            ✓ התשלום התקבל
+            {invoice.paidAt && ` · ${new Date(invoice.paidAt).toLocaleDateString('he-IL')}`}
+          </p>
         )}
 
         <article className="invoice-print card">
           <header className="invoice-print-header">
             <h1>{business.name}</h1>
-            <p>
-              חשבונית מס׳{' '}
-              {invoice.providerInvoiceNumber ?? invoice.invoiceNumber}
-            </p>
+            <p>חשבונית מס׳ {docNumber}</p>
             <p>תאריך הפקה: {new Date(invoice.issuedAt).toLocaleDateString('he-IL')}</p>
             <p>לתשלום עד: {new Date(invoice.dueDate).toLocaleDateString('he-IL')}</p>
           </header>
@@ -164,46 +206,39 @@ export function InvoiceDetailPage() {
 
         <div className="no-print invoice-actions-panel">
           {!financeConn ? (
-            <Link to="/settings/connections" className="btn btn-primary" style={{ width: '100%' }}>
-              חברו ספק חשבוניות
-            </Link>
+            <>
+              <p className="field-hint">חברי ספק חשבוניות כדי להפיק מסמך רשמי</p>
+              <Link to="/settings/connections" className="btn btn-primary" style={{ width: '100%' }}>
+                חיבור ספק
+              </Link>
+            </>
           ) : (
             <>
-              {!invoice.providerDocumentId && (
+              {!hasExternalDoc && (
                 <button
                   type="button"
                   className="btn btn-primary"
                   disabled={busy}
                   onClick={() => void handlePushToProvider()}
                 >
-                  הפקה אצל {providerName}
+                  הפקת חשבונית רשמית
                 </button>
               )}
-              {invoice.providerDocumentId && !invoice.paymentUrl && (
+              {hasExternalDoc && !paymentLink && (
                 <button
                   type="button"
                   className="btn btn-primary"
                   disabled={busy}
                   onClick={() => void handlePaymentLink()}
                 >
-                  צור קישור תשלום
+                  יצירת קישור לתשלום
                 </button>
               )}
-              {invoice.officialPdfUrl && (
-                <a
-                  href={invoice.officialPdfUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="btn btn-ghost"
-                >
-                  פתיחת PDF רשמי
-                </a>
-              )}
-              {invoice.paymentUrl && (
+              {paymentLink && (
                 <>
-                  <a href={invoice.paymentUrl} target="_blank" rel="noreferrer" className="btn btn-ghost">
-                    פתיחת קישור תשלום
-                  </a>
+                  <button type="button" className="btn btn-ghost" onClick={() => void copyPaymentLink()}>
+                    {copyOk ? 'הועתק ✓' : 'העתקת קישור'}
+                  </button>
                   <a
                     href={whatsAppShareUrl('', paymentLinkText)}
                     target="_blank"
@@ -212,12 +247,21 @@ export function InvoiceDetailPage() {
                   >
                     שליחה בוואטסאפ
                   </a>
+                  <a href={paymentLink} target="_blank" rel="noreferrer" className="btn btn-ghost">
+                    פתיחת קישור תשלום
+                  </a>
                 </>
+              )}
+              {pdfUrl && (
+                <a href={pdfUrl} target="_blank" rel="noreferrer" className="btn btn-ghost">
+                  פתיחת מסמך רשמי
+                </a>
               )}
             </>
           )}
 
           {actionMsg && <p className="field-hint">{actionMsg}</p>}
+          {invoice.syncError && <p className="import-feedback">{invoice.syncError}</p>}
 
           <div className="field" style={{ marginTop: '0.75rem' }}>
             <label htmlFor="inv-client-email">אימייל לקוח</label>
@@ -258,4 +302,11 @@ export function InvoiceDetailPage() {
       </div>
     </div>
   );
+}
+
+function getExternalInvoiceId(invoice: {
+  externalInvoiceId?: string;
+  providerDocumentId?: string;
+}) {
+  return invoice.externalInvoiceId ?? invoice.providerDocumentId;
 }

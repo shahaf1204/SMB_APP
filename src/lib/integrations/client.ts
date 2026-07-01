@@ -1,8 +1,15 @@
 /**
- * Client-side integration API — credentials never touch the browser storage.
+ * Client-side integration API — credentials never touch browser storage.
  */
-import type { IntegrationConnection, ProviderId, SyncResult } from '../../types/integrations';
-import type { FinanceDocumentResult, PaymentLinkResult } from '../../types/integrations';
+import type {
+  FinanceDocumentResult,
+  IntegrationConnection,
+  PaymentLinkResult,
+  ProviderId,
+  SyncResult,
+  WebhookPaymentUpdate,
+} from '../../types/integrations';
+import { normalizeIntegrationConnection } from '../../types/integrations';
 import {
   createLocalConnection,
   createLocalMockInvoice,
@@ -36,6 +43,10 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   return data;
 }
 
+function normalizeConnection(c: IntegrationConnection): IntegrationConnection {
+  return normalizeIntegrationConnection(c as IntegrationConnection & { provider?: ProviderId });
+}
+
 export async function connectProvider(params: {
   businessId: string;
   userId: string;
@@ -46,7 +57,7 @@ export async function connectProvider(params: {
   try {
     const data = await post<{ connection: IntegrationConnection }>('/connect', params);
     if (!data.connection?.id) throw new Error('Invalid connection response');
-    return data.connection;
+    return normalizeConnection(data.connection);
   } catch {
     return createLocalConnection(params);
   }
@@ -80,6 +91,18 @@ export async function syncProvider(params: {
   }
 }
 
+export async function testConnectionProvider(params: {
+  connectionId: string;
+  businessId: string;
+  provider: ProviderId;
+}): Promise<{ ok: boolean; message?: string; latencyMs?: number }> {
+  try {
+    return await post('/test-connection', params);
+  } catch {
+    return { ok: true, message: 'החיבור תקין (מקומי)' };
+  }
+}
+
 export async function pushInvoiceToProvider(params: {
   businessId: string;
   connectionId: string;
@@ -93,7 +116,14 @@ export async function pushInvoiceToProvider(params: {
   };
 }): Promise<FinanceDocumentResult> {
   try {
-    return await post('/invoice/push', params);
+    const result = await post<FinanceDocumentResult>('/invoice/push', params);
+    return {
+      ...result,
+      externalInvoiceId: result.externalInvoiceId ?? result.providerDocumentId ?? '',
+      externalDocumentNumber: result.externalDocumentNumber ?? result.providerInvoiceNumber ?? '',
+      externalPdfUrl: result.externalPdfUrl ?? result.officialPdfUrl,
+      paymentLink: result.paymentLink ?? result.paymentUrl,
+    };
   } catch {
     return createLocalMockInvoice(params.provider, params.invoice);
   }
@@ -106,9 +136,51 @@ export async function createProviderPaymentLink(params: {
   amount: number;
 }): Promise<PaymentLinkResult> {
   try {
-    return await post('/invoice/payment-link', params);
+    const result = await post<PaymentLinkResult>('/invoice/payment-link', params);
+    return {
+      ...result,
+      paymentLink: result.paymentLink ?? result.paymentUrl ?? '',
+      externalTransactionId: result.externalTransactionId ?? result.providerTransactionId ?? '',
+    };
   } catch {
     return createLocalPaymentLink(params.providerDocumentId, params.amount);
+  }
+}
+
+export async function simulateIntegrationWebhook(params: {
+  providerId: string;
+  invoiceId?: string;
+  externalInvoiceId?: string;
+  externalTransactionId?: string;
+  event: 'payment.success' | 'payment.failed';
+  amount?: number;
+}): Promise<WebhookPaymentUpdate> {
+  try {
+    return await post<WebhookPaymentUpdate>('/webhook/simulate', params);
+  } catch {
+    const paid = params.event === 'payment.success';
+    return {
+      processed: true,
+      duplicate: false,
+      invoiceId: params.invoiceId,
+      externalInvoiceId: params.externalInvoiceId,
+      externalTransactionId: params.externalTransactionId,
+      paymentStatus: paid ? 'paid' : 'failed',
+      paidAt: paid ? new Date().toISOString() : undefined,
+      providerId: params.providerId as ProviderId,
+      amount: params.amount,
+    };
+  }
+}
+
+export async function fetchIntegrationLogs(params: {
+  businessId: string;
+  limit?: number;
+}): Promise<{ logs: import('../../types/integrations').IntegrationLog[] }> {
+  try {
+    return await post('/logs', params);
+  } catch {
+    return { logs: [] };
   }
 }
 
@@ -126,17 +198,12 @@ export function formatLastSync(iso?: string): string {
   if (d.toDateString() === now.toDateString()) {
     return `היום ${d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}`;
   }
-  return d.toLocaleDateString('he-IL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString('he-IL', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }
 
-export function getActiveFinanceConnection(
-  connections: IntegrationConnection[],
-  businessId: string,
-): IntegrationConnection | undefined {
-  return connections.find(
-    (c) =>
-      c.businessId === businessId &&
-      c.category === 'finance' &&
-      c.connectionStatus === 'connected',
-  );
-}
+export { getActiveFinanceConnection } from './service';

@@ -42,6 +42,8 @@ export function snapshotFromState(state: AppState): AccountSnapshot {
     milestones: state.milestones,
     engagementSessions: state.engagementSessions,
     integrationConnections: state.integrationConnections,
+    integrationLogs: state.integrationLogs ?? [],
+    paymentTransactions: state.paymentTransactions ?? [],
     externalFormConnections: state.externalFormConnections,
     externalFormSubmissions: state.externalFormSubmissions,
     formNotifications: state.formNotifications,

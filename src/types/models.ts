@@ -1,4 +1,4 @@
-import type { IntegrationConnection } from './integrations';
+import type { IntegrationConnection, IntegrationLog } from './integrations';
 import type {
   ExternalFormConnection,
   ExternalFormSubmission,
@@ -202,7 +202,9 @@ export interface Lead {
   convertedToCustomerId?: string;
 }
 
-export type InvoicePaymentStatus = 'none' | 'pending' | 'paid' | 'failed' | 'cancelled';
+export type InvoicePaymentStatus = 'unpaid' | 'pending' | 'paid' | 'failed' | 'cancelled' | 'none';
+
+export type InvoiceSyncStatus = 'not_synced' | 'synced' | 'failed';
 
 export interface Invoice {
   id: string;
@@ -219,14 +221,45 @@ export interface Invoice {
   dueDate: string;
   status: InvoiceStatus;
   notes: string;
-  provider?: string;
-  providerDocumentId?: string;
-  providerInvoiceNumber?: string;
-  officialPdfUrl?: string;
-  paymentUrl?: string;
-  paymentTransactionId?: string;
+  /** External finance provider id */
+  externalProvider?: string;
+  externalInvoiceId?: string;
+  externalDocumentNumber?: string;
+  externalPdfUrl?: string;
   paymentStatus?: InvoicePaymentStatus;
+  paymentLink?: string;
+  paymentTransactionId?: string;
+  paidAt?: string;
+  syncStatus?: InvoiceSyncStatus;
+  syncError?: string;
+  /** @deprecated — use externalProvider */
+  provider?: string;
+  /** @deprecated — use externalInvoiceId */
+  providerDocumentId?: string;
+  /** @deprecated — use externalDocumentNumber */
+  providerInvoiceNumber?: string;
+  /** @deprecated — use externalPdfUrl */
+  officialPdfUrl?: string;
+  /** @deprecated — use paymentLink */
+  paymentUrl?: string;
+  /** @deprecated — use syncStatus */
   providerSyncedAt?: string;
+}
+
+export interface PaymentTransaction {
+  id: string;
+  businessId: string;
+  invoiceId: string;
+  clientId?: string;
+  providerId: string;
+  externalTransactionId: string;
+  amount: number;
+  currency: 'ILS';
+  status: 'pending' | 'paid' | 'failed' | 'cancelled';
+  paymentLink?: string;
+  rawPayload?: string;
+  createdAt: string;
+  paidAt?: string;
 }
 
 export interface UserSession {
@@ -311,6 +344,8 @@ export interface AppState {
   milestones: Milestone[];
   engagementSessions: EngagementSession[];
   integrationConnections: IntegrationConnection[];
+  integrationLogs: IntegrationLog[];
+  paymentTransactions: PaymentTransaction[];
   externalFormConnections: ExternalFormConnection[];
   externalFormSubmissions: ExternalFormSubmission[];
   formNotifications: FormActivityNotification[];

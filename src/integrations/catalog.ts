@@ -11,7 +11,8 @@ export const INTEGRATION_CATALOG: ProviderCatalogEntry[] = [
     authMethod: 'api_key',
     logoEmoji: '🌿',
     brandColor: '#22c55e',
-    available: true,
+    available: false,
+    comingSoon: true,
     credentialFields: 'dual',
     connectSteps: [
       'מפתח API לא קיים באפליקציה הניידת — יש להיכנס מהדפדפן',
@@ -31,7 +32,8 @@ export const INTEGRATION_CATALOG: ProviderCatalogEntry[] = [
     authMethod: 'api_key',
     logoEmoji: '📊',
     brandColor: '#3b82f6',
-    available: true,
+    available: false,
+    comingSoon: true,
   },
   {
     id: 'grow',
@@ -42,7 +44,8 @@ export const INTEGRATION_CATALOG: ProviderCatalogEntry[] = [
     authMethod: 'api_key',
     logoEmoji: '💳',
     brandColor: '#6366f1',
-    available: true,
+    available: false,
+    comingSoon: true,
   },
   {
     id: 'cardcom',
@@ -53,7 +56,8 @@ export const INTEGRATION_CATALOG: ProviderCatalogEntry[] = [
     authMethod: 'api_key',
     logoEmoji: '💳',
     brandColor: '#0ea5e9',
-    available: true,
+    available: false,
+    comingSoon: true,
   },
   {
     id: 'meshulam',
@@ -86,18 +90,25 @@ export const INTEGRATION_CATALOG: ProviderCatalogEntry[] = [
     authMethod: 'api_key',
     logoEmoji: '💳',
     brandColor: '#ef4444',
-    available: true,
+    available: false,
+    comingSoon: true,
   },
   {
-    id: 'mock',
+    id: 'mock_finance',
     category: 'finance',
     name: 'Mock Finance',
-    nameHe: 'ספק דמו (פיתוח)',
-    description: 'סימולציה לבדיקות — לא לשימוש production',
+    nameHe: 'ספק בדיקות',
+    description: 'סימולציה מלאה — חשבוניות, PDF וקישורי תשלום',
     authMethod: 'api_key',
     logoEmoji: '🧪',
-    brandColor: '#94a3b8',
+    brandColor: '#6366f1',
     available: true,
+    mockConnect: true,
+    connectSteps: [
+      'לחצו «חיבור ספק בדיקות» — אין צורך במפתח API',
+      'לאחר החיבור תוכלו להפיק חשבונית רשמית (דמו)',
+      'ניתן ליצור קישור תשלום ולסמulate תשלום מוצלח',
+    ],
   },
   // Calendar
   {
@@ -141,14 +152,15 @@ export const INTEGRATION_CATALOG: ProviderCatalogEntry[] = [
   // Marketing
   {
     id: 'meta_leads',
-    category: 'marketing',
+    category: 'leads',
     name: 'Meta Lead Ads',
-    nameHe: 'Meta Lead Ads',
+    nameHe: 'Meta Leads',
     description: 'ייבוא לידים מפייסבוק ואינסטagram',
     authMethod: 'oauth',
     logoEmoji: '📣',
     brandColor: '#1877f2',
-    available: true,
+    available: false,
+    comingSoon: true,
   },
   {
     id: 'instagram',
@@ -220,16 +232,33 @@ export const INTEGRATION_CATALOG: ProviderCatalogEntry[] = [
 ];
 
 export const CATEGORY_LABELS: Record<string, string> = {
-  finance: 'כספים וחשבוניות',
+  finance: 'כספים — חשבוניות וסליקה',
+  leads: 'לידים',
   calendar: 'יומן',
-  marketing: 'שיווק ולידים',
   communication: 'תקשורת',
+  marketing: 'שיווק ולידים',
 };
 
 export function getCatalogEntry(providerId: string): ProviderCatalogEntry | undefined {
+  if (providerId === 'mock') return INTEGRATION_CATALOG.find((p) => p.id === 'mock_finance');
   return INTEGRATION_CATALOG.find((p) => p.id === providerId);
 }
 
 export function catalogByCategory(category: string): ProviderCatalogEntry[] {
+  if (category === 'leads') {
+    return INTEGRATION_CATALOG.filter((p) => p.category === 'leads' || p.category === 'marketing');
+  }
   return INTEGRATION_CATALOG.filter((p) => p.category === category);
 }
+
+/** Featured providers for integrations hub */
+export const FEATURED_PROVIDER_IDS = [
+  'mock_finance',
+  'morning',
+  'icount',
+  'grow',
+  'cardcom',
+  'meta_leads',
+  'google_calendar',
+  'whatsapp_business',
+] as const;
