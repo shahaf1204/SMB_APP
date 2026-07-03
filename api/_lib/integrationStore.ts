@@ -6,6 +6,8 @@ export interface StoredCredentials {
   businessId: string;
   providerId: string;
   apiKeyEncrypted?: string;
+  /** Morning / Green Invoice API base URL (sandbox vs production) */
+  apiBaseUrl?: string;
   accessTokenEncrypted?: string;
   refreshTokenEncrypted?: string;
   expiresAt?: string;

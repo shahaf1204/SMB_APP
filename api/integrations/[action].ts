@@ -10,10 +10,13 @@ import {
 } from '../_lib/integrationServer';
 import {
   appendIntegrationLog,
+  decryptApiKey,
   encryptApiKey,
+  getCredentials,
   getIntegrationLogs,
   storeCredentials,
 } from '../_lib/integrationStore';
+import { morningAuthFromStored, resolveMorningAuth, testMorningAuth } from '../_lib/morningApi';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   const action = String(req.query.action ?? '').trim();
@@ -50,6 +53,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 }
 
 async function handleConnect(req: VercelRequest, res: VercelResponse): Promise<void> {
+  try {
   const body = req.body as {
     businessId?: string;
     userId?: string;
@@ -68,6 +72,12 @@ async function handleConnect(req: VercelRequest, res: VercelResponse): Promise<v
     return;
   }
 
+  let morningBaseUrl: string | undefined;
+  if (body.provider === 'morning' && body.apiKey?.trim()) {
+    const auth = await resolveMorningAuth(body.apiKey.trim());
+    morningBaseUrl = auth.baseUrl;
+  }
+
   const connection = createConnection({
     businessId: body.businessId,
     userId: body.userId,
@@ -76,12 +86,17 @@ async function handleConnect(req: VercelRequest, res: VercelResponse): Promise<v
     accountLabel: body.accountLabel,
   });
 
+  if (morningBaseUrl) {
+    connection.mode = morningBaseUrl.includes('sandbox') ? 'sandbox' : 'production';
+  }
+
   if (body.apiKey?.trim()) {
     storeCredentials({
       connectionId: connection.id,
       businessId: body.businessId,
       providerId: connection.providerId,
       apiKeyEncrypted: encryptApiKey(body.apiKey.trim()),
+      apiBaseUrl: morningBaseUrl,
     });
   }
 
@@ -97,6 +112,9 @@ async function handleConnect(req: VercelRequest, res: VercelResponse): Promise<v
   );
 
   res.status(200).json({ connection });
+  } catch (e) {
+    res.status(400).json({ error: e instanceof Error ? e.message : 'Connect failed' });
+  }
 }
 
 async function handleDisconnect(req: VercelRequest, res: VercelResponse): Promise<void> {
@@ -149,10 +167,24 @@ async function handleLogs(req: VercelRequest, res: VercelResponse): Promise<void
 }
 
 async function handleTestConnection(req: VercelRequest, res: VercelResponse): Promise<void> {
-  const { provider } = req.body as { provider?: string; connectionId?: string; businessId?: string };
+  const { provider, connectionId } = req.body as {
+    provider?: string;
+    connectionId?: string;
+    businessId?: string;
+  };
   if (!provider || !isKnownProvider(provider)) {
     res.status(400).json({ error: 'Missing or unknown provider' });
     return;
+  }
+
+  if (provider === 'morning' && connectionId) {
+    const creds = getCredentials(connectionId);
+    if (creds?.apiKeyEncrypted) {
+      const auth = morningAuthFromStored(decryptApiKey(creds.apiKeyEncrypted), creds.apiBaseUrl);
+      const result = await testMorningAuth(auth);
+      res.status(200).json(result);
+      return;
+    }
   }
 
   res.status(200).json(testConnection(provider));

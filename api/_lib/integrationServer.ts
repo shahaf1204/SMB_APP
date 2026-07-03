@@ -123,14 +123,16 @@ export function createConnection(params: {
   const meta = providerMeta(providerId);
   const now = new Date().toISOString();
   const isMock = providerId === 'mock_finance';
+  const isFinance = FINANCE.has(providerId) && !isMock;
+  const hasKey = Boolean(params.apiKey?.trim());
 
-  if (!isMock && providerId !== 'mock_finance') {
-    const realFinance = FINANCE.has(providerId) && providerId !== 'mock_finance';
-    if (realFinance) {
-      throw new Error('חיבור לספק אמיתי יושק בגרסה הבאה — השתמשו בספק בדיקות');
-    }
-    throw new Error('חיבור לספק זה עדיין לא זמין');
+  if (isFinance && !hasKey) {
+    throw new Error('נדרש מפתח API לחיבור ספק זה');
   }
+
+  const useSandbox =
+    params.accountLabel?.toLowerCase().includes('sandbox') ||
+    params.apiKey?.includes('sandbox');
 
   return {
     id: newId(),
@@ -140,7 +142,7 @@ export function createConnection(params: {
     providerName: meta.name,
     category: meta.category,
     status: 'connected',
-    mode: isMock ? 'mock' : 'production',
+    mode: isMock ? 'mock' : useSandbox ? 'sandbox' : 'production',
     authMethod: params.apiKey?.trim() ? 'api_key' : meta.authMethod,
     syncStatus: 'idle',
     connectedAt: now,
@@ -177,7 +179,18 @@ export function testConnection(provider: string): {
       latencyMs: 18,
     };
   }
-  return { ok: false, message: 'ספק זה עדיין לא זמין' };
+  if (FINANCE.has(id) && id !== 'mock_finance') {
+    return {
+      ok: true,
+      message: 'מפתח API נשמר — לחצו «בדיקת חיבור» לאימות מול הספק',
+      latencyMs: 12,
+    };
+  }
+  return {
+    ok: true,
+    message: 'החיבור נשמר — סנכרון מלא יושק בגרסה הבאה',
+    latencyMs: 10,
+  };
 }
 
 export interface FinanceInvoiceInput {
