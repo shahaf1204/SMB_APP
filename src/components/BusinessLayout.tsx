@@ -6,6 +6,7 @@ import { useCrmSync } from '../hooks/useCrmSync';
 import { useIntegrationSync } from '../hooks/useIntegrationSync';
 import { useExternalFormSync } from '../hooks/useExternalFormSync';
 import { FormNotificationBanner } from './externalForms/FormNotificationBanner';
+import { ExternalFormSyncIndicator } from './externalForms/ExternalFormSyncIndicator';
 import { useLeadSheetAutoSync } from '../hooks/useLeadSheetAutoSync';
 import { runEventReminderCheck } from '../lib/eventReminders';
 import { useAppStore } from '../store/useAppStore';
@@ -44,6 +45,7 @@ export function BusinessLayout() {
   return (
     <>
       <AutoSaveIndicator />
+      <ExternalFormSyncIndicator />
       <FormNotificationBanner />
       {showSearch && (
         <div className="app-global-search-bar">

@@ -3,6 +3,12 @@ import {
   pollExternalFormSubmissions,
 } from './clientApi';
 
+export interface PendingSubmissionProcessResult {
+  pendingCount: number;
+  processedCount: number;
+  createdActivityIds: string[];
+}
+
 export async function processPendingExternalFormSubmissions(
   businessId: string,
   processSubmission: (params: {
@@ -11,10 +17,10 @@ export async function processPendingExternalFormSubmissions(
     externalSubmissionId?: string;
     submissionId?: string;
   }) => string | null,
-): Promise<number> {
+): Promise<PendingSubmissionProcessResult> {
   const pending = await pollExternalFormSubmissions(businessId);
   const ackIds: string[] = [];
-  let created = 0;
+  const createdActivityIds: string[] = [];
 
   for (const item of pending) {
     const eventId = processSubmission({
@@ -25,10 +31,15 @@ export async function processPendingExternalFormSubmissions(
     });
     if (eventId) {
       ackIds.push(item.id);
-      created += 1;
+      createdActivityIds.push(eventId);
     }
   }
 
   if (ackIds.length) await acknowledgeExternalFormSubmissions(ackIds);
-  return created;
+
+  return {
+    pendingCount: pending.length,
+    processedCount: createdActivityIds.length,
+    createdActivityIds,
+  };
 }

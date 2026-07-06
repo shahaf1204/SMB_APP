@@ -1938,6 +1938,42 @@ a {
   background: var(--color-success);
 }
 
+.external-form-sync-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0 0 0.5rem;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #4338ca;
+  background: #eef2ff;
+  border-radius: 8px;
+}
+
+.external-form-sync-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #6366f1;
+}
+
+.external-form-sync-dot--busy {
+  animation: external-form-sync-pulse 1s ease-in-out infinite;
+}
+
+@keyframes external-form-sync-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
 .auto-save-dot-cloud {
   background: var(--color-primary);
 }
