@@ -2,22 +2,45 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { QueuedFormSubmission, StoredFormConnection } from './externalFormsStore';
 
 let admin: SupabaseClient | null | undefined;
+let envStatusLogged = false;
+
+/** Server-only Supabase credentials (Vercel env — not VITE_* client vars). */
+function getServerSupabaseEnv(): { url: string; key: string } | null {
+  const url = process.env.SUPABASE_URL?.trim();
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  if (!url || !key) return null;
+  return { url, key };
+}
+
+function logEnvStatusOnce(): void {
+  if (envStatusLogged) return;
+  envStatusLogged = true;
+  const env = getServerSupabaseEnv();
+  console.log('[external-forms-persistence] env', {
+    SUPABASE_URL: Boolean(process.env.SUPABASE_URL?.trim()),
+    SUPABASE_SERVICE_ROLE_KEY: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()),
+    enabled: Boolean(env),
+  });
+}
 
 export function isExternalFormsPersistenceEnabled(): boolean {
-  const url = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  return Boolean(url && key);
+  logEnvStatusOnce();
+  return getServerSupabaseEnv() !== null;
 }
 
 function getAdminOptional(): SupabaseClient | null {
   if (admin !== undefined) return admin;
-  if (!isExternalFormsPersistenceEnabled()) {
+
+  logEnvStatusOnce();
+  const env = getServerSupabaseEnv();
+  if (!env) {
     admin = null;
     return null;
   }
-  const url = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL!;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  admin = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+
+  admin = createClient(env.url, env.key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
   return admin;
 }
 
