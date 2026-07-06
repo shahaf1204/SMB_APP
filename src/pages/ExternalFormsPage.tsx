@@ -12,6 +12,7 @@ import { formatDate } from '../lib/finance';
 import { buildFormsAppMockPayload } from '../lib/externalForms/mockSubmission';
 import { sendTestWebhook } from '../lib/externalForms/clientApi';
 import { processPendingExternalFormSubmissions } from '../lib/externalForms/syncPendingSubmissions';
+import { ExternalFormPipelineDebugPanel } from '../components/externalForms/ExternalFormPipelineDebugPanel';
 
 export function ExternalFormsPage() {
   const business = useAppStore((s) => s.business)!;
@@ -46,13 +47,16 @@ export function ExternalFormsPage() {
             actionTo="/settings/external-forms/new"
           />
         ) : (
-          <ul className="external-form-list">
-            {connections.map((conn) => (
-              <li key={conn.id}>
-                <FormConnectionCard connection={conn} />
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className="external-form-list">
+              {connections.map((conn) => (
+                <li key={conn.id}>
+                  <FormConnectionCard connection={conn} />
+                </li>
+              ))}
+            </ul>
+            <ExternalFormPipelineDebugPanel />
+          </>
         )}
       </div>
       <BottomNav />

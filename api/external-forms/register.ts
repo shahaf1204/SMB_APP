@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { registerFormConnection } from '../_lib/externalFormsStore';
+import { registerFormConnectionAsync } from '../_lib/externalFormsStore';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (req.method !== 'POST') {
@@ -26,7 +26,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       return;
     }
 
-    registerFormConnection({
+    await registerFormConnectionAsync({
       id: body.id,
       businessId: body.businessId,
       ownerId: body.ownerId,

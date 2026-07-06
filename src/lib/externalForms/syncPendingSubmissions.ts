@@ -2,6 +2,7 @@ import {
   acknowledgeExternalFormSubmissions,
   pollExternalFormSubmissions,
 } from './clientApi';
+import { logPipelineStage, patchPipelineDebug } from './pipelineDebug';
 
 export interface PendingSubmissionProcessResult {
   pendingCount: number;
@@ -18,11 +19,33 @@ export async function processPendingExternalFormSubmissions(
     submissionId?: string;
   }) => string | null,
 ): Promise<PendingSubmissionProcessResult> {
-  const pending = await pollExternalFormSubmissions(businessId);
+  const { submissions: pending, debug } = await pollExternalFormSubmissions(businessId);
+
+  logPipelineStage('PENDING_POLLED', {
+    lastPollAt: new Date().toISOString(),
+    lastPendingCount: pending.length,
+    storageBackend: debug.storage,
+    lastWebhookReceivedAt: debug.lastWebhookAt,
+    lastWebhookPreview: debug.lastWebhookPreview,
+  });
+
+  patchPipelineDebug({
+    lastPollAt: new Date().toISOString(),
+    lastPendingCount: pending.length,
+    storageBackend: debug.storage,
+    lastWebhookReceivedAt: debug.lastWebhookAt,
+    lastWebhookPreview: debug.lastWebhookPreview,
+  });
+
   const ackIds: string[] = [];
   const createdActivityIds: string[] = [];
 
   for (const item of pending) {
+    logPipelineStage('SUBMISSION_PROCESSING_STARTED', {
+      lastProcessingStartedAt: new Date().toISOString(),
+      payload: item.rawPayload,
+    });
+
     const eventId = processSubmission({
       connectionId: item.connectionId,
       rawPayload: item.rawPayload,
@@ -32,6 +55,7 @@ export async function processPendingExternalFormSubmissions(
     if (eventId) {
       ackIds.push(item.id);
       createdActivityIds.push(eventId);
+      logPipelineStage('ACTIVITY_CREATED', { lastCreatedActivityId: eventId });
     }
   }
 

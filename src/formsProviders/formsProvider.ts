@@ -39,6 +39,24 @@ export function flattenPayloadFields(payload: unknown, prefix = ''): Record<stri
   return out;
 }
 
+function normalizeFieldKey(key: string): string {
+  return key.trim().toLowerCase();
+}
+
+function lookupRawField(
+  rawFields: Record<string, string>,
+  externalField: string,
+): string | undefined {
+  const direct = rawFields[externalField]?.trim();
+  if (direct) return direct;
+
+  const target = normalizeFieldKey(externalField);
+  for (const [key, value] of Object.entries(rawFields)) {
+    if (normalizeFieldKey(key) === target && value.trim()) return value.trim();
+  }
+  return undefined;
+}
+
 export function applyMappingToFields(
   rawFields: Record<string, string>,
   fieldMapping: { externalField: string; appField: string }[],
@@ -50,16 +68,22 @@ export function applyMappingToFields(
   const mappedKeys = new Set<string>();
 
   for (const { externalField, appField } of fieldMapping) {
-    const val = rawFields[externalField]?.trim();
+    const val = lookupRawField(rawFields, externalField);
     if (val) {
-      fields[appField as keyof typeof fields] = val;
+      if (!fields[appField as keyof typeof fields]) {
+        fields[appField as keyof typeof fields] = val;
+      }
       mappedKeys.add(externalField);
+      for (const [key] of Object.entries(rawFields)) {
+        if (normalizeFieldKey(key) === normalizeFieldKey(externalField)) mappedKeys.add(key);
+      }
     }
   }
 
   const unmapped: Record<string, string> = {};
   for (const [key, value] of Object.entries(rawFields)) {
-    if (!mappedKeys.has(key) && value.trim()) unmapped[key] = value.trim();
+    const used = [...mappedKeys].some((m) => normalizeFieldKey(m) === normalizeFieldKey(key));
+    if (!used && value.trim()) unmapped[key] = value.trim();
   }
 
   return {

@@ -2,6 +2,13 @@ import type { ExternalFormConnection } from '../../types/externalForms';
 
 const API = '/api/external-forms';
 
+export interface PollDebugMeta {
+  storage: 'supabase' | 'memory';
+  pendingCount: number;
+  lastWebhookAt: string | null;
+  lastWebhookPreview: string | null;
+}
+
 export async function registerExternalFormConnection(
   connection: ExternalFormConnection,
 ): Promise<void> {
@@ -27,25 +34,47 @@ export async function registerExternalFormConnection(
   }
 }
 
-export async function pollExternalFormSubmissions(businessId: string): Promise<
-  Array<{
+export async function pollExternalFormSubmissions(businessId: string): Promise<{
+  submissions: Array<{
     id: string;
     connectionId: string;
     provider: ExternalFormConnection['provider'];
     externalSubmissionId?: string;
     rawPayload: unknown;
-  }>
-> {
+  }>;
+  debug: PollDebugMeta;
+}> {
   const res = await fetch(`${API}/poll?businessId=${encodeURIComponent(businessId)}`);
-  if (!res.ok) return [];
-  const data = (await res.json()) as { submissions?: Array<{
-    id: string;
-    connectionId: string;
-    provider: ExternalFormConnection['provider'];
-    externalSubmissionId?: string;
-    rawPayload: unknown;
-  }> };
-  return data.submissions ?? [];
+  if (!res.ok) {
+    return {
+      submissions: [],
+      debug: {
+        storage: 'memory',
+        pendingCount: 0,
+        lastWebhookAt: null,
+        lastWebhookPreview: null,
+      },
+    };
+  }
+  const data = (await res.json()) as {
+    submissions?: Array<{
+      id: string;
+      connectionId: string;
+      provider: ExternalFormConnection['provider'];
+      externalSubmissionId?: string;
+      rawPayload: unknown;
+    }>;
+    debug?: PollDebugMeta;
+  };
+  return {
+    submissions: data.submissions ?? [],
+    debug: data.debug ?? {
+      storage: 'memory',
+      pendingCount: data.submissions?.length ?? 0,
+      lastWebhookAt: null,
+      lastWebhookPreview: null,
+    },
+  };
 }
 
 export async function acknowledgeExternalFormSubmissions(ids: string[]): Promise<void> {

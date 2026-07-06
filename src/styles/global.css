@@ -1964,6 +1964,24 @@ a {
   animation: external-form-sync-pulse 1s ease-in-out infinite;
 }
 
+.external-form-debug-panel {
+  margin-top: 1rem;
+  border: 1px dashed #c7d2fe;
+  background: #f8fafc;
+}
+
+.external-form-debug-list pre {
+  margin: 0.35rem 0 0;
+  padding: 0.5rem;
+  font-size: 0.65rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: #fff;
+  border-radius: 6px;
+  max-height: 160px;
+  overflow: auto;
+}
+
 @keyframes external-form-sync-pulse {
   0%,
   100% {

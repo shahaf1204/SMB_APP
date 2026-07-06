@@ -1,5 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { acknowledgeSubmissions, getPendingSubmissions } from '../_lib/externalFormsStore';
+import {
+  acknowledgeSubmissionsAsync,
+  getPendingSubmissionsAsync,
+  getServerPipelineDebug,
+} from '../_lib/externalFormsStore';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (req.method === 'GET') {
@@ -8,7 +12,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       res.status(400).json({ error: 'Missing businessId' });
       return;
     }
-    res.status(200).json({ submissions: getPendingSubmissions(businessId) });
+
+    const submissions = await getPendingSubmissionsAsync(businessId);
+    const debug = await getServerPipelineDebug(businessId);
+
+    console.log('[PENDING_POLLED]', {
+      businessId,
+      count: submissions.length,
+      storage: debug.storage,
+      timestamp: new Date().toISOString(),
+    });
+
+    res.status(200).json({ submissions, debug });
     return;
   }
 
@@ -18,7 +33,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       res.status(400).json({ error: 'Missing ids' });
       return;
     }
-    acknowledgeSubmissions(ids);
+    await acknowledgeSubmissionsAsync(ids);
     res.status(200).json({ ok: true });
     return;
   }

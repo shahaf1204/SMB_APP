@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { processWebhookPayload } from './externalFormsStore';
+import { processWebhookPayloadAsync } from './externalFormsStore';
 
 function queryParam(req: VercelRequest, key: string): string | undefined {
   const q = req.query[key];
@@ -80,7 +80,12 @@ export async function handleFormsWebhook(
   const headerSecret =
     typeof req.headers['x-form-secret'] === 'string' ? req.headers['x-form-secret'] : undefined;
 
-  const result = processWebhookPayload(connectionId, secret, req.body, headerSecret);
+  const result = await processWebhookPayloadAsync(
+    connectionId,
+    secret,
+    req.body,
+    headerSecret,
+  );
 
   res.status(result.status).json(result.body);
 }

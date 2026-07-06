@@ -66,6 +66,8 @@ import {
 } from '../lib/externalForms/formAutomationService';
 import { normalizeSubmission } from '../lib/externalForms/connectionWebhook';
 import { registerExternalFormConnection } from '../lib/externalForms/clientApi';
+import { logPipelineStage } from '../lib/externalForms/pipelineDebug';
+import { getExternalFormProvider } from '../formsProviders';
 
 interface AppActions {
   register: (
@@ -1132,22 +1134,45 @@ export const useAppStore = create<Store>()(
       processExternalFormSubmission: (params) => {
         const business = get().business;
         const user = get().user;
-        if (!business || !user) return null;
+        if (!business || !user) {
+          logPipelineStage('SUBMISSION_FAILED', {
+            error: 'No business or user session',
+            payload: params.rawPayload,
+          });
+          return null;
+        }
 
         const connection = get().externalFormConnections.find(
           (c) => c.id === params.connectionId,
         );
-        if (!connection) return null;
+        if (!connection) {
+          logPipelineStage('SUBMISSION_FAILED', {
+            error: `Connection not found locally: ${params.connectionId}`,
+            payload: params.rawPayload,
+          });
+          return null;
+        }
 
         const now = new Date().toISOString();
         const submissionId = params.submissionId ?? createId();
         let normalized: NormalizedFormPayload;
         try {
+          const provider = getExternalFormProvider(connection.provider);
+          const rawFieldKeys = Object.keys(provider.extractFields(params.rawPayload));
           normalized = normalizeSubmission(connection, params.rawPayload);
           if (params.externalSubmissionId) {
             normalized.externalSubmissionId = params.externalSubmissionId;
           }
+          logPipelineStage('NORMALIZED_FIELDS', {
+            lastNormalizedFields: normalized.fields as Record<string, string>,
+            lastRawFieldKeys: rawFieldKeys,
+          });
         } catch (e) {
+          const errMsg = e instanceof Error ? e.message : 'Mapping failed';
+          logPipelineStage('SUBMISSION_FAILED', {
+            error: errMsg,
+            payload: params.rawPayload,
+          });
           const failed: ExternalFormSubmission = {
             id: submissionId,
             businessId: business.id,
@@ -1197,8 +1222,14 @@ export const useAppStore = create<Store>()(
             userId: user.id,
           });
 
+          logPipelineStage('ACTIVITY_PREPARED', {
+            lastNormalizedFields: normalized.fields as Record<string, string>,
+          });
+
           const eventId = get().addEvent(event, values);
           if (!eventId) throw new Error('יצירת פעילות נכשלה');
+
+          logPipelineStage('ACTIVITY_CREATED', { lastCreatedActivityId: eventId });
 
           const phone = normalized.fields.clientPhone?.trim();
           const email = normalized.fields.clientEmail?.trim();
@@ -1270,6 +1301,11 @@ export const useAppStore = create<Store>()(
         } catch (e) {
           const errMsg = e instanceof Error ? e.message : 'Create activity failed';
           logAutomationError('processSubmission', errMsg);
+          logPipelineStage('SUBMISSION_FAILED', {
+            error: errMsg,
+            payload: params.rawPayload,
+            lastNormalizedFields: normalized.fields as Record<string, string>,
+          });
           const failed: ExternalFormSubmission = {
             id: submissionId,
             businessId: business.id,
