@@ -61,9 +61,9 @@ import type {
   NormalizedFormPayload,
 } from '../types/externalForms';
 import {
-  buildEventFromSubmission,
-  buildEventValuesForSubmission,
-} from '../lib/externalForms/processSubmission';
+  prepareActivityFromFormSubmission,
+  logAutomationError,
+} from '../lib/externalForms/formAutomationService';
 import { normalizeSubmission } from '../lib/externalForms/connectionWebhook';
 import { registerExternalFormConnection } from '../lib/externalForms/clientApi';
 
@@ -1182,7 +1182,7 @@ export const useAppStore = create<Store>()(
         if (dup?.createdActivityId) return dup.createdActivityId;
 
         try {
-          const { event, categoryInputs, clientKey } = buildEventFromSubmission({
+          const { event, values, clientKey } = prepareActivityFromFormSubmission({
             connection,
             submission: {
               id: submissionId,
@@ -1197,13 +1197,6 @@ export const useAppStore = create<Store>()(
             userId: user.id,
           });
 
-          const values = buildEventValuesForSubmission(
-            '',
-            business.id,
-            user.id,
-            get().categories,
-            categoryInputs,
-          );
           const eventId = get().addEvent(event, values);
           if (!eventId) throw new Error('יצירת פעילות נכשלה');
 
@@ -1275,6 +1268,8 @@ export const useAppStore = create<Store>()(
           });
           return eventId;
         } catch (e) {
+          const errMsg = e instanceof Error ? e.message : 'Create activity failed';
+          logAutomationError('processSubmission', errMsg);
           const failed: ExternalFormSubmission = {
             id: submissionId,
             businessId: business.id,
@@ -1284,7 +1279,7 @@ export const useAppStore = create<Store>()(
             rawPayload: params.rawPayload,
             normalizedPayload: normalized,
             status: 'failed',
-            errorMessage: e instanceof Error ? e.message : 'Create activity failed',
+            errorMessage: errMsg,
             createdAt: now,
             updatedAt: now,
           };

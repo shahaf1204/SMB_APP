@@ -75,7 +75,7 @@ import { SettingsHubPage } from './pages/SettingsHubPage';
 
 import { ExternalFormsPage } from './pages/ExternalFormsPage';
 
-import { ExternalFormWizardPage } from './pages/ExternalFormWizardPage';
+import { ExternalFormConnectPage } from './pages/ExternalFormConnectPage';
 
 import { ExternalFormManagePage } from './pages/ExternalFormManagePage';
 
@@ -133,7 +133,7 @@ export default function App() {
 
           <Route path="/settings/external-forms" element={<ExternalFormsPage />} />
 
-          <Route path="/settings/external-forms/new" element={<ExternalFormWizardPage />} />
+          <Route path="/settings/external-forms/new" element={<ExternalFormConnectPage />} />
 
           <Route path="/settings/external-forms/:id" element={<ExternalFormManagePage />} />
 

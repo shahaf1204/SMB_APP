@@ -1,19 +1,38 @@
-{
-  "name": "ניהול עסק",
-  "short_name": "SMB-APP",
-  "description": "ניהול אירועים, לידים וחשבוניות לעסק קטן",
-  "start_url": "/dashboard",
-  "display": "standalone",
-  "background_color": "#f0f4ff",
-  "theme_color": "#6366f1",
-  "lang": "he",
-  "dir": "rtl",
-  "icons": [
-    {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    }
-  ]
-}
+{
+
+  "name": "ניהול עסק",
+
+  "short_name": "SMB-APP",
+
+  "description": "ניהול אירועים, לידים וחשבוניות לעסק קטן",
+
+  "start_url": "/dashboard",
+
+  "display": "standalone",
+
+  "background_color": "#f0f4ff",
+
+  "theme_color": "#6366f1",
+
+  "lang": "he",
+
+  "dir": "rtl",
+
+  "icons": [
+
+    {
+
+      "src": "/icon.svg",
+
+      "sizes": "any",
+
+      "type": "image/svg+xml",
+
+      "purpose": "any"
+
+    }
+
+  ]
+
+}
+

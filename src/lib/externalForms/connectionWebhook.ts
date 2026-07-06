@@ -13,7 +13,11 @@ export function buildWebhookUrl(connectionId: string, secretKey: string, origin?
   const base =
     origin ??
     (typeof window !== 'undefined' ? window.location.origin : 'https://smb-app-gray.vercel.app');
-  return `${base}/api/webhooks/forms/${connectionId}?secret=${encodeURIComponent(secretKey)}`;
+  const params = new URLSearchParams({
+    connectionId,
+    secret: secretKey,
+  });
+  return `${base}/api/webhooks/forms?${params.toString()}`;
 }
 
 export function normalizeSubmission(

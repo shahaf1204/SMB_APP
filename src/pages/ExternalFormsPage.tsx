@@ -1,14 +1,17 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FileInput } from 'lucide-react';
 import { BottomNav } from '../components/BottomNav';
 import { EmptyState } from '../components/ui/EmptyState';
 import {
-  EXTERNAL_FORM_ACTIVITY_LABELS,
   EXTERNAL_FORM_PROVIDER_LABELS,
   type ExternalFormConnection,
 } from '../types/externalForms';
 import { useAppStore } from '../store/useAppStore';
 import { formatDate } from '../lib/finance';
+import { buildFormsAppMockPayload } from '../lib/externalForms/mockSubmission';
+import { sendTestWebhook } from '../lib/externalForms/clientApi';
+import { processPendingExternalFormSubmissions } from '../lib/externalForms/syncPendingSubmissions';
 
 export function ExternalFormsPage() {
   const business = useAppStore((s) => s.business)!;
@@ -26,22 +29,20 @@ export function ExternalFormsPage() {
           <div>
             <h1 className="page-title">טפסים חיצוניים</h1>
             <p className="page-subtitle">
-              חברי טפסים קיימים כדי שכל מילוי טופס ייצור פעילות אוטומטית באפליקציה
+              חברי טפסים מ-forms.app — כל מילוי ייצור פעילות אוטומטית
             </p>
           </div>
-          {connections.length > 0 && (
-            <Link to="/settings/external-forms/new" className="btn btn-primary btn-sm">
-              + חדש
-            </Link>
-          )}
+          <Link to="/settings/external-forms/new" className="btn btn-primary btn-sm">
+            + חיבור טופס
+          </Link>
         </div>
 
         {connections.length === 0 ? (
           <EmptyState
             icon={FileInput}
-            title="עדיין לא חיברת טפסים חיצוניים"
-            message="תוכל/י לחבר טופס קיים כדי שכל מילוי טופס ייצור פעילות אוטומטית באפליקציה"
-            actionLabel="חיבור טופס חדש"
+            title="עדיין לא חיברת טפסים"
+            message="חברי טופס forms.app כדי שכל מילוי ייצור פעילות אוטומטית — בלי העתקה ידנית"
+            actionLabel="חיבור טופס"
             actionTo="/settings/external-forms/new"
           />
         ) : (
@@ -60,14 +61,53 @@ export function ExternalFormsPage() {
 }
 
 function FormConnectionCard({ connection }: { connection: ExternalFormConnection }) {
+  const business = useAppStore((s) => s.business)!;
+  const processExternalFormSubmission = useAppStore((s) => s.processExternalFormSubmission);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const copyWebhook = async () => {
+    try {
+      await navigator.clipboard.writeText(connection.webhookUrl);
+      setMessage('קישור הועתק');
+      setTimeout(() => setMessage(null), 2000);
+    } catch {
+      setMessage('לא ניתן להעתיק');
+    }
+  };
+
+  const simulateSubmission = async () => {
+    setBusy(true);
+    setMessage(null);
+    const payload = buildFormsAppMockPayload();
+
+    try {
+      await sendTestWebhook(connection, payload);
+      await processPendingExternalFormSubmissions(business.id, processExternalFormSubmission);
+    } catch {
+      /* local fallback below */
+    }
+
+    const eventId = processExternalFormSubmission({
+      connectionId: connection.id,
+      rawPayload: payload,
+    });
+
+    setBusy(false);
+    setMessage(
+      eventId
+        ? 'נוצרה פעילות — בדקו במסך פעילויות'
+        : 'הסימולציה נכשלה — בדקו את מיפוי השדות',
+    );
+  };
+
   return (
     <article className="card external-form-card">
       <div className="external-form-card-head">
         <div>
           <strong>{connection.formName}</strong>
           <p className="external-form-card-meta">
-            {EXTERNAL_FORM_PROVIDER_LABELS[connection.provider]} ·{' '}
-            {EXTERNAL_FORM_ACTIVITY_LABELS[connection.activityType]}
+            {EXTERNAL_FORM_PROVIDER_LABELS[connection.provider]}
           </p>
         </div>
         <span
@@ -81,6 +121,23 @@ function FormConnectionCard({ connection }: { connection: ExternalFormConnection
         {connection.lastSubmissionAt &&
           ` · אחרון: ${formatDate(connection.lastSubmissionAt.slice(0, 10))}`}
       </p>
+      <div className="webhook-copy-box">
+        <code>{connection.webhookUrl}</code>
+      </div>
+      <div className="wizard-btn-row">
+        <button type="button" className="btn btn-ghost btn-sm" onClick={() => void copyWebhook()}>
+          העתקת Webhook
+        </button>
+        <button
+          type="button"
+          className="btn btn-primary btn-sm"
+          disabled={busy}
+          onClick={() => void simulateSubmission()}
+        >
+          סימולציית Forms.app
+        </button>
+      </div>
+      {message && <p className="field-hint">{message}</p>}
       <Link to={`/settings/external-forms/${connection.id}`} className="btn btn-ghost btn-sm">
         ניהול
       </Link>

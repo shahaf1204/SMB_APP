@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
 import {
-  acknowledgeExternalFormSubmissions,
-  pollExternalFormSubmissions,
   registerExternalFormConnection,
 } from '../lib/externalForms/clientApi';
+import { processPendingExternalFormSubmissions } from '../lib/externalForms/syncPendingSubmissions';
 import { useAppStore } from '../store/useAppStore';
+
+const POLL_MS = 8_000;
 
 export function useExternalFormSync(): void {
   const business = useAppStore((s) => s.business);
@@ -23,23 +24,11 @@ export function useExternalFormSync(): void {
   useEffect(() => {
     if (!business?.id) return;
 
-    const sync = async () => {
-      const pending = await pollExternalFormSubmissions(business.id);
-      const ackIds: string[] = [];
-      for (const item of pending) {
-        const eventId = processExternalFormSubmission({
-          connectionId: item.connectionId,
-          rawPayload: item.rawPayload,
-          externalSubmissionId: item.externalSubmissionId,
-          submissionId: item.id,
-        });
-        if (eventId) ackIds.push(item.id);
-      }
-      if (ackIds.length) await acknowledgeExternalFormSubmissions(ackIds);
-    };
+    const sync = () =>
+      processPendingExternalFormSubmissions(business.id, processExternalFormSubmission);
 
     void sync();
-    const interval = setInterval(() => void sync(), 45_000);
+    const interval = setInterval(() => void sync(), POLL_MS);
     return () => clearInterval(interval);
   }, [business?.id, processExternalFormSubmission]);
 }
