@@ -1,16 +1,17 @@
 -- External Forms: persistent connections and submission queue (production)
--- Run after schema.sql
+-- Run in Supabase → SQL Editor (after schema.sql)
+-- business_id is the app's local business id (text) — no FK to keep local-first sync working
 
-create table if not exists external_form_connections (
+create table if not exists public.external_form_connections (
   id text primary key,
-  business_id text not null references businesses(id) on delete cascade,
+  business_id text not null,
   owner_id text not null,
   provider text not null check (provider in (
     'forms_app', 'google_forms', 'typeform', 'jotform', 'tally', 'custom'
   )),
   form_name text not null,
   form_url text,
-  webhook_url text not null,
+  webhook_url text not null default '',
   secret_key text not null,
   activity_type text not null check (activity_type in ('event', 'card', 'program', 'course')),
   is_active boolean not null default false,
@@ -22,12 +23,12 @@ create table if not exists external_form_connections (
 );
 
 create index if not exists external_form_connections_business_idx
-  on external_form_connections (business_id);
+  on public.external_form_connections (business_id);
 
-create table if not exists external_form_submissions (
+create table if not exists public.external_form_submissions (
   id text primary key,
-  business_id text not null references businesses(id) on delete cascade,
-  connection_id text not null references external_form_connections(id) on delete cascade,
+  business_id text not null,
+  connection_id text not null references public.external_form_connections(id) on delete cascade,
   provider text not null,
   external_submission_id text,
   dedupe_hash text,
@@ -41,9 +42,16 @@ create table if not exists external_form_submissions (
   updated_at timestamptz not null default now()
 );
 
+create index if not exists external_form_submissions_business_status_idx
+  on public.external_form_submissions (business_id, status, created_at desc);
+
 create index if not exists external_form_submissions_connection_idx
-  on external_form_submissions (connection_id, created_at desc);
+  on public.external_form_submissions (connection_id, created_at desc);
 
 create unique index if not exists external_form_submissions_dedupe_idx
-  on external_form_submissions (connection_id, coalesce(external_submission_id, dedupe_hash))
+  on public.external_form_submissions (connection_id, coalesce(external_submission_id, dedupe_hash))
   where status = 'created';
+
+-- Service role (Vercel API) bypasses RLS; optional policies for future client reads:
+alter table public.external_form_connections enable row level security;
+alter table public.external_form_submissions enable row level security;
