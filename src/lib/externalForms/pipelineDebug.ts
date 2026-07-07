@@ -6,7 +6,7 @@ export interface PipelineDebugState {
   lastPendingCount: number;
   storageBackend: 'supabase' | 'memory' | null;
   storageBackendReason: string | null;
-  supabaseEnvDiagnostics: import('./supabaseEnvDiagnostics').SupabaseEnvDiagnostics | null;
+  supabaseEnvDiagnostics: import('./supabaseEnvDiagnostics').SupabaseEnvDiagnosticsResponse | null;
   lastProcessingStartedAt: string | null;
   lastNormalizedFields: Record<string, string> | null;
   lastRawFieldKeys: string[];

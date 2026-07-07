@@ -4,8 +4,10 @@ import {
   patchPipelineDebug,
   subscribePipelineDebug,
 } from '../../lib/externalForms/pipelineDebug';
-import { fetchSupabaseEnvDiagnostics } from '../../lib/externalForms/supabaseEnvDiagnostics';
-import type { SupabaseEnvDiagnostics } from '../../lib/externalForms/supabaseEnvDiagnostics';
+import {
+  fetchSupabaseEnvDiagnostics,
+  type SupabaseEnvDiagnosticsResponse,
+} from '../../lib/externalForms/supabaseEnvDiagnostics';
 
 function boolLabel(value: boolean | undefined): string {
   if (value === undefined) return '—';
@@ -14,7 +16,7 @@ function boolLabel(value: boolean | undefined): string {
 
 export function ExternalFormPipelineDebugPanel() {
   const [state, setState] = useState(getPipelineDebugState());
-  const [envDiag, setEnvDiag] = useState<SupabaseEnvDiagnostics | null>(
+  const [envDiag, setEnvDiag] = useState<SupabaseEnvDiagnosticsResponse | null>(
     state.supabaseEnvDiagnostics,
   );
 
@@ -36,8 +38,12 @@ export function ExternalFormPipelineDebugPanel() {
   }, [refreshEnvDiagnostics]);
 
   const diag = envDiag ?? state.supabaseEnvDiagnostics;
+  const diagOk = diag?.ok === true ? diag : null;
+  const diagFail = diag?.ok === false ? diag : null;
+
   const storageReason =
-    diag?.storageBackendReason ??
+    diagOk?.storageBackendReason ??
+    (diagFail ? `endpoint error — ${diagFail.error}` : null) ??
     state.storageBackendReason ??
     (state.storageBackend === 'memory'
       ? 'memory — poll reported in-memory storage (see Supabase diagnostics below)'
@@ -57,34 +63,48 @@ export function ExternalFormPipelineDebugPanel() {
           <strong>Storage reason:</strong> {storageReason ?? '—'}
         </li>
         <li>
-          <strong>supabaseUrlExists:</strong> {boolLabel(diag?.supabaseUrlExists)}
+          <strong>Diagnostics ok:</strong> {diag ? boolLabel(diag.ok) : '—'}
+        </li>
+        {diagFail && (
+          <>
+            <li>
+              <strong>Init error:</strong> {diagFail.error}
+            </li>
+            <li>
+              <strong>Init stack:</strong>
+              <pre>{diagFail.stack || '—'}</pre>
+            </li>
+          </>
+        )}
+        <li>
+          <strong>supabaseUrlExists:</strong> {boolLabel(diagOk?.supabaseUrlExists)}
         </li>
         <li>
-          <strong>serviceRoleExists:</strong> {boolLabel(diag?.serviceRoleExists)}
+          <strong>serviceRoleExists:</strong> {boolLabel(diagOk?.serviceRoleExists)}
         </li>
         <li>
-          <strong>supabaseUrlLooksValid:</strong> {boolLabel(diag?.supabaseUrlLooksValid)}
+          <strong>supabaseUrlLooksValid:</strong> {boolLabel(diagOk?.supabaseUrlLooksValid)}
         </li>
         <li>
-          <strong>serviceRoleLooksValid:</strong> {boolLabel(diag?.serviceRoleLooksValid)}
+          <strong>serviceRoleLooksValid:</strong> {boolLabel(diagOk?.serviceRoleLooksValid)}
         </li>
         <li>
-          <strong>supabaseClientCreated:</strong> {boolLabel(diag?.supabaseClientCreated)}
+          <strong>supabaseClientCreated:</strong> {boolLabel(diagOk?.supabaseClientCreated)}
         </li>
         <li>
-          <strong>testQuerySuccess:</strong> {boolLabel(diag?.testQuerySuccess)}
+          <strong>testQuerySuccess:</strong> {boolLabel(diagOk?.testQuerySuccess)}
         </li>
         <li>
-          <strong>testQueryError:</strong> {diag?.testQueryError || '—'}
+          <strong>testQueryError:</strong> {diagOk?.testQueryError || diagFail?.error || '—'}
         </li>
         <li>
-          <strong>nodeEnv:</strong> {diag?.nodeEnv || '—'}
+          <strong>nodeEnv:</strong> {diagOk?.nodeEnv || diagFail?.nodeEnv || '—'}
         </li>
         <li>
-          <strong>vercelEnv:</strong> {diag?.vercelEnv || '—'}
+          <strong>vercelEnv:</strong> {diagOk?.vercelEnv || diagFail?.vercelEnv || '—'}
         </li>
         <li>
-          <strong>deploymentUrl:</strong> {diag?.deploymentUrl || '—'}
+          <strong>deploymentUrl:</strong> {diagOk?.deploymentUrl || '—'}
         </li>
         <li>
           <strong>Last webhook (server):</strong>{' '}
