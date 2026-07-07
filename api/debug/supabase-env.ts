@@ -1,4 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import {
+  runSupabaseEnvDiagnostics,
+  supabaseEnvDiagnosticsErrorResponse,
+} from '../_lib/supabaseEnvDiagnostics';
 
 /** Temporary diagnostics — always returns JSON, never throws. */
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
@@ -14,29 +18,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         nodeEnv,
         vercelEnv,
       });
-      return;
-    }
-
-    let runSupabaseEnvDiagnostics: (typeof import('../_lib/supabaseEnvDiagnostics'))['runSupabaseEnvDiagnostics'];
-    let supabaseEnvDiagnosticsErrorResponse: (typeof import('../_lib/supabaseEnvDiagnostics'))['supabaseEnvDiagnosticsErrorResponse'];
-
-    try {
-      const mod = await import('../_lib/supabaseEnvDiagnostics');
-      runSupabaseEnvDiagnostics = mod.runSupabaseEnvDiagnostics;
-      supabaseEnvDiagnosticsErrorResponse = mod.supabaseEnvDiagnosticsErrorResponse;
-    } catch (importError) {
-      const payload = {
-        ok: false as const,
-        error:
-          importError instanceof Error
-            ? `Failed to load diagnostics module: ${importError.message}`
-            : `Failed to load diagnostics module: ${String(importError)}`,
-        stack: importError instanceof Error ? importError.stack ?? '' : '',
-        nodeEnv,
-        vercelEnv,
-      };
-      console.error('[supabase-env-diagnostics] import failed', payload);
-      res.status(200).json(payload);
       return;
     }
 
