@@ -1,16 +1,47 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   getPipelineDebugState,
+  patchPipelineDebug,
   subscribePipelineDebug,
 } from '../../lib/externalForms/pipelineDebug';
+import { fetchSupabaseEnvDiagnostics } from '../../lib/externalForms/supabaseEnvDiagnostics';
+import type { SupabaseEnvDiagnostics } from '../../lib/externalForms/supabaseEnvDiagnostics';
+
+function boolLabel(value: boolean | undefined): string {
+  if (value === undefined) return '—';
+  return value ? 'true' : 'false';
+}
 
 export function ExternalFormPipelineDebugPanel() {
   const [state, setState] = useState(getPipelineDebugState());
+  const [envDiag, setEnvDiag] = useState<SupabaseEnvDiagnostics | null>(
+    state.supabaseEnvDiagnostics,
+  );
+
+  const refreshEnvDiagnostics = useCallback(async () => {
+    const diagnostics = await fetchSupabaseEnvDiagnostics();
+    setEnvDiag(diagnostics);
+    patchPipelineDebug({ supabaseEnvDiagnostics: diagnostics });
+  }, []);
 
   useEffect(() => {
     setState(getPipelineDebugState());
     return subscribePipelineDebug(() => setState(getPipelineDebugState()));
   }, []);
+
+  useEffect(() => {
+    void refreshEnvDiagnostics();
+    const interval = window.setInterval(() => void refreshEnvDiagnostics(), 15_000);
+    return () => window.clearInterval(interval);
+  }, [refreshEnvDiagnostics]);
+
+  const diag = envDiag ?? state.supabaseEnvDiagnostics;
+  const storageReason =
+    diag?.storageBackendReason ??
+    state.storageBackendReason ??
+    (state.storageBackend === 'memory'
+      ? 'memory — poll reported in-memory storage (see Supabase diagnostics below)'
+      : null);
 
   return (
     <section className="card external-form-debug-panel">
@@ -21,6 +52,39 @@ export function ExternalFormPipelineDebugPanel() {
         </li>
         <li>
           <strong>Storage:</strong> {state.storageBackend ?? '—'}
+        </li>
+        <li>
+          <strong>Storage reason:</strong> {storageReason ?? '—'}
+        </li>
+        <li>
+          <strong>supabaseUrlExists:</strong> {boolLabel(diag?.supabaseUrlExists)}
+        </li>
+        <li>
+          <strong>serviceRoleExists:</strong> {boolLabel(diag?.serviceRoleExists)}
+        </li>
+        <li>
+          <strong>supabaseUrlLooksValid:</strong> {boolLabel(diag?.supabaseUrlLooksValid)}
+        </li>
+        <li>
+          <strong>serviceRoleLooksValid:</strong> {boolLabel(diag?.serviceRoleLooksValid)}
+        </li>
+        <li>
+          <strong>supabaseClientCreated:</strong> {boolLabel(diag?.supabaseClientCreated)}
+        </li>
+        <li>
+          <strong>testQuerySuccess:</strong> {boolLabel(diag?.testQuerySuccess)}
+        </li>
+        <li>
+          <strong>testQueryError:</strong> {diag?.testQueryError || '—'}
+        </li>
+        <li>
+          <strong>nodeEnv:</strong> {diag?.nodeEnv || '—'}
+        </li>
+        <li>
+          <strong>vercelEnv:</strong> {diag?.vercelEnv || '—'}
+        </li>
+        <li>
+          <strong>deploymentUrl:</strong> {diag?.deploymentUrl || '—'}
         </li>
         <li>
           <strong>Last webhook (server):</strong>{' '}
@@ -62,6 +126,9 @@ export function ExternalFormPipelineDebugPanel() {
           </li>
         )}
       </ul>
+      <button type="button" className="btn btn-ghost btn-sm" onClick={() => void refreshEnvDiagnostics()}>
+        Refresh Supabase diagnostics
+      </button>
     </section>
   );
 }

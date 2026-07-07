@@ -5,6 +5,8 @@ export interface PipelineDebugState {
   lastPollAt: string | null;
   lastPendingCount: number;
   storageBackend: 'supabase' | 'memory' | null;
+  storageBackendReason: string | null;
+  supabaseEnvDiagnostics: import('./supabaseEnvDiagnostics').SupabaseEnvDiagnostics | null;
   lastProcessingStartedAt: string | null;
   lastNormalizedFields: Record<string, string> | null;
   lastRawFieldKeys: string[];
@@ -20,6 +22,8 @@ const defaultState: PipelineDebugState = {
   lastPollAt: null,
   lastPendingCount: 0,
   storageBackend: null,
+  storageBackendReason: null,
+  supabaseEnvDiagnostics: null,
   lastProcessingStartedAt: null,
   lastNormalizedFields: null,
   lastRawFieldKeys: [],

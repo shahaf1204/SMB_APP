@@ -33,6 +33,10 @@ export async function processPendingExternalFormSubmissions(
     lastPollAt: new Date().toISOString(),
     lastPendingCount: pending.length,
     storageBackend: debug.storage,
+    storageBackendReason:
+      debug.storage === 'supabase'
+        ? 'supabase — poll read from external_form_submissions'
+        : 'memory — poll did not use Supabase (see Supabase diagnostics)',
     lastWebhookReceivedAt: debug.lastWebhookAt,
     lastWebhookPreview: debug.lastWebhookPreview,
   });
