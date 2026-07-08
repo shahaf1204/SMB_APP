@@ -1,14 +1,13 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { registerFormConnection } from '../../src/server/integrations/externalForms/externalForms.service';
-import type { StoredFormConnection } from '../../src/server/integrations/externalForms/externalForms.types';
+import { registerFormConnection, type StoredFormConnection } from './store';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
-  if (req.method !== 'POST') {
-    res.status(405).json({ error: 'Method not allowed' });
-    return;
-  }
-
   try {
+    if (req.method !== 'POST') {
+      res.status(405).json({ error: 'Method not allowed' });
+      return;
+    }
+
     const body = req.body as {
       id?: string;
       businessId?: string;
