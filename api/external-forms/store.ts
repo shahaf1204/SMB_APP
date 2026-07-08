@@ -53,6 +53,7 @@ let supabaseInitError: string | null = null;
 
 const memoryConnections = new Map<string, StoredFormConnection>();
 const memoryQueue: QueuedFormSubmission[] = [];
+const processedDedup = new Set<string>();
 
 function getServerSupabaseEnv(): { url: string; key: string } | null {
   const url = process.env.SUPABASE_URL?.trim();
@@ -132,6 +133,87 @@ export async function registerFormConnection(conn: StoredFormConnection): Promis
   });
 
   if (error) console.error('[external-forms] registerConnection', error.message);
+}
+
+export async function getFormConnection(
+  connectionId: string,
+): Promise<StoredFormConnection | undefined> {
+  const cached = memoryConnections.get(connectionId);
+  if (cached) return cached;
+
+  const sb = await getSupabaseClientOptional();
+  if (!sb) return undefined;
+
+  const { data, error } = await sb
+    .from('external_form_connections')
+    .select('*')
+    .eq('id', connectionId)
+    .maybeSingle();
+
+  if (error || !data) return undefined;
+
+  const loaded: StoredFormConnection = {
+    id: data.id,
+    businessId: data.business_id,
+    ownerId: data.owner_id,
+    provider: data.provider,
+    formName: data.form_name,
+    formUrl: data.form_url ?? undefined,
+    secretKey: data.secret_key,
+    activityType: data.activity_type,
+    isActive: data.is_active,
+    fieldMapping: data.field_mapping ?? [],
+  };
+
+  memoryConnections.set(connectionId, loaded);
+  return loaded;
+}
+
+export async function enqueueSubmission(entry: QueuedFormSubmission): Promise<void> {
+  memoryQueue.push(entry);
+
+  const sb = await getSupabaseClientOptional();
+  if (!sb) return;
+
+  const { error } = await sb.from('external_form_submissions').insert({
+    id: entry.id,
+    business_id: entry.businessId,
+    connection_id: entry.connectionId,
+    provider: entry.provider,
+    external_submission_id: entry.externalSubmissionId ?? null,
+    dedupe_hash: entry.dedupKey,
+    raw_payload: entry.rawPayload,
+    status: 'received',
+  });
+
+  if (error && error.code !== '23505') {
+    console.error('[external-forms] enqueueSubmission', error.message);
+    throw new Error(error.message);
+  }
+}
+
+export async function isDuplicateSubmission(
+  dedupKey: string,
+  connectionId: string,
+): Promise<boolean> {
+  if (processedDedup.has(dedupKey)) return true;
+
+  const sb = await getSupabaseClientOptional();
+  if (!sb) return false;
+
+  const { data } = await sb
+    .from('external_form_submissions')
+    .select('id')
+    .eq('connection_id', connectionId)
+    .eq('dedupe_hash', dedupKey)
+    .in('status', ['received', 'mapped', 'created'])
+    .limit(1);
+
+  return (data?.length ?? 0) > 0;
+}
+
+export function markSubmissionProcessed(dedupKey: string): void {
+  processedDedup.add(dedupKey);
 }
 
 function getPendingSubmissionsMemory(businessId: string): QueuedFormSubmission[] {

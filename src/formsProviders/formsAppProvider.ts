@@ -3,26 +3,20 @@ import {
   flattenPayloadFields,
   type ExternalFormProvider,
 } from './formsProvider';
-
-function pickSubmissionId(payload: unknown): string | undefined {
-  if (!payload || typeof payload !== 'object') return undefined;
-  const p = payload as Record<string, unknown>;
-  const nested = p.submission;
-  if (nested && typeof nested === 'object') {
-    const fromNested = pickSubmissionId(nested);
-    if (fromNested) return fromNested;
-  }
-  const candidates = [p.submission_id, p.submissionId, p.id, p.response_id, p.responseId];
-  for (const c of candidates) {
-    if (typeof c === 'string' && c.trim()) return c.trim();
-    if (typeof c === 'number') return String(c);
-  }
-  return undefined;
-}
+import {
+  extractFormsAppSubmissionId,
+  parseFormsAppNestedPayload,
+} from '../lib/externalForms/formsAppPayloadParser';
 
 function pickSubmittedAt(payload: unknown): string | undefined {
   if (!payload || typeof payload !== 'object') return undefined;
   const p = payload as Record<string, unknown>;
+  const answer = p.answer ?? p.Answer;
+  if (answer && typeof answer === 'object') {
+    const a = answer as Record<string, unknown>;
+    const fromAnswer = a.submitted_at ?? a.submittedAt ?? a.created_at ?? a.createdAt;
+    if (typeof fromAnswer === 'string') return fromAnswer;
+  }
   const raw = p.submitted_at ?? p.submittedAt ?? p.created_at ?? p.createdAt;
   return typeof raw === 'string' ? raw : undefined;
 }
@@ -40,8 +34,11 @@ function extractFieldArray(items: unknown[]): Record<string, string> {
   return out;
 }
 
-/** forms.app: { data }, { fields }, { answers }, nested submission, or field arrays */
+/** forms.app: nested form.questions + answer.answers, or flat simulate payloads */
 function extractFormsAppFields(payload: unknown): Record<string, string> {
+  const nested = parseFormsAppNestedPayload(payload);
+  if (Object.keys(nested).length > 0) return nested;
+
   if (!payload || typeof payload !== 'object') {
     return flattenPayloadFields(payload);
   }
@@ -74,12 +71,12 @@ function extractFormsAppFields(payload: unknown): Record<string, string> {
 export const formsAppProvider: ExternalFormProvider = {
   providerName: 'forms_app',
 
-  extractSubmissionId: pickSubmissionId,
+  extractSubmissionId: extractFormsAppSubmissionId,
 
   extractFields: extractFormsAppFields,
 
   normalizePayload(payload, fieldMapping = []) {
-    const externalSubmissionId = pickSubmissionId(payload);
+    const externalSubmissionId = extractFormsAppSubmissionId(payload);
     const submittedAt = pickSubmittedAt(payload);
     const rawFields = extractFormsAppFields(payload);
     return applyMappingToFields(
