@@ -1,12 +1,11 @@
-import { encryptToken } from './supabaseAdmin';
-import type { IntegrationLog } from './integrationServer';
+import { encryptToken } from '../../core/supabase.server';
+import type { IntegrationLog } from './financeProvider.interface';
 
 export interface StoredCredentials {
   connectionId: string;
   businessId: string;
   providerId: string;
   apiKeyEncrypted?: string;
-  /** Morning / Green Invoice API base URL (sandbox vs production) */
   apiBaseUrl?: string;
   accessTokenEncrypted?: string;
   refreshTokenEncrypted?: string;

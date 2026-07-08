@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import {
   runSupabaseEnvDiagnostics,
   supabaseEnvDiagnosticsErrorResponse,
-} from '../_lib/supabaseEnvDiagnostics';
+} from '../../src/server/core/supabase.server';
 
 /** Temporary diagnostics — always returns JSON, never throws. */
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {

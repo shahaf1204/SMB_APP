@@ -4,8 +4,11 @@ import {
   isFinanceProvider,
   isKnownProvider,
   parseWebhook,
-} from '../../_lib/integrationServer';
-import { appendIntegrationLog, markWebhookProcessed } from '../../_lib/integrationStore';
+} from '../../../src/server/integrations/finance/integration.service';
+import {
+  appendIntegrationLog,
+  markWebhookProcessed,
+} from '../../../src/server/integrations/finance/integrationCredentials.store';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   const providerId = String(req.query.providerId ?? '').trim();

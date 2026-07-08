@@ -1,5 +1,7 @@
 /** Morning (Green Invoice) API — server-side only */
 
+import type { FinanceInvoiceInput } from './financeProvider.interface';
+
 export const MORNING_SANDBOX_BASE = 'https://sandbox.d.greeninvoice.co.il/api/v1';
 export const MORNING_PRODUCTION_BASE = 'https://api.greeninvoice.co.il/api/v1';
 
@@ -7,14 +9,6 @@ export interface MorningAuth {
   id: string;
   secret: string;
   baseUrl: string;
-}
-
-export interface MorningInvoiceInput {
-  clientName: string;
-  clientEmail?: string;
-  amount: number;
-  dueDate: string;
-  notes?: string;
 }
 
 export interface MorningInvoiceResult {
@@ -64,7 +58,6 @@ async function fetchMorningToken(baseUrl: string, id: string, secret: string): P
   return data.token;
 }
 
-/** Try sandbox first (free testing account), then production */
 export async function resolveMorningAuth(apiKey: string): Promise<MorningAuth> {
   const { id, secret } = parseMorningApiKey(apiKey);
   let lastError = 'אימות נכשל';
@@ -125,7 +118,7 @@ export async function testMorningAuth(auth: MorningAuth): Promise<{
 
 export async function createMorningInvoice(
   auth: MorningAuth,
-  invoice: MorningInvoiceInput,
+  invoice: FinanceInvoiceInput,
 ): Promise<MorningInvoiceResult> {
   const token = await fetchMorningToken(auth.baseUrl, auth.id, auth.secret);
   const today = new Date().toISOString().slice(0, 10);

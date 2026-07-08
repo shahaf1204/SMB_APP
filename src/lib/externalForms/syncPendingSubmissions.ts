@@ -34,9 +34,10 @@ export async function processPendingExternalFormSubmissions(
     lastPendingCount: pending.length,
     storageBackend: debug.storage,
     storageBackendReason:
-      debug.storage === 'supabase'
+      debug.storageReason ??
+      (debug.storage === 'supabase'
         ? 'supabase — poll read from external_form_submissions'
-        : 'memory — poll did not use Supabase (see Supabase diagnostics)',
+        : 'memory — poll did not use Supabase (see Supabase diagnostics)'),
     lastWebhookReceivedAt: debug.lastWebhookAt,
     lastWebhookPreview: debug.lastWebhookPreview,
   });

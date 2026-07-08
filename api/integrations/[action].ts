@@ -7,7 +7,7 @@ import {
   simulateWebhook,
   syncConnection,
   testConnection,
-} from '../_lib/integrationServer';
+} from '../../src/server/integrations/finance/integration.service';
 import {
   appendIntegrationLog,
   decryptApiKey,
@@ -15,8 +15,12 @@ import {
   getCredentials,
   getIntegrationLogs,
   storeCredentials,
-} from '../_lib/integrationStore';
-import { morningAuthFromStored, resolveMorningAuth, testMorningAuth } from '../_lib/morningApi';
+} from '../../src/server/integrations/finance/integrationCredentials.store';
+import {
+  morningAuthFromStored,
+  resolveMorningAuth,
+  testMorningAuth,
+} from '../../src/server/integrations/finance/morning.provider';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   const action = String(req.query.action ?? '').trim();
@@ -54,64 +58,64 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
 async function handleConnect(req: VercelRequest, res: VercelResponse): Promise<void> {
   try {
-  const body = req.body as {
-    businessId?: string;
-    userId?: string;
-    provider?: string;
-    apiKey?: string;
-    accountLabel?: string;
-  };
+    const body = req.body as {
+      businessId?: string;
+      userId?: string;
+      provider?: string;
+      apiKey?: string;
+      accountLabel?: string;
+    };
 
-  if (!body.businessId || !body.userId || !body.provider) {
-    res.status(400).json({ error: 'Missing businessId, userId, or provider' });
-    return;
-  }
+    if (!body.businessId || !body.userId || !body.provider) {
+      res.status(400).json({ error: 'Missing businessId, userId, or provider' });
+      return;
+    }
 
-  if (!isKnownProvider(body.provider)) {
-    res.status(400).json({ error: `Unknown provider: ${body.provider}` });
-    return;
-  }
+    if (!isKnownProvider(body.provider)) {
+      res.status(400).json({ error: `Unknown provider: ${body.provider}` });
+      return;
+    }
 
-  let morningBaseUrl: string | undefined;
-  if (body.provider === 'morning' && body.apiKey?.trim()) {
-    const auth = await resolveMorningAuth(body.apiKey.trim());
-    morningBaseUrl = auth.baseUrl;
-  }
+    let morningBaseUrl: string | undefined;
+    if (body.provider === 'morning' && body.apiKey?.trim()) {
+      const auth = await resolveMorningAuth(body.apiKey.trim());
+      morningBaseUrl = auth.baseUrl;
+    }
 
-  const connection = createConnection({
-    businessId: body.businessId,
-    userId: body.userId,
-    provider: body.provider,
-    apiKey: body.apiKey,
-    accountLabel: body.accountLabel,
-  });
-
-  if (morningBaseUrl) {
-    connection.mode = morningBaseUrl.includes('sandbox') ? 'sandbox' : 'production';
-  }
-
-  if (body.apiKey?.trim()) {
-    storeCredentials({
-      connectionId: connection.id,
+    const connection = createConnection({
       businessId: body.businessId,
-      providerId: connection.providerId,
-      apiKeyEncrypted: encryptApiKey(body.apiKey.trim()),
-      apiBaseUrl: morningBaseUrl,
+      userId: body.userId,
+      provider: body.provider,
+      apiKey: body.apiKey,
+      accountLabel: body.accountLabel,
     });
-  }
 
-  appendIntegrationLog(
-    createIntegrationLog({
-      businessId: body.businessId,
-      connectionId: connection.id,
-      providerId: connection.providerId,
-      action: 'connect',
-      status: 'success',
-      message: `חובר ${connection.providerName}`,
-    }),
-  );
+    if (morningBaseUrl) {
+      connection.mode = morningBaseUrl.includes('sandbox') ? 'sandbox' : 'production';
+    }
 
-  res.status(200).json({ connection });
+    if (body.apiKey?.trim()) {
+      storeCredentials({
+        connectionId: connection.id,
+        businessId: body.businessId,
+        providerId: connection.providerId,
+        apiKeyEncrypted: encryptApiKey(body.apiKey.trim()),
+        apiBaseUrl: morningBaseUrl,
+      });
+    }
+
+    appendIntegrationLog(
+      createIntegrationLog({
+        businessId: body.businessId,
+        connectionId: connection.id,
+        providerId: connection.providerId,
+        action: 'connect',
+        status: 'success',
+        message: `חובר ${connection.providerName}`,
+      }),
+    );
+
+    res.status(200).json({ connection });
   } catch (e) {
     res.status(400).json({ error: e instanceof Error ? e.message : 'Connect failed' });
   }

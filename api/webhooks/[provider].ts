@@ -1,6 +1,13 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { isFinanceProvider, isKnownProvider, parseWebhook } from '../_lib/integrationServer';
-import { markWebhookProcessed, webhookEventLog } from '../_lib/integrationStore';
+import {
+  isFinanceProvider,
+  isKnownProvider,
+  parseWebhook,
+} from '../../src/server/integrations/finance/integration.service';
+import {
+  markWebhookProcessed,
+  webhookEventLog,
+} from '../../src/server/integrations/finance/integrationCredentials.store';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   const provider = String(req.query.provider ?? '').trim();

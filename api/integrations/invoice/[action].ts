@@ -1,7 +1,18 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createMockInvoice, createMockPaymentLink, isFinanceProvider } from '../../_lib/integrationServer';
-import { decryptApiKey, getCredentials } from '../../_lib/integrationStore';
-import { createMorningInvoice, morningAuthFromStored } from '../../_lib/morningApi';
+import {
+  createMockInvoice,
+  createMockPaymentLink,
+  isFinanceProvider,
+} from '../../../src/server/integrations/finance/integration.service';
+import {
+  decryptApiKey,
+  getCredentials,
+} from '../../../src/server/integrations/finance/integrationCredentials.store';
+import {
+  createMorningInvoice,
+  morningAuthFromStored,
+} from '../../../src/server/integrations/finance/morning.provider';
+
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   const action = String(req.query.action ?? '').trim();
   if (!action) {

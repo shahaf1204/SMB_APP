@@ -7,6 +7,7 @@ export interface PollDebugMeta {
   pendingCount: number;
   lastWebhookAt: string | null;
   lastWebhookPreview: string | null;
+  storageReason?: string;
 }
 
 export async function registerExternalFormConnection(

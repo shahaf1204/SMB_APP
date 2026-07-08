@@ -1,9 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import {
-  acknowledgeSubmissionsAsync,
-  getPendingSubmissionsAsync,
+  acknowledgeSubmissions,
+  getPendingSubmissions,
   getServerPipelineDebug,
-} from '../_lib/externalFormsStore';
+} from '../../src/server/integrations/externalForms/externalForms.service';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (req.method === 'GET') {
@@ -13,7 +13,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       return;
     }
 
-    const submissions = await getPendingSubmissionsAsync(businessId);
+    const submissions = await getPendingSubmissions(businessId);
     const debug = await getServerPipelineDebug(businessId);
 
     console.log('[PENDING_POLLED]', {
@@ -33,7 +33,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       res.status(400).json({ error: 'Missing ids' });
       return;
     }
-    await acknowledgeSubmissionsAsync(ids);
+    await acknowledgeSubmissions(ids);
     res.status(200).json({ ok: true });
     return;
   }

@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { processMetaLeadgenWebhook } from '../../../src/server/integrations/leads/metaLead.service';
 
 interface MetaWebhookEntry {
   id?: string;
@@ -48,7 +49,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return;
   }
 
-  const { processMetaLeadgenWebhook } = await import('../../_lib/createLeadFromExternalSource');
   const entries = body.entry ?? [];
   const results: string[] = [];
 

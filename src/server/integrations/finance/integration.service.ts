@@ -1,42 +1,10 @@
-/** Server-side integration logic — no imports from src/ (Vercel-safe) */
-
-export type IntegrationCategory = 'finance' | 'leads' | 'calendar' | 'communication';
-
-export type AuthMethod = 'oauth' | 'api_key' | 'webhook_only';
-
-export type IntegrationMode = 'mock' | 'sandbox' | 'production';
-
-export interface IntegrationConnection {
-  id: string;
-  businessId: string;
-  ownerId: string;
-  providerId: string;
-  providerName: string;
-  category: IntegrationCategory;
-  status: 'connected' | 'disconnected' | 'error' | 'mock' | 'sandbox' | 'syncing';
-  mode: IntegrationMode;
-  authMethod: AuthMethod;
-  lastSyncAt?: string;
-  syncStatus: string;
-  lastError?: string;
-  connectedAt?: string;
-  createdAt: string;
-  updatedAt: string;
-  accountLabel?: string;
-}
-
-export interface IntegrationLog {
-  id: string;
-  businessId: string;
-  connectionId?: string;
-  providerId: string;
-  action: string;
-  status: 'success' | 'failed';
-  message: string;
-  rawRequest?: string;
-  rawResponse?: string;
-  createdAt: string;
-}
+import type {
+  AuthMethod,
+  IntegrationCategory,
+  IntegrationConnection,
+  IntegrationLog,
+  WebhookParseResult,
+} from './financeProvider.interface';
 
 const FINANCE = new Set([
   'mock_finance',
@@ -193,78 +161,7 @@ export function testConnection(provider: string): {
   };
 }
 
-export interface FinanceInvoiceInput {
-  clientName: string;
-  clientEmail?: string;
-  amount: number;
-  dueDate: string;
-  notes?: string;
-}
-
-export function createMockInvoice(
-  provider: string,
-  input: FinanceInvoiceInput,
-): {
-  externalInvoiceId: string;
-  externalDocumentNumber: string;
-  externalPdfUrl: string;
-  paymentLink: string;
-  status: 'sent';
-  providerDocumentId: string;
-  providerInvoiceNumber: string;
-  officialPdfUrl: string;
-  paymentUrl: string;
-} {
-  const docId = `${normalizeProviderId(provider)}_doc_${newId().slice(0, 12)}`;
-  const num = String(Math.floor(10000 + Math.random() * 89999));
-  const pdf = `https://docs.demo.smb-app.local/${docId}.pdf`;
-  const pay = `https://pay.demo.smb-app.local/${docId}?amount=${input.amount}`;
-  return {
-    externalInvoiceId: docId,
-    externalDocumentNumber: num,
-    externalPdfUrl: pdf,
-    paymentLink: pay,
-    status: 'sent',
-    providerDocumentId: docId,
-    providerInvoiceNumber: num,
-    officialPdfUrl: pdf,
-    paymentUrl: pay,
-  };
-}
-
-export function createMockPaymentLink(
-  providerDocumentId: string,
-  amount: number,
-): {
-  paymentLink: string;
-  externalTransactionId: string;
-  status: 'pending';
-  expiresAt: string;
-  paymentUrl: string;
-  providerTransactionId: string;
-} {
-  const tx = `pay_${newId().slice(0, 10)}`;
-  const link = `https://pay.demo.smb-app.local/${providerDocumentId}?amount=${amount}`;
-  return {
-    paymentLink: link,
-    externalTransactionId: tx,
-    status: 'pending',
-    expiresAt: new Date(Date.now() + 7 * 86400000).toISOString(),
-    paymentUrl: link,
-    providerTransactionId: tx,
-  };
-}
-
-export function parseWebhook(payload: unknown): {
-  processed: boolean;
-  duplicate: boolean;
-  invoiceId?: string;
-  externalInvoiceId?: string;
-  paymentStatus?: 'paid' | 'failed' | 'pending';
-  externalTransactionId?: string;
-  paidAt?: string;
-  message?: string;
-} {
+export function parseWebhook(payload: unknown): WebhookParseResult {
   const body = payload as {
     event_id?: string;
     invoice_id?: string;
@@ -339,3 +236,5 @@ function sanitizeForLog(value: unknown): string {
     .replace(/"(api[_-]?key|secret|token|password)"\s*:\s*"[^"]*"/gi, '"$1":"[REDACTED]"')
     .slice(0, 4000);
 }
+
+export { createMockInvoice, createMockPaymentLink } from './mockFinance.provider';
