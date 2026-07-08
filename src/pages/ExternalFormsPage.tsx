@@ -10,9 +10,6 @@ import {
 import { useAppStore } from '../store/useAppStore';
 import { formatDate } from '../lib/finance';
 import { buildFormsAppMockPayload } from '../lib/externalForms/mockSubmission';
-import { sendTestWebhook } from '../lib/externalForms/clientApi';
-import { processPendingExternalFormSubmissions } from '../lib/externalForms/syncPendingSubmissions';
-import { ExternalFormPipelineDebugPanel } from '../components/externalForms/ExternalFormPipelineDebugPanel';
 
 export function ExternalFormsPage() {
   const business = useAppStore((s) => s.business)!;
@@ -55,7 +52,9 @@ export function ExternalFormsPage() {
                 </li>
               ))}
             </ul>
-            <ExternalFormPipelineDebugPanel />
+            <p className="page-subtitle" style={{ marginTop: '1rem' }}>
+              מילוי טופס אמיתי ב-Forms.app יוצר פעילות ישירות בענן. רעננו את האפליקציה כדי לראות פעילויות חדשות.
+            </p>
           </>
         )}
       </div>
@@ -65,7 +64,6 @@ export function ExternalFormsPage() {
 }
 
 function FormConnectionCard({ connection }: { connection: ExternalFormConnection }) {
-  const business = useAppStore((s) => s.business)!;
   const processExternalFormSubmission = useAppStore((s) => s.processExternalFormSubmission);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -84,23 +82,14 @@ function FormConnectionCard({ connection }: { connection: ExternalFormConnection
     setBusy(true);
     setMessage(null);
     const payload = buildFormsAppMockPayload();
-
-    try {
-      await sendTestWebhook(connection, payload);
-      await processPendingExternalFormSubmissions(business.id, processExternalFormSubmission);
-    } catch {
-      /* local fallback below */
-    }
-
     const eventId = processExternalFormSubmission({
       connectionId: connection.id,
       rawPayload: payload,
     });
-
     setBusy(false);
     setMessage(
       eventId
-        ? 'נוצרה פעילות — בדקו במסך פעילויות'
+        ? 'נוצרה פעילות סימולציה — בדקו במסך פעילויות'
         : 'הסימולציה נכשלה — בדקו את מיפוי השדות',
     );
   };

@@ -175,6 +175,66 @@ export async function flushCloudPush(): Promise<void> {
   }
 }
 
+export async function refreshFromCloudIfNewer(): Promise<boolean> {
+  if (!isSupabaseConfigured()) return false;
+  const user = useAppStore.getState().user;
+  if (!user?.id) return false;
+
+  try {
+    const cloud = await pullCloudSnapshot(user.id);
+    if (!cloud?.snapshot) return false;
+
+    const local = useAppStore.getState();
+    const cloudSnapshot = cloud.snapshot;
+    const cloudEvents = cloudSnapshot.events ?? [];
+    const localEventIds = new Set(local.events.map((e) => e.id));
+    const newExternalEvents = cloudEvents.filter(
+      (e) => e.source === 'external_form' && !localEventIds.has(e.id),
+    );
+
+    if (newExternalEvents.length > 0) {
+      const newEventIds = new Set(newExternalEvents.map((e) => e.id));
+      const cloudValues = (cloudSnapshot.eventValues ?? []).filter((v) =>
+        newEventIds.has(v.eventId),
+      );
+      const cloudLeadIds = new Set(
+        (cloudSnapshot.leads ?? [])
+          .filter((l) => newExternalEvents.some((e) => e.clientPhone === l.phone || e.title.includes(l.name)))
+          .map((l) => l.id),
+      );
+      const newLeads = (cloudSnapshot.leads ?? []).filter(
+        (l) => cloudLeadIds.has(l.id) && !local.leads.some((x) => x.id === l.id),
+      );
+      const newNotifications = (cloudSnapshot.formNotifications ?? []).filter(
+        (n) => n.activityId && newEventIds.has(n.activityId),
+      );
+
+      useAppStore.setState({
+        events: [...newExternalEvents, ...local.events],
+        eventValues: [...cloudValues, ...local.eventValues],
+        leads: [...newLeads, ...local.leads],
+        formNotifications: [...newNotifications, ...local.formNotifications],
+      });
+      setSyncStatus('synced');
+      return true;
+    }
+
+    const cloudMs = new Date(cloud.updated_at).getTime();
+    const localMs = lastSyncedAt?.getTime() ?? 0;
+    if (cloudMs <= localMs) return false;
+
+    useAppStore.getState().restoreAppState({
+      ...cloud.snapshot,
+      user,
+    });
+    setSyncStatus('synced');
+    return true;
+  } catch (e) {
+    console.error('cloud refresh failed', e);
+    return false;
+  }
+}
+
 export async function cloudSignOut(): Promise<void> {
   if (!isSupabaseConfigured()) return;
   await getSupabase().auth.signOut();

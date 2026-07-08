@@ -8,10 +8,6 @@ import {
 } from '../lib/externalForms/connectionWebhook';
 import { FORMS_APP_SPRINT_MAPPING } from '../lib/externalForms/sprintMapping';
 import { buildFormsAppMockPayload } from '../lib/externalForms/mockSubmission';
-import {
-  processPendingExternalFormSubmissions,
-} from '../lib/externalForms/syncPendingSubmissions';
-import { sendTestWebhook } from '../lib/externalForms/clientApi';
 import { useAppStore } from '../store/useAppStore';
 
 export function ExternalFormConnectPage() {
@@ -87,13 +83,6 @@ export function ExternalFormConnectPage() {
     await activateExternalFormConnection(connectionId);
 
     const payload = buildFormsAppMockPayload();
-    try {
-      await sendTestWebhook(connection, payload);
-      await processPendingExternalFormSubmissions(business.id, processExternalFormSubmission);
-    } catch {
-      /* fall through to local processing */
-    }
-
     const eventId = processExternalFormSubmission({
       connectionId,
       rawPayload: payload,
@@ -101,7 +90,7 @@ export function ExternalFormConnectPage() {
 
     setBusy(false);
     if (eventId) {
-      setMessage('בדיקה הצליחה — נוצרה פעילות חדשה');
+      setMessage('בדיקה הצליחה — נוצרה פעילות סימולציה');
       setConnected(true);
     } else {
       setMessage('הבדיקה נכשלה — בדקו את מיפוי השדות');
