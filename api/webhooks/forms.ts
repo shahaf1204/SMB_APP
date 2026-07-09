@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { processFormsWebhook } from '../lib/external-forms/webhook';
 
-/** Dedicated Forms.app webhook — dynamic import avoids Vercel cold-start module failures. */
+/** Dedicated Forms.app webhook. POST always returns 200 for forms.app compatibility. */
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (req.method === 'GET') {
     res.status(200).json({ ok: true, route: 'forms-webhook' });
@@ -8,7 +9,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   }
 
   try {
-    const { processFormsWebhook } = await import('../_lib/external-forms/webhook');
     const result = await processFormsWebhook(req);
     const status = req.method === 'POST' ? 200 : result.status;
     res.status(status).json(result.body);

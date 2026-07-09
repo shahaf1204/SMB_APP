@@ -5,14 +5,30 @@ import type {
 } from '../../types/externalForms';
 import { getExternalFormProvider } from '../../formsProviders';
 
+const PRODUCTION_WEBHOOK_ORIGIN = 'https://smb-app-gray.vercel.app';
+
 export function generateSecretKey(): string {
   return crypto.randomUUID().replace(/-/g, '');
 }
 
+/** Always use the stable production origin — preview URLs break forms.app webhooks. */
+export function getWebhookOrigin(): string {
+  const fromEnv = import.meta.env.VITE_WEBHOOK_BASE_URL?.trim();
+  if (fromEnv) return fromEnv.replace(/\/$/, '');
+
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    if (host.includes('vercel.app') && !host.startsWith('smb-app-gray')) {
+      return PRODUCTION_WEBHOOK_ORIGIN;
+    }
+    return window.location.origin;
+  }
+
+  return PRODUCTION_WEBHOOK_ORIGIN;
+}
+
 export function buildWebhookUrl(connectionId: string, secretKey: string, origin?: string): string {
-  const base =
-    origin ??
-    (typeof window !== 'undefined' ? window.location.origin : 'https://smb-app-gray.vercel.app');
+  const base = origin ?? getWebhookOrigin();
   const params = new URLSearchParams({
     connectionId,
     secret: secretKey,

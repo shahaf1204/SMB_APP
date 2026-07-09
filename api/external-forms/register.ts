@@ -1,7 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import type { StoredFormConnection } from '../_lib/external-forms/store';
+import {
+  registerFormConnection,
+  type StoredFormConnection,
+} from '../lib/external-forms/store';
 
-/** Register external form connection — dynamic import avoids Vercel cold-start module failures. */
+/** Register external form connection for Forms.app webhooks. */
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   try {
     if (req.method !== 'POST') {
@@ -33,8 +36,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       res.status(400).json({ error: 'Missing required fields' });
       return;
     }
-
-    const { registerFormConnection } = await import('../_lib/external-forms/store');
 
     const conn: StoredFormConnection = {
       id: body.id,

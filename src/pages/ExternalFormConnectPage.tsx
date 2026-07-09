@@ -217,6 +217,9 @@ export function ExternalFormConnectPage() {
 
           <div className="field">
             <label>קישור Webhook</label>
+            <p className="field-hint">
+              חייב להתחיל ב-<strong>smb-app-gray.vercel.app</strong> — לא כתובת preview (git-main…)
+            </p>
             <div className="webhook-copy-box">
               <code>{webhookUrl}</code>
             </div>
