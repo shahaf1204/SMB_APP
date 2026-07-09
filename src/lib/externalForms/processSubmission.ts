@@ -116,6 +116,15 @@ export function buildEventFromSubmission(input: ProcessSubmissionInput): {
     if (CLIENT_CATEGORY_NAMES.some((n) => cat.name.includes(n))) {
       categoryInputs[cat.id] = clientName;
     }
+    if (
+      (cat.name.includes('מספר ילד') || cat.name.includes('משתתפ') || cat.name.includes('כמות')) &&
+      f.participantsCount?.trim()
+    ) {
+      categoryInputs[cat.id] = f.participantsCount.trim();
+    }
+    if (cat.name.includes('גיל') && f.childAge?.trim()) {
+      categoryInputs[cat.id] = f.childAge.trim();
+    }
     if (f.amount && cat.metricRole === 'revenue' && cat.valueType === 'number') {
       categoryInputs[cat.id] = f.amount.replace(/[^\d.]/g, '');
     }

@@ -77,7 +77,14 @@ async function processWebhook(req: VercelRequest): Promise<Record<string, unknow
   }
 
   const parsedFields = parseFormsAppPayload(req.body);
-  const normalized = fuzzyMapFormFields(parsedFields);
+  const fieldMapping = Array.isArray(connRow.field_mapping)
+    ? (connRow.field_mapping as Array<{ externalField: string; appField: string }>)
+    : [];
+  const mappings = mergeFieldMappings(fieldMapping);
+  const explicit = applyExplicitFieldMapping(parsedFields, mappings);
+  const fuzzy = fuzzyMapFormFields(parsedFields);
+  const normalized = mergeNormalizedFields(explicit, fuzzy);
+  const unmapped = collectUnmappedFields(parsedFields, normalized, mappings);
 
   const clientName = normalized.clientName?.trim() || normalized.childName?.trim();
   if (!clientName) {
@@ -145,11 +152,19 @@ async function processWebhook(req: VercelRequest): Promise<Record<string, unknow
       createdAt: string;
       read: boolean;
     }>;
-    categories?: Array<{ id: string; name: string; isActive?: boolean; metricRole?: string }>;
+    categories?: Array<{
+      id: string;
+      name: string;
+      isActive?: boolean;
+      valueType?: string;
+      metricRole?: string;
+    }>;
   };
 
   const events = snapshot.events ?? [];
   const leads = snapshot.leads ?? [];
+  const categories = snapshot.categories ?? [];
+  const existingEventValues = (snapshot.eventValues ?? []) as AppEventValue[];
 
   if (
     externalSubmissionId &&
@@ -168,7 +183,7 @@ async function processWebhook(req: VercelRequest): Promise<Record<string, unknow
     title: buildActivityTitle(normalized),
     eventDate: parseEventDate(normalized.activityDate),
     location: normalized.location?.trim() ?? '',
-    notes: buildActivityNotes(normalized),
+    notes: buildActivityNotes(normalized, unmapped),
     ...(normalized.clientEmail?.trim() ? { clientEmail: normalized.clientEmail.trim() } : {}),
     ...(normalized.clientPhone?.trim() ? { clientPhone: normalized.clientPhone.trim() } : {}),
     source: 'external_form',
@@ -210,6 +225,18 @@ async function processWebhook(req: VercelRequest): Promise<Record<string, unknow
   }
 
   events.unshift(event);
+
+  const categoryInputs = buildCategoryInputs(categories, normalized);
+  const newEventValues = buildEventValuesForCategories(
+    activityId,
+    businessId,
+    ownerId,
+    categories,
+    categoryInputs,
+    existingEventValues,
+  );
+  const eventValues = [...existingEventValues, ...newEventValues];
+
   const notifications = snapshot.formNotifications ?? [];
   notifications.unshift({
     id: crypto.randomUUID(),
@@ -227,6 +254,7 @@ async function processWebhook(req: VercelRequest): Promise<Record<string, unknow
       ...snapshot,
       events,
       leads,
+      eventValues,
       formNotifications: notifications.slice(0, 50),
     },
     updated_at: now,
@@ -237,9 +265,25 @@ async function processWebhook(req: VercelRequest): Promise<Record<string, unknow
   return { ok: true, clientId, activityId, title: event.title, normalized, parsedFields };
 }
 
+interface AppEventValue {
+  id: string;
+  eventId: string;
+  categoryId: string;
+  businessId: string;
+  userId: string;
+  metricRole: string;
+  valueText?: string;
+  valueNumber?: number;
+  valueDate?: string;
+  revenueValue?: number;
+  expenseValue?: number;
+  valueDuration?: number;
+}
+
 interface NormalizedFormFields {
   clientName?: string;
   childName?: string;
+  childAge?: string;
   clientPhone?: string;
   clientEmail?: string;
   activityDate?: string;
@@ -248,6 +292,174 @@ interface NormalizedFormFields {
   participantsCount?: string;
   packageName?: string;
   notes?: string;
+  activityTitle?: string;
+  amount?: string;
+}
+
+interface FieldMappingRow {
+  externalField: string;
+  appField: string;
+}
+
+const DEFAULT_FIELD_MAPPINGS: FieldMappingRow[] = [
+  { externalField: 'Parent Name', appField: 'clientName' },
+  { externalField: 'שם ההורה', appField: 'clientName' },
+  { externalField: 'שם מלא', appField: 'clientName' },
+  { externalField: 'Phone', appField: 'clientPhone' },
+  { externalField: 'טלפון', appField: 'clientPhone' },
+  { externalField: 'Email', appField: 'clientEmail' },
+  { externalField: 'אימייל', appField: 'clientEmail' },
+  { externalField: 'Child Name', appField: 'childName' },
+  { externalField: 'שם הילד/ה', appField: 'childName' },
+  { externalField: 'שם ילד/ה', appField: 'childName' },
+  { externalField: 'גיל הילד/ה', appField: 'childAge' },
+  { externalField: 'Event Date', appField: 'activityDate' },
+  { externalField: 'תאריך האירוע', appField: 'activityDate' },
+  { externalField: 'Event Time', appField: 'activityTime' },
+  { externalField: 'שעת האירוע', appField: 'activityTime' },
+  { externalField: 'Location', appField: 'location' },
+  { externalField: 'מיקום האירוע', appField: 'location' },
+  { externalField: 'מיקום', appField: 'location' },
+  { externalField: 'מספר משתתפים', appField: 'participantsCount' },
+  { externalField: 'מספר ילדים', appField: 'participantsCount' },
+  { externalField: 'חבילת פעילות', appField: 'packageName' },
+  { externalField: 'Notes', appField: 'notes' },
+  { externalField: 'הערות', appField: 'notes' },
+];
+
+const CLIENT_CATEGORY_NAMES = ['שם לקוח', 'לקוח', 'שם מטופל', 'שם מתאמן', 'שם תלמיד'];
+const CHILD_COUNT_CATEGORY_NAMES = ['מספר ילדים', 'משתתפ', 'מספר משתתפים', 'כמות'];
+
+function normKey(key: string): string {
+  return key.trim().toLowerCase();
+}
+
+function mergeFieldMappings(custom: FieldMappingRow[]): FieldMappingRow[] {
+  const byExternal = new Map<string, FieldMappingRow>();
+  for (const row of DEFAULT_FIELD_MAPPINGS) byExternal.set(normKey(row.externalField), row);
+  for (const row of custom) byExternal.set(normKey(row.externalField), row);
+  return [...byExternal.values()];
+}
+
+function applyExplicitFieldMapping(
+  parsed: Record<string, string>,
+  mappings: FieldMappingRow[],
+): NormalizedFormFields {
+  const fields: NormalizedFormFields = {};
+  for (const { externalField, appField } of mappings) {
+    const target = normKey(externalField);
+    let val = parsed[externalField]?.trim();
+    if (!val) {
+      for (const [key, value] of Object.entries(parsed)) {
+        if (normKey(key) === target && value.trim()) {
+          val = value.trim();
+          break;
+        }
+      }
+    }
+    if (!val) continue;
+    (fields as Record<string, string>)[appField] = val;
+  }
+  return fields;
+}
+
+function mergeNormalizedFields(
+  explicit: NormalizedFormFields,
+  fuzzy: NormalizedFormFields,
+): NormalizedFormFields {
+  return { ...fuzzy, ...explicit };
+}
+
+function collectUnmappedFields(
+  parsed: Record<string, string>,
+  normalized: NormalizedFormFields,
+  mappings: FieldMappingRow[],
+): Record<string, string> {
+  const mappedLabels = new Set(mappings.map((m) => normKey(m.externalField)));
+  const usedValues = new Set(
+    Object.values(normalized)
+      .filter((v): v is string => typeof v === 'string' && v.trim().length > 0)
+      .map((v) => v.trim()),
+  );
+  const unmapped: Record<string, string> = {};
+  for (const [key, value] of Object.entries(parsed)) {
+    const v = value.trim();
+    if (!v || mappedLabels.has(normKey(key)) || usedValues.has(v)) continue;
+    unmapped[key] = v;
+  }
+  return unmapped;
+}
+
+function buildCategoryInputs(
+  categories: Array<{ id: string; name: string; isActive?: boolean; valueType?: string; metricRole?: string }>,
+  fields: NormalizedFormFields,
+): Record<string, string> {
+  const clientName = fields.clientName?.trim() || fields.childName?.trim() || '';
+  const inputs: Record<string, string> = {};
+  for (const cat of categories) {
+    if (cat.isActive === false) continue;
+    if (CLIENT_CATEGORY_NAMES.some((n) => cat.name.includes(n)) && clientName) {
+      inputs[cat.id] = clientName;
+    }
+    if (CHILD_COUNT_CATEGORY_NAMES.some((n) => cat.name.includes(n)) && fields.participantsCount?.trim()) {
+      inputs[cat.id] = fields.participantsCount.trim();
+    }
+    if (cat.name.includes('גיל') && fields.childAge?.trim()) {
+      inputs[cat.id] = fields.childAge.trim();
+    }
+    if (fields.amount && cat.metricRole === 'revenue' && cat.valueType === 'number') {
+      inputs[cat.id] = fields.amount.replace(/[^\d.]/g, '');
+    }
+  }
+  return inputs;
+}
+
+function buildEventValuesForCategories(
+  eventId: string,
+  businessId: string,
+  userId: string,
+  categories: Array<{ id: string; name: string; isActive?: boolean; valueType?: string; metricRole?: string }>,
+  categoryInputs: Record<string, string>,
+  existing: AppEventValue[],
+): AppEventValue[] {
+  return categories
+    .filter((c) => c.isActive !== false)
+    .map((cat) => {
+      const raw = categoryInputs[cat.id]?.trim() ?? '';
+      const existingVal = existing.find((ev) => ev.eventId === eventId && ev.categoryId === cat.id);
+      const base: AppEventValue = existingVal ?? {
+        id: crypto.randomUUID(),
+        eventId,
+        categoryId: cat.id,
+        businessId,
+        userId,
+        metricRole: cat.metricRole ?? 'neutral',
+      };
+      if (!raw) return base;
+      const updated = { ...base };
+      switch (cat.valueType) {
+        case 'number': {
+          const num = Number(raw.replace(/[^\d.]/g, ''));
+          if (Number.isFinite(num)) {
+            updated.valueNumber = num;
+            if (cat.metricRole === 'revenue') updated.revenueValue = num;
+            if (cat.metricRole === 'expense') updated.expenseValue = num;
+          }
+          break;
+        }
+        case 'date':
+          updated.valueDate = raw;
+          break;
+        case 'duration': {
+          const mins = Number(raw);
+          if (Number.isFinite(mins)) updated.valueDuration = mins;
+          break;
+        }
+        default:
+          updated.valueText = raw;
+      }
+      return updated;
+    });
 }
 
 function parseEventDate(raw?: string): string {
@@ -280,16 +492,20 @@ function fuzzyMapFormFields(parsed: Record<string, string>): NormalizedFormField
       fields.clientEmail = v;
       continue;
     }
-    if (labelIncludes(label, ['event date', 'תאריך', 'date'])) {
+    if (labelIncludes(label, ['event date', 'תאריך האירוע', 'תאריך']) && !labelIncludes(label, ['לידה'])) {
       fields.activityDate = v;
       continue;
     }
-    if (labelIncludes(label, ['event time', 'שעת', 'time'])) {
+    if (labelIncludes(label, ['event time', 'שעת האירוע', 'שעה', 'time'])) {
       fields.activityTime = v;
       continue;
     }
-    if (labelIncludes(label, ['participants', 'משתתפ', 'guests', 'מספר'])) {
+    if (labelIncludes(label, ['participants', 'משתתפ', 'guests', 'מספר ילד', 'מספר משתתפ', 'children'])) {
       fields.participantsCount = v;
+      continue;
+    }
+    if (labelIncludes(label, ['גיל'])) {
+      fields.childAge = v;
       continue;
     }
     if (labelIncludes(label, ['package', 'חביל'])) {
@@ -317,17 +533,23 @@ function fuzzyMapFormFields(parsed: Record<string, string>): NormalizedFormField
 }
 
 function buildActivityTitle(fields: NormalizedFormFields): string {
-  const name = fields.childName?.trim() || fields.clientName?.trim() || 'לקוח';
+  const name = fields.clientName?.trim() || fields.childName?.trim() || 'לקוח';
   const pkg = fields.packageName?.trim();
+  if (fields.activityTitle?.trim()) return fields.activityTitle.trim();
   return pkg ? `${pkg} - ${name}` : `אירוע יום הולדת - ${name}`;
 }
 
-function buildActivityNotes(fields: NormalizedFormFields): string {
+function buildActivityNotes(fields: NormalizedFormFields, unmapped: Record<string, string> = {}): string {
   const lines: string[] = [];
-  if (fields.childName?.trim()) lines.push(`ילד/ה: ${fields.childName.trim()}`);
+  if (fields.childName?.trim() && fields.childName !== fields.clientName) {
+    lines.push(`ילד/ה: ${fields.childName.trim()}`);
+  }
+  if (fields.childAge?.trim()) lines.push(`גיל: ${fields.childAge.trim()}`);
   if (fields.participantsCount?.trim()) lines.push(`משתתפים: ${fields.participantsCount.trim()}`);
+  if (fields.packageName?.trim()) lines.push(`חבילה: ${fields.packageName.trim()}`);
   if (fields.activityTime?.trim()) lines.push(`שעה: ${fields.activityTime.trim()}`);
   if (fields.notes?.trim()) lines.push(fields.notes.trim());
+  for (const [key, val] of Object.entries(unmapped)) lines.push(`${key}: ${val}`);
   lines.push('מקור: Forms.app');
   return lines.join('\n');
 }
@@ -392,6 +614,20 @@ function extractAnswerValue(
     return [fn.f, fn.l].filter(Boolean).join(' ').trim();
   }
   if (qt === 'date' && answer.d) return String(answer.d).trim();
+  if (qt === 'number' || qt === 'quantity') {
+    if (answer.n != null && answer.n !== '') return String(answer.n).trim();
+  }
+  if (qt === 'singlechoice' || qt === 'dropdown' || qt === 'radiobutton' || qt === 'yesno') {
+    const choices = answer.c as Array<{ t?: string; v?: string }> | undefined;
+    if (Array.isArray(choices) && choices[0]) {
+      return String(choices[0].t ?? choices[0].v ?? '').trim();
+    }
+  }
+  if (qt === 'address') {
+    const addr = answer.a as { a1?: string; city?: string } | undefined;
+    if (addr?.a1?.trim()) return addr.a1.trim();
+    if (addr?.city?.trim()) return addr.city.trim();
+  }
   if (qt === 'phone' || qt === 'tel') {
     return String(answer.p ?? answer.t ?? '').trim();
   }
