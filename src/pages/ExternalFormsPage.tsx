@@ -10,12 +10,49 @@ import {
 import { useAppStore } from '../store/useAppStore';
 import { formatDate } from '../lib/finance';
 import { buildFormsAppMockPayload } from '../lib/externalForms/mockSubmission';
+import { refreshFromCloudIfNewer } from '../lib/cloudSync';
+import { isSupabaseConfigured } from '../lib/supabase';
 
 export function ExternalFormsPage() {
   const business = useAppStore((s) => s.business)!;
   const connections = useAppStore((s) => s.externalFormConnections).filter(
     (c) => c.businessId === business.id,
   );
+  const clearAllExternalFormConnections = useAppStore((s) => s.clearAllExternalFormConnections);
+  const [resetBusy, setResetBusy] = useState(false);
+  const [refreshBusy, setRefreshBusy] = useState(false);
+  const [pageMessage, setPageMessage] = useState<string | null>(null);
+
+  const resetAll = () => {
+    if (
+      !window.confirm(
+        'למחוק את כל חיבורי הטפסים ולהתחיל מחדש? פעולה זו לא מוחקת פעילויות שכבר נוצרו.',
+      )
+    ) {
+      return;
+    }
+    setResetBusy(true);
+    clearAllExternalFormConnections();
+    setResetBusy(false);
+    setPageMessage('כל החיבורים נמחקו — לחצי «+ חיבור טופס» כדי להתחיל מחדש');
+  };
+
+  const refreshActivities = async () => {
+    setRefreshBusy(true);
+    setPageMessage(null);
+    try {
+      const pulled = await refreshFromCloudIfNewer();
+      setPageMessage(
+        pulled
+          ? 'נמצאו פעילויות חדשות מהענן — בדקי במסך פעילויות'
+          : 'אין פעילויות חדשות מהענן כרגע',
+      );
+    } catch {
+      setPageMessage('לא הצלחנו לרענן מהענן — ודאי שאת מחוברת עם אימייל וסיסמה');
+    } finally {
+      setRefreshBusy(false);
+    }
+  };
 
   return (
     <div className="app-shell">
@@ -45,6 +82,26 @@ export function ExternalFormsPage() {
           />
         ) : (
           <>
+            <div className="wizard-btn-row" style={{ marginBottom: '1rem' }}>
+              {isSupabaseConfigured() && (
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  disabled={refreshBusy}
+                  onClick={() => void refreshActivities()}
+                >
+                  {refreshBusy ? 'מרענן…' : 'רענון פעילויות מהענן'}
+                </button>
+              )}
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                disabled={resetBusy}
+                onClick={resetAll}
+              >
+                {resetBusy ? 'מוחק…' : 'התחלה מחדש (מחק הכל)'}
+              </button>
+            </div>
             <ul className="external-form-list">
               {connections.map((conn) => (
                 <li key={conn.id}>
@@ -53,10 +110,12 @@ export function ExternalFormsPage() {
               ))}
             </ul>
             <p className="page-subtitle" style={{ marginTop: '1rem' }}>
-              מילוי טופס אמיתי ב-Forms.app יוצר פעילות ישירות בענן. רעננו את האפליקציה כדי לראות פעילויות חדשות.
+              מילוי טופס אמיתי ב-Forms.app יוצר פעילות בענן. לחצי «רענון פעילויות מהענן» או
+              פתחי מחדש את האפליקציה כדי לראות פעילויות חדשות.
             </p>
           </>
         )}
+        {pageMessage && <p className="field-hint">{pageMessage}</p>}
       </div>
       <BottomNav />
     </div>
@@ -65,6 +124,7 @@ export function ExternalFormsPage() {
 
 function FormConnectionCard({ connection }: { connection: ExternalFormConnection }) {
   const processExternalFormSubmission = useAppStore((s) => s.processExternalFormSubmission);
+  const removeExternalFormConnection = useAppStore((s) => s.removeExternalFormConnection);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -89,9 +149,14 @@ function FormConnectionCard({ connection }: { connection: ExternalFormConnection
     setBusy(false);
     setMessage(
       eventId
-        ? 'נוצרה פעילות סימולציה — בדקו במסך פעילויות'
+        ? 'נוצרה פעילות סימולציה מקומית — בדקו במסך פעילויות'
         : 'הסימולציה נכשלה — בדקו את מיפוי השדות',
     );
+  };
+
+  const deleteConnection = () => {
+    if (!window.confirm(`למחוק את החיבור «${connection.formName}»?`)) return;
+    removeExternalFormConnection(connection.id);
   };
 
   return (
@@ -110,7 +175,7 @@ function FormConnectionCard({ connection }: { connection: ExternalFormConnection
         </span>
       </div>
       <p className="external-form-card-stats">
-        {connection.submissionCount} מילויים
+        {connection.submissionCount} מילויים מקומיים
         {connection.lastSubmissionAt &&
           ` · אחרון: ${formatDate(connection.lastSubmissionAt.slice(0, 10))}`}
       </p>
@@ -127,7 +192,10 @@ function FormConnectionCard({ connection }: { connection: ExternalFormConnection
           disabled={busy}
           onClick={() => void simulateSubmission()}
         >
-          סימולציית Forms.app
+          סימולציה מקומית
+        </button>
+        <button type="button" className="btn btn-ghost btn-sm" onClick={deleteConnection}>
+          מחיקה
         </button>
       </div>
       {message && <p className="field-hint">{message}</p>}

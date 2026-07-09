@@ -19,6 +19,7 @@ export function ExternalFormManagePage() {
   const retryExternalFormSubmission = useAppStore((s) => s.retryExternalFormSubmission);
   const activateExternalFormConnection = useAppStore((s) => s.activateExternalFormConnection);
   const upsertExternalFormConnection = useAppStore((s) => s.upsertExternalFormConnection);
+  const removeExternalFormConnection = useAppStore((s) => s.removeExternalFormConnection);
 
   if (!connection) {
     return (
@@ -61,11 +62,25 @@ export function ExternalFormManagePage() {
             <strong>סטטוס:</strong> {connection.isActive ? 'פעיל' : 'לא פעיל'}
           </p>
           <p>
-            <strong>מילויים:</strong> {connection.submissionCount}
+            <strong>מילויים מקומיים:</strong> {connection.submissionCount}
           </p>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={() => void toggleActive()}>
-            {connection.isActive ? 'השהייה' : 'הפעלה'}
-          </button>
+          <div className="wizard-btn-row">
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => void toggleActive()}>
+              {connection.isActive ? 'השהייה' : 'הפעלה'}
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              onClick={() => {
+                if (window.confirm(`למחוק את «${connection.formName}»?`)) {
+                  removeExternalFormConnection(connection.id);
+                  window.history.back();
+                }
+              }}
+            >
+              מחיקת חיבור
+            </button>
+          </div>
         </div>
 
         <section className="connections-category">

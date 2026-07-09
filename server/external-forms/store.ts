@@ -132,7 +132,10 @@ export async function registerFormConnection(conn: StoredFormConnection): Promis
     updated_at: new Date().toISOString(),
   });
 
-  if (error) console.error('[external-forms] registerConnection', error.message);
+  if (error) {
+    console.error('[external-forms] registerConnection', error.message);
+    throw new Error(`שמירת החיבור בענן נכשלה: ${error.message}`);
+  }
 }
 
 export async function getFormConnection(

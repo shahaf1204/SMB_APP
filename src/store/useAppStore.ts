@@ -206,6 +206,7 @@ interface AppActions {
   applyIntegrationWebhook: (update: import('../types/integrations').WebhookPaymentUpdate) => void;
   upsertExternalFormConnection: (connection: ExternalFormConnection) => void;
   removeExternalFormConnection: (connectionId: string) => void;
+  clearAllExternalFormConnections: () => void;
   activateExternalFormConnection: (connectionId: string) => Promise<void>;
   processExternalFormSubmission: (params: {
     connectionId: string;
@@ -1112,6 +1113,40 @@ export const useAppStore = create<Store>()(
           externalFormConnections: get().externalFormConnections.filter(
             (c) => c.id !== connectionId,
           ),
+          externalFormSubmissions: get().externalFormSubmissions.filter(
+            (s) => s.connectionId !== connectionId,
+          ),
+          formNotifications: get().formNotifications.filter(
+            (n) => n.connectionId !== connectionId,
+          ),
+        });
+      },
+
+      clearAllExternalFormConnections: () => {
+        const business = get().business;
+        if (!business) {
+          set({
+            externalFormConnections: [],
+            externalFormSubmissions: [],
+            formNotifications: [],
+          });
+          return;
+        }
+        const connectionIds = new Set(
+          get()
+            .externalFormConnections.filter((c) => c.businessId === business.id)
+            .map((c) => c.id),
+        );
+        set({
+          externalFormConnections: get().externalFormConnections.filter(
+            (c) => c.businessId !== business.id,
+          ),
+          externalFormSubmissions: get().externalFormSubmissions.filter(
+            (s) => !connectionIds.has(s.connectionId),
+          ),
+          formNotifications: get().formNotifications.filter(
+            (n) => !connectionIds.has(n.connectionId),
+          ),
         });
       },
 
@@ -1126,8 +1161,13 @@ export const useAppStore = create<Store>()(
         get().upsertExternalFormConnection(updated);
         try {
           await registerExternalFormConnection(updated);
-        } catch {
-          /* local fallback — poll may miss until re-register */
+        } catch (e) {
+          get().upsertExternalFormConnection({
+            ...conn,
+            isActive: false,
+            updatedAt: new Date().toISOString(),
+          });
+          throw e;
         }
       },
 

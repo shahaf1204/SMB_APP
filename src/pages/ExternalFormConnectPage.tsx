@@ -8,15 +8,27 @@ import {
 } from '../lib/externalForms/connectionWebhook';
 import { FORMS_APP_SPRINT_MAPPING } from '../lib/externalForms/sprintMapping';
 import { buildFormsAppMockPayload } from '../lib/externalForms/mockSubmission';
+import { registerExternalFormConnection, sendTestWebhook } from '../lib/externalForms/clientApi';
+import { refreshFromCloudIfNewer } from '../lib/cloudSync';
+import { getSupabase, isSupabaseConfigured } from '../lib/supabase';
 import { useAppStore } from '../store/useAppStore';
+
+function registerErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+      return 'לא ניתן להגיע לשרת — ודאי שהאפליקציה פרוסה ב-Vercel';
+    }
+    return error.message;
+  }
+  return 'שגיאה בחיבור — נסו שוב';
+}
 
 export function ExternalFormConnectPage() {
   const navigate = useNavigate();
   const business = useAppStore((s) => s.business)!;
   const user = useAppStore((s) => s.user)!;
-  const upsertExternalFormConnection = useAppStore((s) => s.upsertExternalFormConnection);
-  const activateExternalFormConnection = useAppStore((s) => s.activateExternalFormConnection);
-  const processExternalFormSubmission = useAppStore((s) => s.processExternalFormSubmission);
+  const storeUpsert = useAppStore((s) => s.upsertExternalFormConnection);
+  const storeActivate = useAppStore((s) => s.activateExternalFormConnection);
 
   const [connectionId] = useState(() => createId());
   const [secretKey] = useState(() => generateSecretKey());
@@ -24,19 +36,29 @@ export function ExternalFormConnectPage() {
   const [connected, setConnected] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [messageKind, setMessageKind] = useState<'ok' | 'err' | null>(null);
 
+  const cloudReady = isSupabaseConfigured();
   const webhookUrl = useMemo(
     () => buildWebhookUrl(connectionId, secretKey),
     [connectionId, secretKey],
   );
 
+  const showMessage = (text: string, kind: 'ok' | 'err') => {
+    setMessage(text);
+    setMessageKind(kind);
+  };
+
   const copyText = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      setMessage('הועתק!');
-      setTimeout(() => setMessage(null), 2000);
+      showMessage('הועתק!', 'ok');
+      setTimeout(() => {
+        setMessage(null);
+        setMessageKind(null);
+      }, 2000);
     } catch {
-      setMessage('לא ניתן להעתיק');
+      showMessage('לא ניתן להעתיק', 'err');
     }
   };
 
@@ -56,44 +78,95 @@ export function ExternalFormConnectPage() {
     submissionCount: 0,
   });
 
+  const ensureCloudSession = async (): Promise<boolean> => {
+    if (!cloudReady) {
+      showMessage('חיבור טפסים דורש התחברות עם אימייל וסיסמה (Supabase)', 'err');
+      return false;
+    }
+    try {
+      const { data } = await getSupabase().auth.getSession();
+      if (!data.session?.user?.id) {
+        showMessage('יש להתחבר עם אימייל וסיסמה לפני חיבור טופס', 'err');
+        return false;
+      }
+      if (data.session.user.id !== user.id) {
+        showMessage('זוהה חשבון שונה — התנתקי והתחברי מחדש', 'err');
+        return false;
+      }
+    } catch {
+      showMessage('לא ניתן לוודא התחברות לענן', 'err');
+      return false;
+    }
+    return true;
+  };
+
   const connectForm = async () => {
     if (!formName.trim()) {
-      setMessage('יש להזין שם טופס');
+      showMessage('יש להזין שם טופס', 'err');
       return;
     }
+    if (!(await ensureCloudSession())) return;
+
     setBusy(true);
     setMessage(null);
+    setMessageKind(null);
     try {
-      upsertExternalFormConnection(buildConnection(true));
-      await activateExternalFormConnection(connectionId);
+      storeUpsert(buildConnection(true));
+      await storeActivate(connectionId);
       setConnected(true);
-      setMessage('הטופס מחובר ופעיל');
-    } catch {
-      setMessage('שגיאה בחיבור — נסו שוב');
+      showMessage('החיבור נשמר בשרת — העתיקי את קישור ה-Webhook ל-forms.app', 'ok');
+    } catch (e) {
+      showMessage(registerErrorMessage(e), 'err');
     } finally {
       setBusy(false);
     }
   };
 
   const testConnection = async () => {
+    if (!formName.trim()) {
+      showMessage('יש להזין שם טופס', 'err');
+      return;
+    }
+    if (!(await ensureCloudSession())) return;
+
     setBusy(true);
     setMessage(null);
+    setMessageKind(null);
     const connection = buildConnection(true);
-    upsertExternalFormConnection(connection);
-    await activateExternalFormConnection(connectionId);
 
-    const payload = buildFormsAppMockPayload();
-    const eventId = processExternalFormSubmission({
-      connectionId,
-      rawPayload: payload,
-    });
+    try {
+      storeUpsert(connection);
+      await registerExternalFormConnection(connection);
 
-    setBusy(false);
-    if (eventId) {
-      setMessage('בדיקה הצליחה — נוצרה פעילות סימולציה');
+      const payload = buildFormsAppMockPayload();
+      const res = await sendTestWebhook(connection, payload);
+      const body = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        error?: string;
+        activityId?: string;
+      };
+
+      if (!res.ok) {
+        showMessage(body.error ?? `השרת החזיר שגיאה (${res.status})`, 'err');
+        return;
+      }
+      if (!body.ok) {
+        showMessage(body.error ?? 'השרת קיבל את הבקשה אך לא יצר פעילות', 'err');
+        return;
+      }
+
+      await refreshFromCloudIfNewer();
       setConnected(true);
-    } else {
-      setMessage('הבדיקה נכשלה — בדקו את מיפוי השדות');
+      showMessage(
+        body.activityId
+          ? 'בדיקה הצליחה — נוצרה פעילות בשרת. בדקי במסך פעילויות'
+          : 'השרת אישר את הבקשה — רענני את מסך הפעילויות',
+        'ok',
+      );
+    } catch (e) {
+      showMessage(registerErrorMessage(e), 'err');
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -112,7 +185,25 @@ export function ExternalFormConnectPage() {
           הדביקי את קישור ה-Webhook ב-forms.app — כל מילוי ייצור פעילות אוטומטית
         </p>
 
+        {!cloudReady && (
+          <p className="provider-card-error">
+            חיבור טפסים אמיתי דורש התחברות עם אימייל וסיסמה (לא רק שם משתמש מקומי).
+          </p>
+        )}
+
         <section className="wizard-panel">
+          <h2 className="section-title-sm">שלבים</h2>
+          <ol className="connect-steps">
+            <li>הזיני שם לטופס ולחצי «חיבור טופס» — חייב להופיע «החיבור נשמר בשרת»</li>
+            <li>העתיקי את קישור ה-Webhook</li>
+            <li>
+              ב-forms.app: פתחי את הטופס → Integrations / Webhooks → הוסיפי Webhook → הדביקי
+              את הקישור
+            </li>
+            <li>לחצי «בדיקת חיבור לשרת» — אם הצליח, תופיע פעילות במסך פעילויות</li>
+            <li>מילוי אמיתי ב-forms.app יגיע תוך ~30 שניות (או אחרי «רענון מהענן»)</li>
+          </ol>
+
           <div className="field">
             <label htmlFor="form-name">שם הטופס</label>
             <input
@@ -142,11 +233,19 @@ export function ExternalFormConnectPage() {
             <span
               className={`provider-status ${connected ? 'provider-status--on' : ''}`}
             >
-              {connected ? 'מחובר' : 'לא מחובר'}
+              {connected ? 'מחובר לשרת' : 'טרם נשמר בשרת'}
             </span>
           </div>
 
-          {message && <p className="field-hint">{message}</p>}
+          {message && (
+            <p
+              className={
+                messageKind === 'err' ? 'provider-card-error' : 'field-hint'
+              }
+            >
+              {message}
+            </p>
+          )}
 
           <div className="wizard-btn-row">
             <button
@@ -160,10 +259,10 @@ export function ExternalFormConnectPage() {
             <button
               type="button"
               className="btn btn-ghost"
-              disabled={busy}
+              disabled={busy || !formName.trim()}
               onClick={() => void testConnection()}
             >
-              בדיקת חיבור
+              בדיקת חיבור לשרת
             </button>
           </div>
 
