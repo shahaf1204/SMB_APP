@@ -1,5 +1,4 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { processFormsWebhook } from '../../server/external-forms/webhook';
 import {
   createIntegrationLog,
   isFinanceProvider,
@@ -41,18 +40,11 @@ function queryParam(value: string | string[] | undefined): string {
   return value ?? '';
 }
 
-async function handleFormsWebhook(req: VercelRequest, res: VercelResponse): Promise<void> {
-  try {
-    const result = await processFormsWebhook(req);
-    res.status(result.status).json(result.body);
-  } catch (e) {
-    console.error('[FORMS_PARSE_ERROR]', e);
-    res.status(200).json({
-      processed: false,
-      ok: false,
-      error: e instanceof Error ? e.message : 'Webhook handler failed',
-    });
-  }
+async function handleFormsWebhook(_req: VercelRequest, res: VercelResponse): Promise<void> {
+  res.status(410).json({
+    ok: false,
+    error: 'Use /api/webhooks/forms for Forms.app webhooks',
+  });
 }
 
 async function handleMetaLeadgen(req: VercelRequest, res: VercelResponse): Promise<void> {

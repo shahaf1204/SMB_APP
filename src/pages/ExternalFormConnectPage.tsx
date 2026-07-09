@@ -195,13 +195,14 @@ export function ExternalFormConnectPage() {
           <h2 className="section-title-sm">שלבים</h2>
           <ol className="connect-steps">
             <li>הזיני שם לטופס ולחצי «חיבור טופס» — חייב להופיע «החיבור נשמר בשרת»</li>
-            <li>העתיקי את קישור ה-Webhook</li>
+            <li>העתיקי את קישור ה-Webhook המלא (כולל connectionId ו-secret)</li>
+            <li>ב-forms.app: Connect → Webhook → Add a webhook → הדביקי את הקישור המלא</li>
             <li>
-              ב-forms.app: פתחי את הטופס → Integrations / Webhooks → הוסיפי Webhook → הדביקי
-              את הקישור
+              <strong>חשוב:</strong> שלחי מילוי דרך קישור הטופס ב-forms.app (Share → Open form) —
+              לא דרך הוספת «אירוע» באפליקציה שלנו
             </li>
+            <li>אחרי שליחת הטופס, בדקי Recent Deliveries ב-forms.app — אמור להופיע שם</li>
             <li>לחצי «בדיקת חיבור לשרת» — אם הצליח, תופיע פעילות במסך פעילויות</li>
-            <li>מילוי אמיתי ב-forms.app יגיע תוך ~30 שניות (או אחרי «רענון מהענן»)</li>
           </ol>
 
           <div className="field">
