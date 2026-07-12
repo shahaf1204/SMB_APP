@@ -34,6 +34,36 @@ export const BIRTHDAY_PARTY_DEFAULT_MAPPING: Array<{
   { externalField: 'הערות', appField: 'notes' },
 ];
 
+export const GENERIC_SERVICE_DEFAULT_MAPPING: Array<{
+  externalField: string;
+  appField: ExternalFormAppField;
+}> = [
+  { externalField: 'שם מלא', appField: 'clientName' },
+  { externalField: 'שם', appField: 'clientName' },
+  { externalField: 'Name', appField: 'clientName' },
+  { externalField: 'Full Name', appField: 'clientName' },
+  { externalField: 'טלפון', appField: 'clientPhone' },
+  { externalField: 'Phone', appField: 'clientPhone' },
+  { externalField: 'אימייל', appField: 'clientEmail' },
+  { externalField: 'Email', appField: 'clientEmail' },
+  { externalField: 'תאריך', appField: 'activityDate' },
+  { externalField: 'Date', appField: 'activityDate' },
+  { externalField: 'שעה', appField: 'activityTime' },
+  { externalField: 'Time', appField: 'activityTime' },
+  { externalField: 'מיקום', appField: 'location' },
+  { externalField: 'Location', appField: 'location' },
+  { externalField: 'הערות', appField: 'notes' },
+  { externalField: 'Notes', appField: 'notes' },
+];
+
+export function getDefaultMappingForPreset(presetId?: string): Array<{
+  externalField: string;
+  appField: ExternalFormAppField;
+}> {
+  if (presetId === 'birthday') return [...BIRTHDAY_PARTY_DEFAULT_MAPPING];
+  return [...GENERIC_SERVICE_DEFAULT_MAPPING];
+}
+
 export function appFieldLabel(field: ExternalFormAppField): string {
   return APP_FIELD_OPTIONS.find((o) => o.value === field)?.label ?? field;
 }

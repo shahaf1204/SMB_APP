@@ -4,7 +4,7 @@ import { BottomNav } from '../components/BottomNav';
 import { createId } from '../lib/ids';
 import {
   APP_FIELD_OPTIONS,
-  BIRTHDAY_PARTY_DEFAULT_MAPPING,
+  getDefaultMappingForPreset,
 } from '../lib/externalForms/fieldMapping';
 import {
   buildWebhookUrl,
@@ -13,7 +13,17 @@ import {
   normalizeSubmission,
 } from '../lib/externalForms/connectionWebhook';
 import { previewActivityFromSubmission } from '../lib/externalForms/processSubmission';
-import { sendTestWebhook } from '../lib/externalForms/clientApi';
+import {
+  registerExternalFormConnection,
+  sendTestWebhook,
+} from '../lib/externalForms/clientApi';
+import { buildFormsAppMockPayload } from '../lib/externalForms/mockSubmission';
+import {
+  mergeSuggestedWithPreset,
+  suggestFieldMappingFromLabels,
+} from '../lib/externalForms/suggestFieldMapping';
+import { refreshFromCloudIfNewer } from '../lib/cloudSync';
+import { getSupabase, isSupabaseConfigured } from '../lib/supabase';
 import { useAppStore } from '../store/useAppStore';
 import type {
   ExternalFormActivityType,
@@ -36,19 +46,15 @@ const PROVIDERS: ExternalFormProviderId[] = [
 
 const ACTIVITY_TYPES: ExternalFormActivityType[] = ['event', 'card', 'program', 'course'];
 
-const SAMPLE_BIRTHDAY_JSON = `{
-  "שם ההורה": "דנה כהן",
-  "טלפון": "0501234567",
-  "אימייל": "dana@example.com",
-  "שם הילד/ה": "יואב",
-  "גיל הילד/ה": "7",
-  "תאריך האירוע": "2026-08-15",
-  "שעת האירוע": "16:00",
-  "מיקום האירוע": "גן אירועים",
-  "מספר משתתפים": "25",
-  "חבילת פעילות": "VIP",
-  "הערות": "אלרגיה לבוטנים"
-}`;
+function registerErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+      return 'לא ניתן להגיע לשרת — ודאי שהאפליקציה פרוסה ב-Vercel';
+    }
+    return error.message;
+  }
+  return 'שגיאה בחיבור — נסו שוב';
+}
 
 export function ExternalFormWizardPage() {
   const navigate = useNavigate();
@@ -56,7 +62,11 @@ export function ExternalFormWizardPage() {
   const user = useAppStore((s) => s.user)!;
   const upsertExternalFormConnection = useAppStore((s) => s.upsertExternalFormConnection);
   const activateExternalFormConnection = useAppStore((s) => s.activateExternalFormConnection);
-  const processExternalFormSubmission = useAppStore((s) => s.processExternalFormSubmission);
+
+  const presetMapping = useMemo(
+    () => getDefaultMappingForPreset(business.presetId),
+    [business.presetId],
+  );
 
   const [step, setStep] = useState(1);
   const [connectionId] = useState(() => createId());
@@ -65,12 +75,16 @@ export function ExternalFormWizardPage() {
   const [formName, setFormName] = useState('');
   const [formUrl, setFormUrl] = useState('');
   const [activityType, setActivityType] = useState<ExternalFormActivityType>('event');
-  const [fieldMapping, setFieldMapping] = useState<ExternalFormFieldMapping[]>(
-    BIRTHDAY_PARTY_DEFAULT_MAPPING,
-  );
-  const [testJson, setTestJson] = useState(SAMPLE_BIRTHDAY_JSON);
+  const [fieldMapping, setFieldMapping] = useState<ExternalFormFieldMapping[]>(presetMapping);
+  const [testJson, setTestJson] = useState('');
   const [testMsg, setTestMsg] = useState<string | null>(null);
+  const [testMsgKind, setTestMsgKind] = useState<'ok' | 'err' | null>(null);
   const [busy, setBusy] = useState(false);
+  const [serverSaved, setServerSaved] = useState(false);
+  const [mappingAutoSuggested, setMappingAutoSuggested] = useState(false);
+  const [detectedFieldLabels, setDetectedFieldLabels] = useState<string[]>([]);
+
+  const cloudReady = isSupabaseConfigured();
 
   const webhookUrl = useMemo(
     () => buildWebhookUrl(connectionId, secretKey),
@@ -109,6 +123,7 @@ export function ExternalFormWizardPage() {
   );
 
   const parsedTest = useMemo(() => {
+    if (!testJson.trim()) return null;
     try {
       return JSON.parse(testJson) as unknown;
     } catch {
@@ -131,78 +146,185 @@ export function ExternalFormWizardPage() {
   }, [normalizedPreview, draftConnection]);
 
   const detectedFields = useMemo(() => {
+    if (detectedFieldLabels.length > 0) return detectedFieldLabels;
     if (!parsedTest) return [];
     return detectExternalFields(parsedTest, provider);
-  }, [parsedTest, provider]);
+  }, [parsedTest, provider, detectedFieldLabels]);
+
+  const showMessage = (text: string, kind: 'ok' | 'err') => {
+    setTestMsg(text);
+    setTestMsgKind(kind);
+  };
 
   const copyText = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      setTestMsg('הועתק!');
-      setTimeout(() => setTestMsg(null), 2000);
+      showMessage('הועתק!', 'ok');
+      setTimeout(() => {
+        setTestMsg(null);
+        setTestMsgKind(null);
+      }, 2000);
     } catch {
-      setTestMsg('לא ניתן להעתיק');
+      showMessage('לא ניתן להעתיק', 'err');
+    }
+  };
+
+  const ensureCloudSession = async (): Promise<boolean> => {
+    if (!cloudReady) {
+      showMessage('חיבור טפסים דורש התחברות עם אימייל וסיסמה (Supabase)', 'err');
+      return false;
+    }
+    try {
+      const { data } = await getSupabase().auth.getSession();
+      if (!data.session?.user?.id) {
+        showMessage('יש להתחבר עם אימייל וסיסמה לפני חיבור טופס', 'err');
+        return false;
+      }
+      if (data.session.user.id !== user.id) {
+        showMessage('זוהה חשבון שונה — התנתקי והתחברי מחדש', 'err');
+        return false;
+      }
+    } catch {
+      showMessage('לא ניתן לוודא התחברות לענן', 'err');
+      return false;
+    }
+    return true;
+  };
+
+  const saveConnectionToServer = async (active: boolean): Promise<boolean> => {
+    if (!(await ensureCloudSession())) return false;
+    setBusy(true);
+    setTestMsg(null);
+    setTestMsgKind(null);
+    const connection = { ...draftConnection, isActive: active, fieldMapping };
+    try {
+      upsertExternalFormConnection(connection);
+      await registerExternalFormConnection(connection);
+      setServerSaved(true);
+      return true;
+    } catch (e) {
+      showMessage(registerErrorMessage(e), 'err');
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const applySuggestedMapping = (labels: string[]) => {
+    const suggested = suggestFieldMappingFromLabels(labels);
+    setFieldMapping(mergeSuggestedWithPreset(suggested, presetMapping));
+    setMappingAutoSuggested(true);
+  };
+
+  const runServerTest = async () => {
+    if (!formName.trim()) {
+      showMessage('יש להזין שם טופס', 'err');
+      return;
+    }
+    if (!(await ensureCloudSession())) return;
+
+    setBusy(true);
+    setTestMsg(null);
+    setTestMsgKind(null);
+
+    const payload = parsedTest ?? buildFormsAppMockPayload();
+    if (!testJson.trim()) {
+      setTestJson(JSON.stringify(payload, null, 2));
+    }
+
+    const connection = { ...draftConnection, isActive: true, fieldMapping };
+
+    try {
+      upsertExternalFormConnection(connection);
+      await registerExternalFormConnection(connection);
+      setServerSaved(true);
+
+      const res = await sendTestWebhook(connection, payload);
+      const body = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        error?: string;
+        activityId?: string;
+        parsedFields?: Record<string, string>;
+        normalized?: Record<string, string>;
+        title?: string;
+      };
+
+      if (body.parsedFields && Object.keys(body.parsedFields).length > 0) {
+        const labels = Object.keys(body.parsedFields);
+        setDetectedFieldLabels(labels);
+        setTestJson(JSON.stringify(body.parsedFields, null, 2));
+        applySuggestedMapping(labels);
+      } else {
+        const localLabels = detectExternalFields(payload, provider);
+        if (localLabels.length > 0) {
+          setDetectedFieldLabels(localLabels);
+          applySuggestedMapping(localLabels);
+        }
+      }
+
+      if (!res.ok || !body.ok) {
+        showMessage(
+          body.error ??
+            (body.parsedFields
+              ? 'השרת קיבל את השדות — עדכני מיפוי והריצי שוב'
+              : `השרת החזיר שגיאה (${res.status})`),
+          body.parsedFields ? 'ok' : 'err',
+        );
+        return;
+      }
+
+      await refreshFromCloudIfNewer();
+      showMessage(
+        body.activityId
+          ? 'בדיקה הצליחה! נוצרה פעילות — המיפוי עודכן לפי השדות שנמצאו'
+          : 'השרת אישר — המיפוי עודכן לפי השדות שנמצאו',
+        'ok',
+      );
+    } catch (e) {
+      showMessage(registerErrorMessage(e), 'err');
+    } finally {
+      setBusy(false);
     }
   };
 
   const updateMapping = (index: number, patch: Partial<ExternalFormFieldMapping>) => {
+    setMappingAutoSuggested(false);
     setFieldMapping((prev) =>
       prev.map((row, i) => (i === index ? { ...row, ...patch } : row)),
     );
   };
 
   const addMappingRow = () => {
+    setMappingAutoSuggested(false);
     setFieldMapping((prev) => [...prev, { externalField: '', appField: 'notes' }]);
   };
 
-  const runTest = async () => {
-    setBusy(true);
-    setTestMsg(null);
-    try {
-      if (!parsedTest) throw new Error('JSON לא תקין');
-      upsertExternalFormConnection({ ...draftConnection, isActive: true });
-      await activateExternalFormConnection(connectionId);
-
-      const res = await sendTestWebhook({ ...draftConnection, isActive: true }, parsedTest);
-      if (!res.ok) {
-        const eventId = processExternalFormSubmission({
-          connectionId,
-          rawPayload: parsedTest,
-        });
-        if (eventId) {
-          setTestMsg('נוצרה פעילות בדיקה (מקומי)');
-          return;
-        }
-        throw new Error('שגיאת webhook');
-      }
-
-      const eventId = processExternalFormSubmission({
-        connectionId,
-        rawPayload: parsedTest,
-      });
-      setTestMsg(eventId ? 'נוצרה פעילות בדיקה בהצלחה!' : 'הטופס התקבל — בדקו מיפוי שדות');
-    } catch (e) {
-      const eventId = parsedTest
-        ? processExternalFormSubmission({ connectionId, rawPayload: parsedTest })
-        : null;
-      setTestMsg(
-        eventId
-          ? 'נוצרה פעילות בדיקה (מקומי)'
-          : e instanceof Error
-            ? e.message
-            : 'שגיאה',
-      );
-    } finally {
-      setBusy(false);
+  const goToStep4 = async () => {
+    if (!formName.trim()) {
+      showMessage('יש להזין שם טופס', 'err');
+      return;
+    }
+    const ok = await saveConnectionToServer(false);
+    if (ok) {
+      showMessage('החיבור נשמר בשרת — העתיקי את קישור ה-Webhook ל-forms.app', 'ok');
+      setStep(4);
     }
   };
 
   const finish = async () => {
+    if (!(await ensureCloudSession())) return;
     setBusy(true);
-    upsertExternalFormConnection(draftConnection);
-    await activateExternalFormConnection(connectionId);
-    setBusy(false);
-    navigate(`/settings/external-forms/${connectionId}`);
+    setTestMsg(null);
+    setTestMsgKind(null);
+    try {
+      upsertExternalFormConnection({ ...draftConnection, fieldMapping, isActive: true });
+      await activateExternalFormConnection(connectionId);
+      navigate(`/settings/external-forms/${connectionId}`);
+    } catch (e) {
+      showMessage(registerErrorMessage(e), 'err');
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -214,6 +336,12 @@ export function ExternalFormWizardPage() {
         <h1 className="page-title">חיבור טופס חדש</h1>
         <p className="wizard-steps-label">שלב {step} מתוך 6</p>
 
+        {!cloudReady && (
+          <p className="provider-card-error">
+            חיבור טפסים אמיתי דורש התחברות עם אימייל וסיסמה (לא רק שם משתמש מקומי).
+          </p>
+        )}
+
         {step === 1 && (
           <section className="wizard-panel">
             <h2 className="section-title-sm">בחרו ספק טפסים</h2>
@@ -224,8 +352,10 @@ export function ExternalFormWizardPage() {
                     type="button"
                     className={`provider-pick-btn ${provider === id ? 'provider-pick-btn--on' : ''}`}
                     onClick={() => setProvider(id)}
+                    disabled={id !== 'forms_app'}
                   >
                     {EXTERNAL_FORM_PROVIDER_LABELS[id]}
+                    {id !== 'forms_app' && ' (בקרוב)'}
                   </button>
                 </li>
               ))}
@@ -293,26 +423,56 @@ export function ExternalFormWizardPage() {
         {step === 3 && (
           <section className="wizard-panel">
             <h2 className="section-title-sm">קישור חיבור לטופס</h2>
+            <ol className="connect-steps">
+              <li>לחצי «שמירה והמשך» — חייב להופיע «החיבור נשמר בשרת»</li>
+              <li>העתיקי את קישור ה-Webhook המלא (כולל connectionId ו-secret)</li>
+              <li>ב-forms.app: Connect → Webhook → Add a webhook → הדביקי את הקישור</li>
+              <li>
+                <strong>חשוב:</strong> שלחי מילוי דרך Share → Open form — לא דרך הוספת «אירוע»
+                באפליקציה
+              </li>
+            </ol>
             <p className="field-hint">
-              הדביקי את הקישור הזה בהגדרות ה-Webhook של ספק הטפסים שלך
+              הקישור חייב להתחיל ב-<strong>smb-app-gray.vercel.app</strong> — לא כתובת preview
             </p>
             <div className="webhook-copy-box">
               <code>{webhookUrl}</code>
             </div>
             <div className="wizard-btn-row">
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => void copyText(webhookUrl)}>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={() => void copyText(webhookUrl)}
+              >
                 העתקת קישור
               </button>
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => void copyText(secretKey)}>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={() => void copyText(secretKey)}
+              >
                 העתקת מפתח סודי
               </button>
             </div>
+            {serverSaved && (
+              <span className="provider-status provider-status--on">מחובר לשרת</span>
+            )}
+            {testMsg && step === 3 && (
+              <p className={testMsgKind === 'err' ? 'provider-card-error' : 'field-hint'}>
+                {testMsg}
+              </p>
+            )}
             <div className="wizard-nav-row">
               <button type="button" className="btn btn-ghost" onClick={() => setStep(2)}>
                 חזרה
               </button>
-              <button type="button" className="btn btn-primary" onClick={() => setStep(4)}>
-                המשך
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={busy || !formName.trim()}
+                onClick={() => void goToStep4()}
+              >
+                שמירה והמשך
               </button>
             </div>
           </section>
@@ -320,8 +480,79 @@ export function ExternalFormWizardPage() {
 
         {step === 4 && (
           <section className="wizard-panel">
+            <h2 className="section-title-sm">בדיקת מילוי</h2>
+            <p className="field-hint">
+              שלחי מילוי אמיתי מ-forms.app, או לחצי «בדיקת חיבור לשרת» — נזהה את שמות השדות
+              ונציע מיפוי אוטומטי.
+            </p>
+            <textarea
+              className="test-json-area"
+              value={testJson}
+              onChange={(e) => setTestJson(e.target.value)}
+              placeholder="אחרי בדיקה יופיעו כאן השדות שהשרת קיבל מהטופס…"
+              rows={8}
+            />
+            {detectedFields.length > 0 && (
+              <div className="card activity-preview-card">
+                <strong>שדות שזוהו ({detectedFields.length})</strong>
+                <ul className="connect-steps">
+                  {detectedFields.map((f) => (
+                    <li key={f}>{f}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {mappingAutoSuggested && (
+              <p className="field-hint">המיפוי עודכן אוטומטית — ניתן לערוך בשלב הבא</p>
+            )}
+            {testMsg && (
+              <p className={testMsgKind === 'err' ? 'provider-card-error' : 'field-hint'}>
+                {testMsg}
+              </p>
+            )}
+            <div className="wizard-btn-row">
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={busy || !formName.trim()}
+                onClick={() => void runServerTest()}
+              >
+                בדיקת חיבור לשרת
+              </button>
+              {detectedFields.length > 0 && (
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  disabled={busy}
+                  onClick={() => applySuggestedMapping(detectedFields)}
+                >
+                  הצעת מיפוי מחדש
+                </button>
+              )}
+            </div>
+            <div className="wizard-nav-row">
+              <button type="button" className="btn btn-ghost" onClick={() => setStep(3)}>
+                חזרה
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={detectedFields.length === 0}
+                onClick={() => setStep(5)}
+              >
+                המשך למיפוי
+              </button>
+            </div>
+          </section>
+        )}
+
+        {step === 5 && (
+          <section className="wizard-panel">
             <h2 className="section-title-sm">מיפוי שדות</h2>
             <p className="field-hint">שם שדה בטופס → שדה באפליקציה</p>
+            {mappingAutoSuggested && (
+              <p className="field-hint">מיפוי מוצע אוטומטית — ודאי שהשדות נכונים לפני הפעלה</p>
+            )}
             <ul className="field-mapping-list">
               {fieldMapping.map((row, index) => (
                 <li key={`${row.externalField}-${index}`} className="field-mapping-row">
@@ -333,7 +564,9 @@ export function ExternalFormWizardPage() {
                   <select
                     value={row.appField}
                     onChange={(e) =>
-                      updateMapping(index, { appField: e.target.value as ExternalFormFieldMapping['appField'] })
+                      updateMapping(index, {
+                        appField: e.target.value as ExternalFormFieldMapping['appField'],
+                      })
                     }
                   >
                     {APP_FIELD_OPTIONS.map((opt) => (
@@ -348,41 +581,17 @@ export function ExternalFormWizardPage() {
             <button type="button" className="btn btn-ghost btn-sm" onClick={addMappingRow}>
               + שדה
             </button>
-            <div className="wizard-nav-row">
-              <button type="button" className="btn btn-ghost" onClick={() => setStep(3)}>
-                חזרה
-              </button>
-              <button type="button" className="btn btn-primary" onClick={() => setStep(5)}>
-                המשך
-              </button>
-            </div>
-          </section>
-        )}
-
-        {step === 5 && (
-          <section className="wizard-panel">
-            <h2 className="section-title-sm">בדיקת מילוי</h2>
-            <p className="field-hint">הדביקי דוגמת JSON או שלחי בדיקה</p>
-            <textarea
-              className="test-json-area"
-              value={testJson}
-              onChange={(e) => setTestJson(e.target.value)}
-              rows={8}
-            />
-            {detectedFields.length > 0 && (
-              <p className="field-hint">שדות שזוהו: {detectedFields.join(', ')}</p>
-            )}
             {activityPreview && (
               <div className="card activity-preview-card">
                 <strong>תצוגה מקדימה</strong>
-                <p>{activityPreview.clientName} · {activityPreview.title}</p>
-                <p>{activityPreview.date} · {activityPreview.location}</p>
+                <p>
+                  {activityPreview.clientName} · {activityPreview.title}
+                </p>
+                <p>
+                  {activityPreview.date} · {activityPreview.location}
+                </p>
               </div>
             )}
-            {testMsg && <p className="field-hint">{testMsg}</p>}
-            <button type="button" className="btn btn-primary" disabled={busy} onClick={() => void runTest()}>
-              שליחת בדיקה
-            </button>
             <div className="wizard-nav-row">
               <button type="button" className="btn btn-ghost" onClick={() => setStep(4)}>
                 חזרה
@@ -405,12 +614,23 @@ export function ExternalFormWizardPage() {
               <li>טופס: {formName}</li>
               <li>סוג: {EXTERNAL_FORM_ACTIVITY_LABELS[activityType]}</li>
               <li>{fieldMapping.length} שדות ממופים</li>
+              {detectedFields.length > 0 && <li>{detectedFields.length} שדות זוהו מהטופס</li>}
             </ul>
+            {testMsg && (
+              <p className={testMsgKind === 'err' ? 'provider-card-error' : 'field-hint'}>
+                {testMsg}
+              </p>
+            )}
             <div className="wizard-nav-row">
               <button type="button" className="btn btn-ghost" onClick={() => setStep(5)}>
                 חזרה
               </button>
-              <button type="button" className="btn btn-primary" disabled={busy} onClick={() => void finish()}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={busy}
+                onClick={() => void finish()}
+              >
                 הפעלת חיבור
               </button>
             </div>
