@@ -27,7 +27,8 @@ export function BottomNav() {
             (to === '/activities' &&
               (pathname.startsWith('/engagements') ||
                 pathname.startsWith('/create') ||
-                pathname.startsWith('/events'))) ||
+                pathname.startsWith('/events') ||
+                pathname.startsWith('/sources'))) ||
             (to === '/customers' && pathname.startsWith('/customers')) ||
             (to === '/invoices' && pathname.startsWith('/invoices')) ||
             (to === '/more' &&
@@ -36,6 +37,7 @@ export function BottomNav() {
                 pathname === '/today' ||
                 pathname === '/assistant' ||
                 pathname.startsWith('/leads') ||
+                pathname.startsWith('/sources') ||
                 pathname === '/more'));
 
           return (

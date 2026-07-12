@@ -1,4 +1,4 @@
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 
 import { BusinessLayout } from './components/BusinessLayout';
 
@@ -79,6 +79,12 @@ import { ExternalFormWizardPage } from './pages/ExternalFormWizardPage';
 
 import { ExternalFormManagePage } from './pages/ExternalFormManagePage';
 
+import { SourcesHubPage } from './pages/SourcesHubPage';
+
+import { SourcesLeadsPage } from './pages/SourcesLeadsPage';
+
+import { RedirectExternalFormManage } from './components/RedirectExternalFormManage';
+
 import { TodayPage } from './pages/TodayPage';
 
 
@@ -131,11 +137,21 @@ export default function App() {
 
           <Route path="/settings/connections" element={<ConnectionsPage />} />
 
-          <Route path="/settings/external-forms" element={<ExternalFormsPage />} />
+          <Route path="/sources" element={<SourcesHubPage />} />
 
-          <Route path="/settings/external-forms/new" element={<ExternalFormWizardPage />} />
+          <Route path="/sources/forms" element={<ExternalFormsPage />} />
 
-          <Route path="/settings/external-forms/:id" element={<ExternalFormManagePage />} />
+          <Route path="/sources/forms/new" element={<ExternalFormWizardPage />} />
+
+          <Route path="/sources/forms/:id" element={<ExternalFormManagePage />} />
+
+          <Route path="/sources/leads" element={<SourcesLeadsPage />} />
+
+          <Route path="/settings/external-forms" element={<Navigate to="/sources/forms" replace />} />
+
+          <Route path="/settings/external-forms/new" element={<Navigate to="/sources/forms/new" replace />} />
+
+          <Route path="/settings/external-forms/:id" element={<RedirectExternalFormManage />} />
 
           <Route path="/settings/business" element={<SettingsBusinessPage />} />
 

@@ -319,7 +319,7 @@ export function ExternalFormWizardPage() {
     try {
       upsertExternalFormConnection({ ...draftConnection, fieldMapping, isActive: true });
       await activateExternalFormConnection(connectionId);
-      navigate(`/settings/external-forms/${connectionId}`);
+      navigate(`/sources/forms/${connectionId}`);
     } catch (e) {
       showMessage(registerErrorMessage(e), 'err');
     } finally {
@@ -330,8 +330,8 @@ export function ExternalFormWizardPage() {
   return (
     <div className="app-shell">
       <div className="page">
-        <Link to="/settings/external-forms" className="back-link">
-          ← טפסים חיצוניים
+        <Link to="/sources/forms" className="back-link">
+          ← טפסים
         </Link>
         <h1 className="page-title">חיבור טופס חדש</h1>
         <p className="wizard-steps-label">שלב {step} מתוך 6</p>

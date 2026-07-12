@@ -171,13 +171,13 @@ export function ExternalFormConnectPage() {
   };
 
   const finish = () => {
-    navigate('/settings/external-forms');
+    navigate('/sources/forms');
   };
 
   return (
     <div className="app-shell">
       <div className="page">
-        <Link to="/settings/external-forms" className="back-link">
+        <Link to="/sources/forms" className="back-link">
           ← טפסים חיצוניים
         </Link>
         <h1 className="page-title">חיבור Forms.app</h1>

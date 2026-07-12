@@ -3421,6 +3421,21 @@ a {
   gap: 0.5rem;
 }
 
+.sources-inline-cta {
+  margin-bottom: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.sources-inline-cta p {
+  margin: 0;
+}
+
+.sources-inline-cta a {
+  font-weight: 600;
+}
+
 .hub-card {
   display: flex;
   align-items: center;

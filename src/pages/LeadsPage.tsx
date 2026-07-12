@@ -1,9 +1,8 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
 import { LeadCard } from '../components/crm/LeadCard';
-import { LeadSheetSyncCard } from '../components/crm/LeadSheetSyncCard';
 import { ManualLeadForm } from '../components/crm/ManualLeadForm';
-import { MetaConnectionCard } from '../components/crm/MetaConnectionCard';
 import {
   countByStatStatus,
   LEAD_FILTER_OPTIONS,
@@ -21,7 +20,7 @@ export function LeadsPage() {
   const business = useAppStore((s) => s.business)!;
   const leads = useAppStore((s) => s.leads);
   const addLead = useAppStore((s) => s.addLead);
-  const { metaConnection, metaLoading, refreshMeta, syncLeads } = useCrmSync();
+  const { metaConnection, metaLoading, syncLeads } = useCrmSync();
   const [filter, setFilter] = useState<LeadFilter>('all');
 
   const isConnected = Boolean(metaConnection?.isActive);
@@ -48,30 +47,24 @@ export function LeadsPage() {
   return (
     <div className="app-shell">
       <div className="page">
-        <h1 className="page-title">לידים</h1>
-        <p className="page-subtitle">כל הפניות מהקמפיינים והמקורות שלך במקום אחד</p>
+        <div className="page-top-row">
+          <div>
+            <h1 className="page-title">לידים</h1>
+            <p className="page-subtitle">כל הפניות מהקמפיינים והמקורות שלך</p>
+          </div>
+          <Link to="/sources/leads" className="btn btn-ghost btn-sm">
+            מקורות
+          </Link>
+        </div>
 
-        <LeadSheetSyncCard />
+        <section className="card sources-inline-cta">
+          <p>
+            לידים מגיעים מ-Meta או Google Sheets —{' '}
+            <Link to="/sources/leads">הגדרת מקורות לידים</Link>
+          </p>
+        </section>
+
         <ManualLeadForm />
-
-        {cloudReady && user && (
-          <MetaConnectionCard
-            connection={metaConnection}
-            loading={metaLoading}
-            userId={user.id}
-            businessId={business.id}
-            onUpdated={() => void refreshMeta()}
-          />
-        )}
-
-        {!cloudReady && (
-          <section className="card crm-meta-card">
-            <p className="crm-meta-title">ענן לא מחובר</p>
-            <p className="crm-meta-desc">
-              לקליטה אוטומטית מ-Meta יש לחבר Supabase (VITE_SUPABASE_URL).
-            </p>
-          </section>
-        )}
 
         {leads.length > 0 && (
           <>
@@ -113,8 +106,11 @@ export function LeadsPage() {
           <section className="card crm-empty-state">
             <p className="crm-empty-title">אין לידים עדיין</p>
             <p className="crm-empty-desc">
-              חברי Google Sheets, הוסיפי ליד ידנית, או חברי Meta כשיהיה לקוח עם Lead Ads.
+              חברי מקור לידים (Meta או Google Sheets) או הוסיפי ליד ידנית.
             </p>
+            <Link to="/sources/leads" className="btn btn-primary btn-sm">
+              הגדרת מקורות לידים
+            </Link>
             {import.meta.env.DEV && (
               <button type="button" className="btn btn-ghost" onClick={handleLoadDemo}>
                 טעינת ליד לדוגמה (פיתוח)
@@ -138,6 +134,9 @@ export function LeadsPage() {
         {!showNoSourceEmpty && !showNoLeadsEmpty && leads.length === 0 && !metaLoading && (
           <section className="card crm-empty-state">
             <p className="crm-empty-title">אין לידים להצגה</p>
+            <Link to="/sources/leads" className="btn btn-ghost btn-sm">
+              הגדרת מקורות
+            </Link>
             <button type="button" className="btn btn-ghost" onClick={() => void syncLeads()}>
               סנכרון מהענן
             </button>

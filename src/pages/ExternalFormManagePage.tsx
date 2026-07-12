@@ -25,7 +25,7 @@ export function ExternalFormManagePage() {
     return (
       <div className="app-shell">
         <div className="page">
-          <Link to="/settings/external-forms" className="back-link">
+          <Link to="/sources/forms" className="back-link">
             ← טפסים
           </Link>
           <p>חיבור לא נמצא</p>
@@ -48,8 +48,8 @@ export function ExternalFormManagePage() {
   return (
     <div className="app-shell">
       <div className="page">
-        <Link to="/settings/external-forms" className="back-link">
-          ← טפסים חיצוניים
+        <Link to="/sources/forms" className="back-link">
+          ← טפסים
         </Link>
         <h1 className="page-title">{connection.formName}</h1>
         <p className="page-subtitle">

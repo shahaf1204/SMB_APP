@@ -57,8 +57,8 @@ export function ExternalFormsPage() {
   return (
     <div className="app-shell">
       <div className="page">
-        <Link to="/settings" className="back-link">
-          ← הגדרות
+        <Link to="/sources" className="back-link">
+          ← מקורות כניסה
         </Link>
         <div className="page-top-row">
           <div>
@@ -67,7 +67,7 @@ export function ExternalFormsPage() {
               חברי טפסים מ-forms.app — כל מילוי ייצור פעילות אוטומטית
             </p>
           </div>
-          <Link to="/settings/external-forms/new" className="btn btn-primary btn-sm">
+          <Link to="/sources/forms/new" className="btn btn-primary btn-sm">
             + חיבור טופס
           </Link>
         </div>
@@ -78,7 +78,7 @@ export function ExternalFormsPage() {
             title="עדיין לא חיברת טפסים"
             message="חברי טופס forms.app כדי שכל מילוי ייצור פעילות אוטומטית — בלי העתקה ידנית"
             actionLabel="חיבור טופס"
-            actionTo="/settings/external-forms/new"
+            actionTo="/sources/forms/new"
           />
         ) : (
           <>
@@ -199,7 +199,7 @@ function FormConnectionCard({ connection }: { connection: ExternalFormConnection
         </button>
       </div>
       {message && <p className="field-hint">{message}</p>}
-      <Link to={`/settings/external-forms/${connection.id}`} className="btn btn-ghost btn-sm">
+      <Link to={`/sources/forms/${connection.id}`} className="btn btn-ghost btn-sm">
         ניהול
       </Link>
     </article>

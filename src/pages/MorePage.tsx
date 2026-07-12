@@ -3,6 +3,7 @@ import {
   ChevronLeft,
   Database,
   HardDrive,
+  Inbox,
   ListTodo,
   Settings,
   Users,
@@ -11,6 +12,12 @@ import { Link } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
 
 const MORE_ITEMS = [
+  {
+    to: '/sources',
+    label: 'מקורות כניסה',
+    desc: 'טפסים, Meta ו-Google Sheets',
+    icon: Inbox,
+  },
   {
     to: '/settings',
     label: 'הגדרות',
@@ -39,9 +46,8 @@ const MORE_ITEMS = [
   {
     to: '/leads',
     label: 'CRM — לידים',
-    desc: 'ניהול לידים מ-Meta ובעתיד',
+    desc: 'ניהול לידים מקמפיינים',
     icon: Users,
-    badge: 'בקרוב',
   },
   {
     to: '/today',

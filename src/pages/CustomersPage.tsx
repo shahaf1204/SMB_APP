@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Users } from 'lucide-react';
+import { FileInput, Users } from 'lucide-react';
 import { BottomNav } from '../components/BottomNav';
 import { Avatar } from '../components/ui/Avatar';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -25,13 +25,21 @@ export function CustomersPage() {
       <div className="page">
         <h1 className="page-title">לקוחות</h1>
 
+        <section className="card sources-inline-cta">
+          <p>
+            <FileInput size={16} aria-hidden style={{ verticalAlign: 'middle', marginLeft: 6 }} />
+            רוצים שלקוחות יגיעו אוטומטית מטופס?{' '}
+            <Link to="/sources/forms">חיבור טופס</Link>
+          </p>
+        </section>
+
         {customers.length === 0 ? (
           <EmptyState
             icon={Users}
             title="אין לקוחות עדיין"
-            message="הוסיפו שם לקוח באירוע או ליד כדי לבנות את מאגר הלקוחות"
-            actionLabel="+ אירוע חדש"
-            actionTo="/create/event"
+            message="חברי טופס forms.app או הוסיפו שם לקוח באירוע כדי לבנות את מאגר הלקוחות"
+            actionLabel="חיבור טופס"
+            actionTo="/sources/forms"
           />
         ) : (
           <ul className="customer-list">

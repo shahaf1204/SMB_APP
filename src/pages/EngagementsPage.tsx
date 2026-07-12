@@ -247,9 +247,14 @@ export function EngagementsPage() {
       <div className="page">
         <div className="page-top-row">
           <h1 className="page-title">פעילויות</h1>
-          <Link to="/create" className="btn btn-primary btn-sm">
-            + חדש
-          </Link>
+          <div className="wizard-btn-row">
+            <Link to="/sources" className="btn btn-ghost btn-sm">
+              מקורות
+            </Link>
+            <Link to="/create" className="btn btn-primary btn-sm">
+              + חדש
+            </Link>
+          </div>
         </div>
 
         {filterTabs.length > 0 && (
