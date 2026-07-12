@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
 import { EventForm, type EventFormValues } from '../components/EventForm';
@@ -17,12 +17,21 @@ export function EditEventPage() {
   const eventTemplates = useAppStore((s) => s.eventTemplates);
   const updateEvent = useAppStore((s) => s.updateEvent);
   const deleteEvent = useAppStore((s) => s.deleteEvent);
+  const markFormNotificationsHandledForActivity = useAppStore(
+    (s) => s.markFormNotificationsHandledForActivity,
+  );
 
   const event = events.find((e) => e.id === id);
   const valuesForEvent = useMemo(
     () => eventValues.filter((ev) => ev.eventId === id),
     [eventValues, id],
   );
+
+  useEffect(() => {
+    if (event?.source === 'external_form' && id) {
+      markFormNotificationsHandledForActivity(id);
+    }
+  }, [event?.source, id, markFormNotificationsHandledForActivity]);
 
   if (!event) {
     return (

@@ -20,16 +20,19 @@ export interface WeekEventItem {
 interface ThisWeekEventsShowcaseProps {
   items: WeekEventItem[];
   todayIso: string;
+  newAutoEventIds?: Set<string>;
 }
 
 function WeekEventCard({
   item,
   todayIso,
   featured,
+  isNewAuto,
 }: {
   item: WeekEventItem;
   todayIso: string;
   featured?: boolean;
+  isNewAuto?: boolean;
 }) {
   const dayLabel = relativeDayLabel(item.sortDate, todayIso);
   const isToday = item.sortDate === todayIso;
@@ -37,13 +40,14 @@ function WeekEventCard({
   return (
     <Link
       to={item.href}
-      className={`week-event-card ${featured ? 'week-event-card--featured' : ''} ${isToday ? 'week-event-card--today' : ''}`}
+      className={`week-event-card ${featured ? 'week-event-card--featured' : ''} ${isToday ? 'week-event-card--today' : ''} ${isNewAuto ? 'week-event-card--new-auto' : ''}`}
     >
       <div className="week-event-card-top">
         <span className={`week-event-day-chip ${isToday ? 'week-event-day-chip--today' : ''}`}>
           {isToday && <Sparkles size={11} strokeWidth={2.5} aria-hidden />}
           {dayLabel}
         </span>
+        {isNewAuto && <span className="activity-new-badge">חדש</span>}
         {item.event && <FormSourceChip event={item.event} />}
       </div>
       <p className="week-event-client">
@@ -70,8 +74,11 @@ function WeekEventCard({
   );
 }
 
-export function ThisWeekEventsShowcase({ items, todayIso }: ThisWeekEventsShowcaseProps) {
+export function ThisWeekEventsShowcase({ items, todayIso, newAutoEventIds }: ThisWeekEventsShowcaseProps) {
   if (items.length === 0) return null;
+
+  const isNewAuto = (item: WeekEventItem) =>
+    Boolean(item.event?.id && newAutoEventIds?.has(item.event.id));
 
   const hasToday = items.some((i) => i.sortDate === todayIso);
   const tomorrow = new Date(`${todayIso}T12:00:00`);
@@ -97,12 +104,12 @@ export function ThisWeekEventsShowcase({ items, todayIso }: ThisWeekEventsShowca
       </div>
 
       {items.length === 1 ? (
-        <WeekEventCard item={items[0]!} todayIso={todayIso} featured />
+        <WeekEventCard item={items[0]!} todayIso={todayIso} featured isNewAuto={isNewAuto(items[0]!)} />
       ) : (
         <div className="week-events-track" role="list">
           {items.map((item) => (
             <div key={item.id} className="week-events-track-item" role="listitem">
-              <WeekEventCard item={item} todayIso={todayIso} />
+              <WeekEventCard item={item} todayIso={todayIso} isNewAuto={isNewAuto(item)} />
             </div>
           ))}
         </div>

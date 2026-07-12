@@ -1,5 +1,9 @@
 import { findAccountSnapshot } from './accountArchive';
 import { getAppSnapshot } from './appSnapshot';
+import { buildFormActivityNotificationFromEvent } from './externalForms/formActivityNotification';
+import { getClientName } from './events';
+import { createId } from './ids';
+import { EXTERNAL_FORM_PROVIDER_LABELS } from '../types/externalForms';
 import { getSupabase, isSupabaseConfigured } from './supabase';
 import { useAppStore } from '../store/useAppStore';
 import type { AppState } from '../types/models';
@@ -208,12 +212,42 @@ export async function refreshFromCloudIfNewer(): Promise<boolean> {
       const newNotifications = (cloudSnapshot.formNotifications ?? []).filter(
         (n) => n.activityId && newEventIds.has(n.activityId),
       );
+      const notifiedIds = new Set(newNotifications.map((n) => n.activityId));
+      const categories = cloudSnapshot.categories ?? local.categories;
+      const synthesized = newExternalEvents
+        .filter((ev) => !notifiedIds.has(ev.id))
+        .map((ev) => {
+          const conn = local.externalFormConnections.find(
+            (c) => c.id === ev.externalFormConnectionId,
+          );
+          const provider = ev.externalFormProvider as keyof typeof EXTERNAL_FORM_PROVIDER_LABELS;
+          const sourceLabel =
+            provider && provider in EXTERNAL_FORM_PROVIDER_LABELS
+              ? EXTERNAL_FORM_PROVIDER_LABELS[provider]
+              : 'טופס';
+          const clientName =
+            getClientName(ev.id, categories, cloudValues) ?? ev.title ?? 'לקוח';
+          return buildFormActivityNotificationFromEvent({
+            id: createId(),
+            connectionId: ev.externalFormConnectionId ?? conn?.id ?? '',
+            formName: conn?.formName ?? 'טופס',
+            sourceLabel,
+            activityId: ev.id,
+            clientName,
+            clientPhone: ev.clientPhone,
+            location: ev.location,
+            createdAt: new Date().toISOString(),
+          });
+        });
 
       useAppStore.setState({
         events: [...newExternalEvents, ...local.events],
         eventValues: [...cloudValues, ...local.eventValues],
         leads: [...newLeads, ...local.leads],
-        formNotifications: [...newNotifications, ...local.formNotifications],
+        formNotifications: [...synthesized, ...newNotifications, ...local.formNotifications].slice(
+          0,
+          20,
+        ),
       });
       setSyncStatus('synced');
       return true;

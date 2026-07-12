@@ -57,7 +57,6 @@ import { normalizeIntegrationConnection } from '../types/integrations';
 import type {
   ExternalFormConnection,
   ExternalFormSubmission,
-  FormActivityNotification,
   NormalizedFormPayload,
 } from '../types/externalForms';
 import {
@@ -66,6 +65,7 @@ import {
 } from '../lib/externalForms/formAutomationService';
 import { normalizeSubmission } from '../lib/externalForms/connectionWebhook';
 import { registerExternalFormConnection } from '../lib/externalForms/clientApi';
+import { buildFormActivityNotification } from '../lib/externalForms/formActivityNotification';
 import { logPipelineStage } from '../lib/externalForms/pipelineDebug';
 import { getExternalFormProvider } from '../formsProviders';
 
@@ -216,6 +216,8 @@ interface AppActions {
   }) => string | null;
   retryExternalFormSubmission: (submissionId: string) => string | null;
   dismissFormNotification: (id: string) => void;
+  markFormNotificationHandled: (id: string) => void;
+  markFormNotificationsHandledForActivity: (activityId: string) => void;
   addEventTemplate: (template: Omit<EventTemplate, 'id' | 'businessId'>) => void;
   deleteEventTemplate: (id: string) => void;
   addTask: (title: string, dueDate: string) => void;
@@ -1314,14 +1316,13 @@ export const useAppStore = create<Store>()(
             updatedAt: now,
           };
 
-          const notification: FormActivityNotification = {
+          const notification = buildFormActivityNotification({
             id: createId(),
-            message: 'נוצר אירוע חדש מטופס חיצוני',
-            connectionId: connection.id,
+            connection,
             activityId: eventId,
+            normalized,
             createdAt: now,
-            read: false,
-          };
+          });
 
           set({
             externalFormSubmissions: [record, ...get().externalFormSubmissions],
@@ -1386,6 +1387,22 @@ export const useAppStore = create<Store>()(
         set({
           formNotifications: get().formNotifications.map((n) =>
             n.id === id ? { ...n, read: true } : n,
+          ),
+        });
+      },
+
+      markFormNotificationHandled: (id) => {
+        set({
+          formNotifications: get().formNotifications.map((n) =>
+            n.id === id ? { ...n, read: true, handled: true } : n,
+          ),
+        });
+      },
+
+      markFormNotificationsHandledForActivity: (activityId) => {
+        set({
+          formNotifications: get().formNotifications.map((n) =>
+            n.activityId === activityId ? { ...n, read: true, handled: true } : n,
           ),
         });
       },

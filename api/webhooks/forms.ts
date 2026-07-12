@@ -151,6 +151,12 @@ async function processWebhook(req: VercelRequest): Promise<Record<string, unknow
       activityId?: string;
       createdAt: string;
       read: boolean;
+      handled?: boolean;
+      sourceLabel?: string;
+      formName?: string;
+      clientName?: string;
+      clientPhone?: string;
+      missingFields?: string[];
     }>;
     categories?: Array<{
       id: string;
@@ -238,13 +244,30 @@ async function processWebhook(req: VercelRequest): Promise<Record<string, unknow
   const eventValues = [...existingEventValues, ...newEventValues];
 
   const notifications = snapshot.formNotifications ?? [];
+  const missingFields = detectMissingInboundFields({
+    clientName,
+    clientPhone: normalized.clientPhone,
+    location: normalized.location,
+  });
+  const displayName = clientName.trim();
+  const notificationMessage =
+    missingFields.length > 0
+      ? `אירוע חדש מ«${formName}»: ${displayName} — חסר: ${missingFields.join(', ')}`
+      : `אירוע חדש מ«${formName}»: ${displayName}`;
+
   notifications.unshift({
     id: crypto.randomUUID(),
-    message: `פעילות חדשה מטופס: ${event.title}`,
+    message: notificationMessage,
     connectionId,
     activityId,
     createdAt: now,
     read: false,
+    handled: false,
+    formName,
+    clientName: displayName,
+    clientPhone: normalized.clientPhone?.trim() || undefined,
+    missingFields,
+    sourceLabel: (connRow.provider as string) || 'forms.app',
   });
 
   const { error: saveError } = await sb.from('app_snapshots').upsert({
@@ -329,6 +352,20 @@ const DEFAULT_FIELD_MAPPINGS: FieldMappingRow[] = [
 
 const CLIENT_CATEGORY_NAMES = ['שם לקוח', 'לקוח', 'שם מטופל', 'שם מתאמן', 'שם תלמיד'];
 const CHILD_COUNT_CATEGORY_NAMES = ['מספר ילדים', 'משתתפ', 'מספר משתתפים', 'כמות'];
+const GENERIC_CLIENT_NAMES = new Set(['לקוח', 'לקוח חדש', 'client', '—', '-', '']);
+
+function detectMissingInboundFields(fields: {
+  clientName?: string;
+  clientPhone?: string;
+  location?: string;
+}): string[] {
+  const missing: string[] = [];
+  const name = fields.clientName?.trim() ?? '';
+  if (!name || GENERIC_CLIENT_NAMES.has(name)) missing.push('שם לקוח');
+  if (!fields.clientPhone?.trim()) missing.push('טלפון');
+  if (!fields.location?.trim()) missing.push('מיקום');
+  return missing;
+}
 
 function normKey(key: string): string {
   return key.trim().toLowerCase();

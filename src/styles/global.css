@@ -4838,20 +4838,72 @@ a {
   top: 0;
   z-index: 50;
   display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  padding: 0.625rem 1rem;
-  background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface));
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.5rem 0.625rem;
+  padding: 0.75rem 1rem;
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
   border-bottom: 1px solid var(--color-border);
   font-size: 0.875rem;
 }
 
-.form-notification-link {
+.form-notification-body {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.form-notification-title {
+  display: block;
+  font-size: 0.8125rem;
+  margin-bottom: 0.125rem;
+}
+
+.form-notification-message {
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.form-notification-missing {
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
+  color: color-mix(in srgb, var(--color-primary) 70%, #b45309);
+}
+
+.form-notification-meta {
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.form-notification-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem 0.625rem;
   margin-inline-start: auto;
+}
+
+.form-notification-link {
   font-weight: 600;
   color: var(--color-primary);
   text-decoration: none;
   white-space: nowrap;
+}
+
+.form-notification-link--btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+}
+
+.form-notification-queue {
+  flex: 1 1 100%;
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
 }
 
 .form-notification-dismiss {
@@ -4862,6 +4914,26 @@ a {
   cursor: pointer;
   color: var(--color-text-secondary);
   padding: 0 0.25rem;
+}
+
+.activity-card-v2--new-auto {
+  border-color: color-mix(in srgb, var(--color-primary) 45%, var(--color-border-light));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-primary) 20%, transparent);
+}
+
+.activity-new-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+  color: var(--color-primary);
+}
+
+.week-event-card--new-auto {
+  outline: 2px solid color-mix(in srgb, var(--color-primary) 25%, transparent);
 }
 
 .external-form-manage-summary {

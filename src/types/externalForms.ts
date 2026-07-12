@@ -80,6 +80,13 @@ export interface FormActivityNotification {
   activityId?: string;
   createdAt: string;
   read: boolean;
+  /** User confirmed they reviewed / followed up */
+  handled?: boolean;
+  sourceLabel?: string;
+  formName?: string;
+  clientName?: string;
+  clientPhone?: string;
+  missingFields?: string[];
 }
 
 export const EXTERNAL_FORM_PROVIDER_LABELS: Record<ExternalFormProviderId, string> = {

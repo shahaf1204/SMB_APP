@@ -20,6 +20,7 @@ import {
 } from '../lib/engagements';
 import { getClientName, getEventRevenueTotal } from '../lib/events';
 import { externalFormEventBadge } from '../lib/externalForms/badges';
+import { getUnreadAutoActivityIds } from '../lib/externalForms/formActivityNotification';
 import {
   activityEmptyMessage,
   allowedActivityFilters,
@@ -96,12 +97,20 @@ function engagementItem(e: Engagement): ActivityItem {
   };
 }
 
-function ActivityCard({ item, highlight }: { item: ActivityItem; highlight?: boolean }) {
+function ActivityCard({
+  item,
+  highlight,
+  isNewAuto,
+}: {
+  item: ActivityItem;
+  highlight?: boolean;
+  isNewAuto?: boolean;
+}) {
   const Icon = item.icon;
   return (
     <Link
       to={item.href}
-      className={`card activity-card-v2 ${highlight ? 'activity-card-v2--highlight' : ''} ${item.isPast ? 'activity-card-v2--muted' : ''}`}
+      className={`card activity-card-v2 ${highlight ? 'activity-card-v2--highlight' : ''} ${isNewAuto ? 'activity-card-v2--new-auto' : ''} ${item.isPast ? 'activity-card-v2--muted' : ''}`}
     >
       <div className="activity-card-v2-body">
         <div className="activity-card-v2-top">
@@ -109,6 +118,7 @@ function ActivityCard({ item, highlight }: { item: ActivityItem; highlight?: boo
             <Icon size={16} strokeWidth={2} />
           </span>
           <strong>{item.client}</strong>
+          {isNewAuto && <span className="activity-new-badge">חדש</span>}
         </div>
         <p className="activity-card-v2-meta">
           {item.dateLabel} · {item.valueLabel}
@@ -122,13 +132,25 @@ function ActivityCard({ item, highlight }: { item: ActivityItem; highlight?: boo
   );
 }
 
-function ActivityList({ items, highlight }: { items: ActivityItem[]; highlight?: boolean }) {
+function ActivityList({
+  items,
+  highlight,
+  newAutoIds,
+}: {
+  items: ActivityItem[];
+  highlight?: boolean;
+  newAutoIds?: Set<string>;
+}) {
   if (items.length === 0) return null;
   return (
     <ul className="activity-list">
       {items.map((item) => (
         <li key={item.id}>
-          <ActivityCard item={item} highlight={highlight} />
+          <ActivityCard
+            item={item}
+            highlight={highlight}
+            isNewAuto={newAutoIds?.has(item.event?.id ?? item.id.replace(/^ev-/, ''))}
+          />
         </li>
       ))}
     </ul>
@@ -141,6 +163,12 @@ export function EngagementsPage() {
   const categories = useAppStore((s) => s.categories);
   const eventValues = useAppStore((s) => s.eventValues);
   const engagements = useAppStore((s) => s.engagements ?? []);
+  const formNotifications = useAppStore((s) => s.formNotifications);
+
+  const newAutoEventIds = useMemo(
+    () => getUnreadAutoActivityIds(formNotifications),
+    [formNotifications],
+  );
 
   const allowedKinds = useMemo(() => allowedActivityFilters(business), [business]);
   const filterTabs = useMemo(() => buildActivityFilterTabs(business), [business]);
@@ -279,7 +307,11 @@ export function EngagementsPage() {
         ) : (
           <div className="activity-sections">
             {showWeekShowcase && (
-              <ThisWeekEventsShowcase items={weekShowcaseItems} todayIso={todayIso} />
+              <ThisWeekEventsShowcase
+                items={weekShowcaseItems}
+                todayIso={todayIso}
+                newAutoEventIds={newAutoEventIds}
+              />
             )}
 
             {showEngagementSections && activeEng.length > 0 && (
@@ -287,7 +319,7 @@ export function EngagementsPage() {
                 title="ליוויים פעילים"
                 count={activeEng.length}
               >
-                <ActivityList items={activeEng} />
+                <ActivityList items={activeEng} newAutoIds={newAutoEventIds} />
               </CollapsibleSection>
             )}
 
@@ -296,7 +328,7 @@ export function EngagementsPage() {
                 title="אירועים עתידיים"
                 count={later.length}
               >
-                <ActivityList items={later} />
+                <ActivityList items={later} newAutoIds={newAutoEventIds} />
               </CollapsibleSection>
             )}
 
@@ -306,7 +338,7 @@ export function EngagementsPage() {
                 count={past.length}
                 variant="muted"
               >
-                <ActivityList items={past.slice(0, 20)} />
+                <ActivityList items={past.slice(0, 20)} newAutoIds={newAutoEventIds} />
               </CollapsibleSection>
             )}
           </div>
