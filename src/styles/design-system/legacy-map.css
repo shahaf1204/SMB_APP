@@ -1,0 +1,23 @@
+/**
+ * Maps legacy CSS variables to design-system tokens.
+ * Allows gradual migration without breaking existing pages.
+ */
+:root {
+  --color-primary: var(--ds-color-primary);
+  --color-primary-hover: var(--ds-color-primary-hover);
+  --color-primary-subtle: var(--ds-color-primary-subtle);
+  --color-success: var(--ds-color-success);
+  --color-accent: var(--ds-color-accent);
+  --color-danger: var(--ds-color-danger);
+  --color-text: var(--ds-color-text);
+  --color-text-muted: var(--ds-color-text-muted);
+  --color-bg: var(--ds-color-bg);
+  --color-surface: var(--ds-color-bg-elevated);
+  --color-border: var(--ds-color-border);
+  --radius-sm: var(--ds-radius-sm);
+  --radius-md: var(--ds-radius-md);
+  --radius-lg: var(--ds-radius-lg);
+  --shadow-sm: var(--ds-shadow-sm);
+  --shadow-md: var(--ds-shadow-md);
+  --app-max-width: var(--ds-app-max-width);
+}

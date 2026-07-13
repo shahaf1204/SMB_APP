@@ -87,6 +87,8 @@ import { RedirectExternalFormManage } from './components/RedirectExternalFormMan
 
 import { TodayPage } from './pages/TodayPage';
 
+import { DesignSystemPage } from './pages/DesignSystemPage';
+
 
 
 export default function App() {
@@ -196,6 +198,8 @@ export default function App() {
           <Route path="/invoices/reports" element={<InvoiceReportsPage />} />
 
           <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
+
+          <Route path="/dev/design-system" element={<DesignSystemPage />} />
 
           </Route>
 

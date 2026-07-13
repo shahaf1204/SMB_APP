@@ -1,0 +1,9 @@
+/**
+ * SMB Design System — entry point
+ * Load after legacy global.css / design-refresh.css
+ */
+@import './tokens.css';
+@import './typography.css';
+@import './motion.css';
+@import './components.css';
+@import './legacy-map.css';

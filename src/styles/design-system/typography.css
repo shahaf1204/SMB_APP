@@ -1,0 +1,82 @@
+/**
+ * Design System — Typography utilities
+ * Use via <Text variant="..."> or .ds-* classes
+ */
+
+.ds-display {
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-display-size);
+  line-height: var(--ds-text-display-line);
+  font-weight: var(--ds-text-display-weight);
+  letter-spacing: -0.03em;
+  color: var(--ds-color-text);
+  margin: 0;
+}
+
+.ds-h1 {
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-h1-size);
+  line-height: var(--ds-text-h1-line);
+  font-weight: var(--ds-text-h1-weight);
+  letter-spacing: -0.025em;
+  color: var(--ds-color-text);
+  margin: 0;
+}
+
+.ds-h2 {
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-h2-size);
+  line-height: var(--ds-text-h2-line);
+  font-weight: var(--ds-text-h2-weight);
+  letter-spacing: -0.02em;
+  color: var(--ds-color-text);
+  margin: 0;
+}
+
+.ds-h3 {
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-h3-size);
+  line-height: var(--ds-text-h3-line);
+  font-weight: var(--ds-text-h3-weight);
+  color: var(--ds-color-text);
+  margin: 0;
+}
+
+.ds-body {
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-body-size);
+  line-height: var(--ds-text-body-line);
+  font-weight: var(--ds-text-body-weight);
+  color: var(--ds-color-text);
+  margin: 0;
+}
+
+.ds-small {
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-small-size);
+  line-height: var(--ds-text-small-line);
+  font-weight: var(--ds-text-small-weight);
+  color: var(--ds-color-text-secondary);
+  margin: 0;
+}
+
+.ds-caption {
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-caption-size);
+  line-height: var(--ds-text-caption-line);
+  font-weight: var(--ds-text-caption-weight);
+  color: var(--ds-color-text-muted);
+  margin: 0;
+  letter-spacing: 0.01em;
+}
+
+.ds-text-secondary { color: var(--ds-color-text-secondary); }
+.ds-text-muted { color: var(--ds-color-text-muted); }
+.ds-text-primary { color: var(--ds-color-primary); }
+.ds-text-success { color: var(--ds-color-success); }
+.ds-text-accent { color: var(--ds-color-accent); }
+.ds-text-danger { color: var(--ds-color-danger); }
+
+.ds-text-medium { font-weight: var(--ds-font-weight-medium); }
+.ds-text-semibold { font-weight: var(--ds-font-weight-semibold); }
+.ds-text-bold { font-weight: var(--ds-font-weight-bold); }

@@ -1,0 +1,52 @@
+/**
+ * Design System — Motion & micro-interactions
+ */
+
+@keyframes ds-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes ds-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes ds-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ds-animate-fade-in {
+  animation: ds-fade-in var(--ds-duration-base) var(--ds-ease-out);
+}
+
+.ds-animate-slide-up {
+  animation: ds-slide-up var(--ds-duration-base) var(--ds-ease-out);
+}
+
+.ds-transition {
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: var(--ds-duration-base);
+  transition-timing-function: var(--ds-ease-out);
+}
+
+.ds-pressable:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-animate-fade-in,
+  .ds-animate-slide-up,
+  .ds-transition,
+  .ds-pressable:active:not(:disabled) {
+    animation: none;
+    transition: none;
+    transform: none;
+  }
+}
