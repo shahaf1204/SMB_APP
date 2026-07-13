@@ -66,6 +66,7 @@
   --shadow-hero: 0 12px 32px rgba(99, 102, 241, 0.35);
 
   --nav-height: 72px;
+  --app-max-width: 480px;
   --touch-min: 44px;
   --space-page: 1rem;
   --font: 'Heebo', system-ui, sans-serif;
