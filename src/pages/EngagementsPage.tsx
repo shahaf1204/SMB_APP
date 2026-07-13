@@ -274,7 +274,10 @@ export function EngagementsPage() {
     <div className="app-shell">
       <div className="page">
         <div className="page-top-row">
-          <h1 className="page-title">פעילויות</h1>
+          <div>
+            <h1 className="page-title">פעילויות</h1>
+            <p className="page-subtitle page-subtitle--inline">אירועים, ליוויים ופרויקטים</p>
+          </div>
           <div className="wizard-btn-row">
             <Link to="/sources" className="btn btn-ghost btn-sm">
               מקורות

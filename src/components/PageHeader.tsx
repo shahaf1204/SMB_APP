@@ -1,6 +1,9 @@
+import { CalendarDays, FileText, ListTodo } from 'lucide-react';
 import { useMemo } from 'react';
 import { buildDailySummary } from '../lib/dailySummary';
 import { useAppStore } from '../store/useAppStore';
+
+const BULLET_ICONS = [CalendarDays, ListTodo, FileText] as const;
 
 export function PageHeader() {
   const user = useAppStore((s) => s.user)!;
@@ -24,18 +27,22 @@ export function PageHeader() {
   );
 
   return (
-    <header className="page-header page-header--summary">
-      <h1 className="page-header-welcome">
-        {summary.greeting} {summary.userName} {summary.emoji}
-      </h1>
-      <div className="page-header-brief">
-        <span className="page-header-brief-label">היום יש לך:</span>
-        <ul className="page-header-bullets">
-          {summary.bullets.map((b) => (
-            <li key={b}>{b}</li>
-          ))}
-        </ul>
-      </div>
+    <header className="dash-welcome" aria-label="סיכום יומי">
+      <p className="dash-welcome-greeting">{summary.greeting}</p>
+      <h1 className="dash-welcome-name">{summary.userName}</h1>
+      <ul className="dash-welcome-pills">
+        {summary.bullets.map((b, i) => {
+          const Icon = BULLET_ICONS[i % BULLET_ICONS.length];
+          return (
+            <li key={b} className="dash-welcome-pill">
+              <span className="dash-welcome-pill-icon" aria-hidden>
+                <Icon size={14} strokeWidth={2.2} />
+              </span>
+              {b}
+            </li>
+          );
+        })}
+      </ul>
     </header>
   );
 }

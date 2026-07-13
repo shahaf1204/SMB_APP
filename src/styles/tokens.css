@@ -1,94 +1,93 @@
 :root {
-  /* ── Joyful business — vibrant indigo + warm sunny accents ── */
-  --color-primary: #6366f1;
-  --color-primary-dark: #4f46e5;
-  --color-primary-light: #818cf8;
-  --color-primary-soft: #e0e7ff;
-  --color-primary-muted: rgba(99, 102, 241, 0.14);
-  --color-primary-border: rgba(99, 102, 241, 0.1);
-  --color-primary-border-strong: rgba(99, 102, 241, 0.22);
-  --color-primary-tint: rgba(99, 102, 241, 0.07);
-  --color-primary-tint-fade: rgba(99, 102, 241, 0.04);
-  --color-primary-shadow: rgba(99, 102, 241, 0.28);
-  --color-primary-shadow-strong: rgba(99, 102, 241, 0.38);
+  /* ── Pro SMB — calm slate + confident blue (Linear / Notion inspired) ── */
+  --color-primary: #2563eb;
+  --color-primary-dark: #1d4ed8;
+  --color-primary-light: #3b82f6;
+  --color-primary-soft: #eff6ff;
+  --color-primary-muted: rgba(37, 99, 235, 0.1);
+  --color-primary-border: rgba(37, 99, 235, 0.12);
+  --color-primary-border-strong: rgba(37, 99, 235, 0.22);
+  --color-primary-tint: rgba(37, 99, 235, 0.06);
+  --color-primary-tint-fade: rgba(37, 99, 235, 0.03);
+  --color-primary-shadow: rgba(37, 99, 235, 0.18);
+  --color-primary-shadow-strong: rgba(37, 99, 235, 0.28);
 
-  --color-success: #10b981;
-  --color-success-dark: #059669;
-  --color-success-soft: #d1fae5;
+  --color-success: #059669;
+  --color-success-dark: #047857;
+  --color-success-soft: #ecfdf5;
 
-  --color-warning: #f59e0b;
-  --color-warning-dark: #d97706;
-  --color-warning-soft: #fef3c7;
+  --color-warning: #d97706;
+  --color-warning-dark: #b45309;
+  --color-warning-soft: #fffbeb;
 
-  --color-danger: #f87171;
-  --color-danger-dark: #ef4444;
-  --color-danger-soft: #fee2e2;
+  --color-danger: #dc2626;
+  --color-danger-dark: #b91c1c;
+  --color-danger-soft: #fef2f2;
 
-  --color-accent: #f97316;
-  --color-accent-dark: #ea580c;
-  --color-accent-soft: #ffedd5;
+  --color-accent: #0891b2;
+  --color-accent-dark: #0e7490;
+  --color-accent-soft: #ecfeff;
   --color-error: var(--color-danger);
   --color-error-soft: var(--color-danger-soft);
 
-  /* Cheerful pastel insight surfaces */
-  --color-violet-soft: #ede9fe;
-  --color-sky-soft: #e0f2fe;
-  --color-amber-soft: #fef3c7;
-  --color-rose-soft: #ffe4e6;
-  --color-mint-soft: #d1fae5;
-  --color-peach-soft: #fff1eb;
+  --color-violet-soft: #f5f3ff;
+  --color-sky-soft: #f0f9ff;
+  --color-amber-soft: #fffbeb;
+  --color-rose-soft: #fff1f2;
+  --color-mint-soft: #ecfdf5;
+  --color-peach-soft: #fff7ed;
 
-  --color-bg: #f0f4ff;
-  --color-bg-subtle: #e8edfa;
+  --color-bg: #f1f5f9;
+  --color-bg-subtle: #e2e8f0;
   --color-surface: #ffffff;
-  --color-surface-tint: #f5f7ff;
-  --color-surface-elevated: #eef2ff;
+  --color-surface-tint: #f8fafc;
+  --color-surface-elevated: #ffffff;
   --color-card: #ffffff;
 
-  --color-text: #111827;
-  --color-text-secondary: #6b7280;
-  --color-text-muted: #9ca3af;
-  --color-border: #e5e7eb;
-  --color-border-light: #eef2ff;
+  --color-text: #0f172a;
+  --color-text-secondary: #64748b;
+  --color-text-muted: #94a3b8;
+  --color-border: #e2e8f0;
+  --color-border-light: #f1f5f9;
 
-  --radius-card: 18px;
-  --radius-button: 14px;
-  --radius-input: 14px;
+  --radius-card: 16px;
+  --radius-button: 12px;
+  --radius-input: 12px;
   --radius-pill: 999px;
-  --radius-nav: 22px;
+  --radius-nav: 20px;
 
-  --shadow-card: 0 2px 8px rgba(99, 102, 241, 0.07), 0 1px 2px rgba(17, 24, 39, 0.04);
-  --shadow-card-hover: 0 8px 24px rgba(99, 102, 241, 0.14);
-  --shadow-nav: 0 -4px 24px rgba(99, 102, 241, 0.12);
-  --shadow-button: 0 4px 14px rgba(99, 102, 241, 0.35);
-  --shadow-fab: 0 6px 20px rgba(249, 115, 22, 0.42);
-  --shadow-fab-hover: 0 8px 26px rgba(249, 115, 22, 0.48);
-  --shadow-hero: 0 12px 32px rgba(99, 102, 241, 0.35);
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(15, 23, 42, 0.04);
+  --shadow-card-hover: 0 4px 16px rgba(15, 23, 42, 0.08);
+  --shadow-nav: 0 -2px 16px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.04);
+  --shadow-button: 0 1px 2px rgba(37, 99, 235, 0.2), 0 4px 12px rgba(37, 99, 235, 0.18);
+  --shadow-fab: 0 4px 14px rgba(37, 99, 235, 0.35);
+  --shadow-fab-hover: 0 6px 20px rgba(37, 99, 235, 0.4);
+  --shadow-hero: 0 8px 24px rgba(15, 23, 42, 0.08);
 
-  --nav-height: 72px;
+  --nav-height: 68px;
   --app-max-width: 480px;
   --touch-min: 44px;
   --space-page: 1rem;
-  --font: 'Heebo', system-ui, sans-serif;
+  --font: 'Heebo', system-ui, -apple-system, sans-serif;
 
-  --transition-fast: 200ms ease;
-  --transition-base: 250ms ease;
+  --text-xs: 0.6875rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-lg: 1.0625rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
 
-  --gradient-primary: linear-gradient(135deg, #818cf8 0%, #6366f1 45%, #4f46e5 100%);
-  --gradient-accent: linear-gradient(135deg, #fb923c 0%, #f97316 50%, #ea580c 100%);
-  --gradient-featured: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
-  --gradient-bg: linear-gradient(
-    165deg,
-    #eef2ff 0%,
-    #f0f4ff 28%,
-    #faf5ff 55%,
-    #fff7ed 82%,
-    #f8fafc 100%
-  );
-  --gradient-auth: linear-gradient(160deg, #6366f1 0%, #7c3aed 52%, #4f46e5 100%);
-  --gradient-surface: linear-gradient(180deg, #fafbff 0%, var(--color-card) 100%);
-  --gradient-surface-primary: linear-gradient(180deg, #ffffff 0%, #f5f7ff 100%);
-  --gradient-kpi-revenue: linear-gradient(145deg, #ecfdf5 0%, #a7f3d0 100%);
-  --gradient-kpi-expense: linear-gradient(145deg, #fff1f2 0%, #fecdd3 100%);
-  --gradient-kpi-profit: linear-gradient(145deg, #eef2ff 0%, #c7d2fe 100%);
+  --transition-fast: 180ms ease;
+  --transition-base: 240ms ease;
+
+  --gradient-primary: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  --gradient-accent: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+  --gradient-featured: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  --gradient-bg: #f1f5f9;
+  --gradient-auth: linear-gradient(160deg, #1e40af 0%, #2563eb 55%, #1d4ed8 100%);
+  --gradient-surface: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  --gradient-surface-primary: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  --gradient-kpi-revenue: linear-gradient(145deg, #ecfdf5 0%, #d1fae5 100%);
+  --gradient-kpi-expense: linear-gradient(145deg, #fef2f2 0%, #fee2e2 100%);
+  --gradient-kpi-profit: linear-gradient(145deg, #eff6ff 0%, #dbeafe 100%);
 }

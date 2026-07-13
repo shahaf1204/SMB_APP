@@ -1,0 +1,604 @@
+/**
+ * Design refresh — professional mobile SaaS
+ * Overrides layered on global.css after token update
+ */
+
+/* ── Base & typography ── */
+body {
+  background: var(--color-bg);
+  font-size: var(--text-base);
+}
+
+.page-title {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.page-subtitle {
+  font-size: var(--text-sm);
+  margin-bottom: 1rem;
+  color: var(--color-text-secondary);
+}
+
+.dash-section-label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+}
+
+/* ── Cards & surfaces ── */
+.card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 1rem 1.125rem;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-card-hover);
+}
+
+.card:active {
+  transform: scale(0.992);
+}
+
+/* ── Buttons ── */
+.btn-primary {
+  background: var(--color-primary);
+  background-image: none;
+  box-shadow: var(--shadow-button);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.28);
+}
+
+.btn-ghost {
+  border-color: var(--color-border);
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--color-surface-tint);
+  border-color: var(--color-border);
+  color: var(--color-primary);
+}
+
+/* ── Bottom navigation ── */
+.bottom-nav {
+  height: var(--nav-height);
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-nav);
+}
+
+.bottom-nav a {
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.bottom-nav a.active {
+  color: var(--color-primary);
+}
+
+.bottom-nav a.active .nav-icon-wrap {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.nav-icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+}
+
+/* ── Search ── */
+.global-search-input {
+  border: 1px solid var(--color-border);
+  background: var(--color-card);
+  box-shadow: var(--shadow-card);
+}
+
+.global-search-input:focus {
+  border-color: var(--color-primary-light);
+  box-shadow: 0 0 0 3px var(--color-primary-muted);
+}
+
+/* ── Dashboard welcome ── */
+.page-subtitle--inline {
+  margin: 0.15rem 0 0.75rem;
+}
+
+.dash-welcome {
+  margin-bottom: 0.25rem;
+}
+
+.dash-welcome-greeting {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.dash-welcome-name {
+  margin: 0.125rem 0 0.75rem;
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--color-text);
+}
+
+.dash-welcome-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.dash-welcome-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+}
+
+.dash-welcome-pill-icon {
+  display: inline-flex;
+  color: var(--color-primary);
+}
+
+/* ── Hero / next event ── */
+.hero-event-card {
+  position: relative;
+  background: var(--color-card);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  padding: 1rem 1.125rem 1rem 1.25rem;
+  overflow: hidden;
+}
+
+.hero-event-card::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--gradient-primary);
+}
+
+.hero-event-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-card-hover);
+  border-color: var(--color-primary-border-strong);
+}
+
+.hero-event-card--empty {
+  padding-inline-start: 1.125rem;
+}
+
+.hero-event-card--empty::before {
+  display: none;
+}
+
+.hero-event-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--color-primary-dark);
+  background: var(--color-primary-soft);
+  opacity: 1;
+}
+
+.hero-event-client {
+  font-size: var(--text-xl);
+  color: var(--color-text);
+}
+
+.hero-event-meta {
+  color: var(--color-text-secondary);
+  opacity: 1;
+}
+
+.hero-event-footer {
+  border-top-color: var(--color-border-light);
+}
+
+.hero-event-amount {
+  color: var(--color-primary);
+  font-size: var(--text-lg);
+}
+
+.hero-event-title {
+  color: var(--color-text-secondary);
+  opacity: 1;
+}
+
+/* ── KPI cards ── */
+.kpi-card {
+  border-radius: var(--radius-card);
+  border-color: var(--color-border);
+  padding: 0.75rem 0.5rem;
+}
+
+.kpi-card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+}
+
+.kpi-card-label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.kpi-card-value {
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+/* ── Dashboard insights ── */
+.dash-insights {
+  gap: 0.5rem;
+}
+
+.dash-insight-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  border-radius: var(--radius-card);
+  padding: 0.875rem 0.75rem;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.dash-insight-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.dash-insight-card--violet,
+.dash-insight-card--sky,
+.dash-insight-card--amber {
+  background: var(--color-card);
+}
+
+.dash-insight-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  margin-bottom: 0.35rem;
+}
+
+.dash-insight-card--violet .dash-insight-icon {
+  background: var(--color-violet-soft);
+  color: #7c3aed;
+}
+
+.dash-insight-card--sky .dash-insight-icon {
+  background: var(--color-sky-soft);
+  color: var(--color-primary);
+}
+
+.dash-insight-card--amber .dash-insight-icon {
+  background: var(--color-amber-soft);
+  color: var(--color-warning-dark);
+}
+
+.dash-insight-value {
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.dash-insight-label {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+.dash-margin-strip {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+.dash-margin-strip strong {
+  color: var(--color-success-dark);
+}
+
+/* ── Quick actions ── */
+.quick-actions-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+
+.quick-action-btn {
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: 0.625rem;
+  padding: 0.75rem 0.875rem;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  text-align: right;
+}
+
+.quick-action-btn:hover {
+  border-color: var(--color-primary-border-strong);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.quick-action-btn-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.quick-action-btn-label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.quick-action-btn-icon--primary {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.quick-action-btn-icon--success {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+
+.quick-action-btn-icon--accent {
+  background: var(--color-accent-soft);
+  color: var(--color-accent-dark);
+}
+
+.quick-action-btn-icon--neutral {
+  background: var(--color-surface-tint);
+  color: var(--color-text-secondary);
+}
+
+.quick-actions-row--4 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+/* ── Week events showcase ── */
+.week-events-showcase {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 1rem;
+}
+
+.week-events-showcase-glow {
+  display: none;
+}
+
+.week-events-showcase-title {
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.week-events-showcase-badge {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.week-event-card {
+  background: var(--color-card);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  position: relative;
+  overflow: hidden;
+}
+
+.week-event-card::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--color-primary);
+}
+
+.week-event-card:hover {
+  border-color: var(--color-primary-border-strong);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.week-event-card--today::before {
+  background: var(--color-accent);
+  width: 4px;
+}
+
+.week-event-card--today {
+  background: var(--color-card);
+  border-color: var(--color-accent);
+}
+
+.week-event-day-chip {
+  background: var(--color-primary-soft);
+  color: var(--color-primary-dark);
+}
+
+.week-event-day-chip--today {
+  background: var(--color-accent-soft);
+  color: var(--color-accent-dark);
+}
+
+.week-event-card .form-source-chip {
+  background: var(--color-primary-soft);
+  color: var(--color-primary-dark);
+}
+
+.week-event-meta {
+  color: var(--color-text-secondary);
+  opacity: 1;
+}
+
+.week-event-title {
+  color: var(--color-text-secondary);
+  opacity: 1;
+}
+
+.week-event-amount {
+  color: var(--color-primary);
+  border-top-color: var(--color-border-light);
+}
+
+/* ── Activity list cards ── */
+.activity-card-v2 {
+  border-radius: var(--radius-card);
+  margin-bottom: 0;
+}
+
+.activity-card-v2-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--color-surface-tint);
+  color: var(--color-primary);
+}
+
+.activity-card-v2-top strong {
+  font-weight: 600;
+  font-size: var(--text-sm);
+}
+
+.activity-card-v2--new-auto {
+  border-color: var(--color-primary-border-strong);
+  background: linear-gradient(to left, var(--color-card) 0%, var(--color-primary-tint) 100%);
+}
+
+.activity-new-badge {
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 0.625rem;
+}
+
+/* ── Hub / settings cards ── */
+.hub-card {
+  border-radius: var(--radius-card);
+  border-color: var(--color-border);
+  box-shadow: var(--shadow-card);
+}
+
+.hub-card:hover {
+  border-color: var(--color-primary-border-strong);
+}
+
+.hub-card-icon {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  border-radius: 12px;
+}
+
+/* ── Pills & chips ── */
+.pill-tab {
+  border: 1px solid var(--color-border);
+  background: var(--color-card);
+  font-weight: 600;
+}
+
+.pill-tab.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+  box-shadow: none;
+}
+
+.chip {
+  border: 1px solid var(--color-border);
+  background: var(--color-card);
+  font-weight: 600;
+}
+
+.chip.active {
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary-border-strong);
+  color: var(--color-primary-dark);
+  box-shadow: none;
+}
+
+/* ── Customer cards ── */
+.customer-card-v2 {
+  border-radius: var(--radius-card);
+}
+
+.customer-revenue {
+  color: var(--color-success-dark);
+  font-weight: 700;
+}
+
+/* ── Inbound alert ── */
+.inbound-alert-shell {
+  background: transparent;
+}
+
+.inbound-alert-card {
+  border-color: var(--color-border);
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* ── Empty states ── */
+.empty-state {
+  padding: 2rem 1rem;
+}
+
+/* ── Form fields ── */
+.field input,
+.field select,
+.field textarea {
+  border-color: var(--color-border);
+  border-radius: var(--radius-input);
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: var(--color-primary-light);
+  box-shadow: 0 0 0 3px var(--color-primary-muted);
+}
+
+/* ── Auth (keep branded but calmer) ── */
+.auth-hero {
+  box-shadow: 0 12px 40px rgba(30, 64, 175, 0.2);
+}

@@ -1,4 +1,4 @@
-import { Calendar, MapPin, Sparkles, User } from 'lucide-react';
+import { Calendar, CalendarClock, MapPin, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { EmptyState } from './ui/EmptyState';
 import { FormSourceChip } from './externalForms/FormSourceChip';
@@ -30,7 +30,7 @@ export function NextEventCard({ event, clientName, amount }: NextEventCardProps)
     <Link to={`/events/${event.id}/edit`} className="hero-event-card" aria-label="אירוע קרוב">
       <div className="hero-event-card-top">
         <span className="hero-event-badge">
-          <Sparkles size={12} strokeWidth={2.5} aria-hidden />
+          <CalendarClock size={13} strokeWidth={2.2} aria-hidden />
           האירוע הבא
         </span>
         <FormSourceChip event={event} />
