@@ -50,7 +50,7 @@ export function Input({
         id={id}
         className={cn(
           'ds-input',
-          startIcon && 'ds-input--with-icon',
+          startIcon != null && 'ds-input--with-icon',
           error && 'ds-input--error',
           className,
         )}

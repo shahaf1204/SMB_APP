@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { cn } from '../../design-system/cn';
 
 export interface CardProps {
-  children: ReactNode;
+  children?: ReactNode;
   className?: string;
   interactive?: boolean;
   href?: string;
