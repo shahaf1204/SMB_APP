@@ -94,7 +94,7 @@ export function OnboardingPage() {
 
       <div className="onboarding-steps" aria-hidden>
         <span className={step >= 1 ? 'active' : ''}>1. העסק</span>
-        <span className={step >= 2 ? 'active' : ''}>2. קונסept</span>
+        <span className={step >= 2 ? 'active' : ''}>2. קונספט</span>
       </div>
 
       {step === 1 ? (

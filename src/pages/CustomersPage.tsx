@@ -24,6 +24,7 @@ export function CustomersPage() {
     <div className="app-shell">
       <div className="page">
         <h1 className="page-title">לקוחות</h1>
+        <p className="page-subtitle">כל מי שעבד איתך — מאירועים, לידים וחשבוניות</p>
 
         <section className="card sources-inline-cta">
           <p>

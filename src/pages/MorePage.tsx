@@ -62,6 +62,7 @@ export function MorePage() {
     <div className="app-shell">
       <div className="page">
         <h1 className="page-title">עוד</h1>
+        <p className="page-subtitle">הגדרות, מקורות כניסה, משימות ועוזר AI</p>
 
         <ul className="hub-card-list hub-card-list--lg">
           {MORE_ITEMS.map(({ to, label, desc, icon: Icon, ...rest }) => (

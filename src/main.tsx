@@ -10,6 +10,7 @@ import { isSupabaseConfigured } from './lib/supabase';
 import { runBootstrapResetFromUrl } from './lib/safeStorage';
 import { useAppStore } from './store/useAppStore';
 import './styles/global.css';
+import './styles/design-refresh.css';
 
 runBootstrapResetFromUrl();
 

@@ -602,3 +602,485 @@ body {
 .auth-hero {
   box-shadow: 0 12px 40px rgba(30, 64, 175, 0.2);
 }
+
+.auth-shell {
+  background: var(--color-bg);
+}
+
+.auth-body {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+.auth-mode-row .btn-ghost.active,
+.auth-mode-row .btn-primary {
+  width: auto;
+}
+
+/* ── Onboarding ── */
+.onboarding-page {
+  max-width: var(--app-max-width);
+  margin: 0 auto;
+  padding: 1.25rem 1.125rem;
+}
+
+.onboarding-steps {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.onboarding-steps span {
+  flex: 1;
+  text-align: center;
+  padding: 0.5rem;
+  border-radius: var(--radius-button);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: var(--color-surface-tint);
+  border: 1px solid var(--color-border);
+}
+
+.onboarding-steps .active {
+  color: var(--color-primary-dark);
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary-border-strong);
+}
+
+.onboarding-suggestion {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-tint);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: 0.75rem;
+}
+
+.onboarding-actions .btn {
+  width: 100%;
+}
+
+/* ── Navigation links ── */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.back-link:hover {
+  color: var(--color-primary);
+}
+
+.create-hub-link {
+  display: block;
+  margin-top: 1rem;
+  text-align: center;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+/* ── Create hub ── */
+.create-hub-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.create-hub-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  padding: 1rem 1.125rem;
+  text-decoration: none;
+  color: inherit;
+  border-radius: var(--radius-card);
+}
+
+.create-hub-card-primary {
+  border-color: var(--color-primary-border-strong);
+  background: linear-gradient(to left, var(--color-card), var(--color-primary-tint));
+}
+
+.create-hub-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.create-hub-desc {
+  margin: 0.25rem 0 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.create-hub-badge {
+  display: inline-block;
+  margin-inline-start: 0.35rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  background: var(--color-primary-soft);
+  vertical-align: middle;
+}
+
+.create-hub-quick-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.create-hub-quick-btn {
+  width: auto;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* ── Invoices ── */
+.invoice-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.invoice-slim-row,
+.invoice-row {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  border-radius: var(--radius-card);
+  transition: box-shadow var(--transition-fast);
+}
+
+.invoice-slim-row--rich {
+  padding: 0.875rem 1rem;
+}
+
+.invoice-slim-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.invoice-slim-client {
+  font-weight: 600;
+  font-size: var(--text-sm);
+}
+
+.invoice-slim-date {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.invoice-slim-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+/* ── Customers & leads lists ── */
+.customer-list,
+.crm-lead-list,
+.lead-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.customer-card-v2,
+.crm-lead-card,
+.lead-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: inherit;
+  border-radius: var(--radius-card);
+}
+
+.crm-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.375rem;
+  margin-bottom: 0.75rem;
+}
+
+.crm-stat-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 0.5rem 0.35rem;
+  text-align: center;
+  box-shadow: var(--shadow-card);
+}
+
+.crm-stat-num {
+  display: block;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.crm-stat-label {
+  font-size: 0.625rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.crm-meta-card,
+.crm-empty-state,
+.lead-sync-card {
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+}
+
+.crm-meta-card--connected {
+  border-color: var(--color-success);
+  background: linear-gradient(to left, var(--color-card), var(--color-success-soft));
+}
+
+.crm-status-badge {
+  font-size: 0.625rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-pill);
+}
+
+.sources-inline-cta {
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-primary-border);
+  background: var(--color-primary-tint);
+  font-size: var(--text-sm);
+}
+
+/* ── Settings & provider cards ── */
+.settings-link-row {
+  border-bottom-color: var(--color-border-light);
+  border-radius: 8px;
+}
+
+.settings-link-row:hover {
+  background: var(--color-surface-tint);
+}
+
+.provider-card {
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  background: var(--color-card);
+}
+
+.provider-card--connected {
+  border-color: var(--color-success);
+}
+
+.provider-card--error {
+  border-color: var(--color-danger);
+}
+
+.provider-card-actions .btn {
+  width: auto;
+}
+
+/* ── Wizard & forms connect ── */
+.wizard-panel {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: 1.125rem;
+  box-shadow: var(--shadow-card);
+  margin-bottom: 0.75rem;
+}
+
+.wizard-steps-label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.provider-pick-btn {
+  border: 1px solid var(--color-border);
+  background: var(--color-card);
+  border-radius: var(--radius-button);
+  font-weight: 600;
+}
+
+.provider-pick-btn--on {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-dark);
+}
+
+.connect-steps {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.55;
+}
+
+.webhook-copy-box {
+  background: var(--color-surface-tint);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-input);
+}
+
+/* ── Empty states ── */
+.empty-state-card {
+  border: 1px solid var(--color-border);
+  border-style: solid;
+  box-shadow: var(--shadow-card);
+  background: var(--color-card);
+}
+
+.empty-state-action {
+  width: auto;
+  min-width: 10rem;
+}
+
+/* ── Collapsible sections (activities) ── */
+.collapsible-section {
+  border-radius: var(--radius-card);
+}
+
+.collapsible-section-header {
+  font-weight: 600;
+}
+
+/* ── Tasks / today ── */
+.task-row,
+.today-task-card {
+  border-radius: var(--radius-card);
+}
+
+/* ── Form source chip ── */
+.form-source-chip {
+  font-size: 0.625rem;
+  font-weight: 600;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-dark);
+}
+
+/* ── Auto-save ── */
+.auto-save-indicator {
+  max-width: var(--app-max-width);
+  margin-inline: auto;
+  border: 1px solid rgba(5, 150, 105, 0.15);
+}
+
+/* ── Global overrides (must win over legacy global.css) ── */
+.hero-event-card,
+.next-event-card {
+  background: var(--color-card) !important;
+  color: var(--color-text) !important;
+  border: 1px solid var(--color-border) !important;
+  box-shadow: var(--shadow-card) !important;
+}
+
+.week-event-card {
+  background: var(--color-card) !important;
+  color: var(--color-text) !important;
+}
+
+.week-event-card--today {
+  background: var(--color-card) !important;
+}
+
+.week-events-showcase {
+  background: var(--color-card) !important;
+  border: 1px solid var(--color-border) !important;
+}
+
+.chip.active {
+  box-shadow: none !important;
+}
+
+.card {
+  border-color: var(--color-border) !important;
+}
+
+.btn-primary {
+  background: var(--color-primary) !important;
+  background-image: none !important;
+}
+
+.page-dashboard {
+  gap: 1rem;
+}
+
+.hub-card-desc {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.45;
+}
+
+.hub-card-chevron {
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.activity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.activity-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.activities-monthly-expenses-bar {
+  border-radius: var(--radius-card);
+  margin-bottom: 0.5rem;
+}
+
+.modal-sheet {
+  border-radius: 20px 20px 0 0;
+  border: 1px solid var(--color-border);
+}
+
+.global-search-results {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.global-search-item:hover {
+  background: var(--color-surface-tint);
+}

@@ -92,7 +92,10 @@ export function InvoicesPage() {
     <div className="app-shell">
       <div className="page">
         <div className="page-top-row">
-          <h1 className="page-title">חשבוניות</h1>
+          <div>
+            <h1 className="page-title">חשבוניות</h1>
+            <p className="page-subtitle page-subtitle--inline">הפקה, מעקב תשלומים ודוחות</p>
+          </div>
           <Link to="/invoices/new" className="btn btn-primary btn-sm">
             + חדשה
           </Link>

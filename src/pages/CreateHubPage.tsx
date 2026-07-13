@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom';
+import { Calendar, ClipboardList, Ticket, Users } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { BottomNav } from '../components/BottomNav';
 import {
   CREATE_ROUTES,
@@ -10,36 +12,42 @@ import {
 } from '../lib/workModel';
 import { useAppStore } from '../store/useAppStore';
 
-const OPTIONS = [
+const OPTIONS: Array<{
+  to: string;
+  id: 'single_event' | 'session_pack' | 'project' | 'recurring_group';
+  icon: LucideIcon;
+  title: string;
+  desc: string;
+}> = [
   {
     to: '/create/event',
-    id: 'single_event' as const,
-    icon: '📅',
+    id: 'single_event',
+    icon: Calendar,
     title: 'אירוע בודד',
     desc: 'תאריך אחד, תשלום אחד — צילום, יום הולדת',
   },
   {
     to: '/create/pack',
-    id: 'session_pack' as const,
-    icon: '🎫',
+    id: 'session_pack',
+    icon: Ticket,
     title: 'כרטיסייה',
     desc: 'תשלום מראש · מונה כניסות — סטודיו, אימון',
   },
   {
     to: '/create/project',
-    id: 'project' as const,
-    icon: '📋',
+    id: 'project',
+    icon: ClipboardList,
     title: 'ליווי / פרויקט',
     desc: 'לאורך זמן · אבני דרך · חשבוניות לפי תפוקה',
   },
   {
     to: '/create/group',
-    id: 'recurring_group' as const,
-    icon: '👥',
+    id: 'recurring_group',
+    icon: Users,
     title: 'חוג / קבוצה',
     desc: 'יום קבוע · תלמידים · תשלום לכל שיעור',
   },
-] as const;
+];
 
 export function CreateHubPage() {
   const business = useAppStore((s) => s.business);
@@ -74,14 +82,15 @@ export function CreateHubPage() {
         <div className="create-hub-list">
           {sorted.map((opt) => {
             const recommended = isRecommendedCreateRoute(opt.to, workModels);
+            const Icon = opt.icon;
             return (
               <Link
                 key={opt.to}
                 to={opt.to}
                 className={`card create-hub-card ${recommended ? 'create-hub-card-primary' : ''}`}
               >
-                <span className="create-hub-icon" aria-hidden>
-                  {opt.icon}
+                <span className="create-hub-icon-wrap" aria-hidden>
+                  <Icon size={22} strokeWidth={2} />
                 </span>
                 <div>
                   <strong>

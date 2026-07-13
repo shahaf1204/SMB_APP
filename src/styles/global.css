@@ -1,5 +1,4 @@
 @import './tokens.css';
-@import './design-refresh.css';
 
 *,
 *::before,
@@ -5573,94 +5572,6 @@ a {
   .kpi-row--client.kpi-row--4 {
     grid-template-columns: repeat(4, 1fr);
   }
-}
-
-/* ── Joyful design polish ── */
-
-.auth-hero {
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 16px 48px rgba(99, 102, 241, 0.22);
-}
-
-.auth-hero::before {
-  content: '';
-  position: absolute;
-  inset: -40% -20% auto;
-  height: 120%;
-  background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.18) 0%, transparent 55%);
-  pointer-events: none;
-}
-
-.auth-hero-title {
-  font-weight: 800;
-  position: relative;
-}
-
-.auth-hero-logo {
-  background: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-}
-
-.kpi-card-value,
-.dash-insight-value,
-.week-events-showcase-title,
-.week-events-showcase-badge,
-.week-event-amount {
-  font-weight: 800;
-}
-
-.chip.active {
-  box-shadow: var(--shadow-button);
-}
-
-.btn-primary {
-  letter-spacing: 0.015em;
-}
-
-.bottom-nav {
-  background: rgba(255, 255, 255, 0.94);
-  border-color: var(--color-border-light);
-}
-
-.field input:focus,
-.field select:focus,
-.field textarea:focus {
-  border-color: var(--color-primary-light);
-}
-
-.dash-insight-card {
-  border-color: rgba(255, 255, 255, 0.7);
-}
-
-.page-header-welcome {
-  font-weight: 800;
-}
-
-.card {
-  border-color: rgba(99, 102, 241, 0.09);
-}
-
-.week-events-showcase {
-  background: linear-gradient(
-    145deg,
-    color-mix(in srgb, var(--color-primary) 10%, var(--color-card)) 0%,
-    var(--color-card) 50%,
-    color-mix(in srgb, var(--color-accent) 8%, var(--color-card)) 100%
-  );
-  border-color: rgba(99, 102, 241, 0.18);
-}
-
-.week-event-card--today {
-  background: var(--gradient-featured);
-}
-
-.dash-margin-strip {
-  background: linear-gradient(90deg, var(--color-primary-soft), var(--color-mint-soft), var(--color-amber-soft));
-}
-
-.dash-margin-strip strong {
-  color: var(--color-primary-dark);
 }
 
 .provider-chip-col {
