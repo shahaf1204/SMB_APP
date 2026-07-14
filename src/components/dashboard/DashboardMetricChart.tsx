@@ -39,10 +39,10 @@ export function DashboardMetricChart({
   const hasData = data.some((d) => d.revenue > 0 || d.expense > 0);
 
   return (
-    <section className="dash-v2-chart-card" aria-label="Business Performance">
+    <section className="dash-v2-chart-card" aria-label="ביצועי העסק">
       <div className="dash-v2-chart-head">
-        <h2 className="dash-v2-chart-title">Business Performance</h2>
-        <p className="dash-v2-chart-sub">Revenue vs Expenses · YTD</p>
+        <h2 className="dash-v2-chart-title">ביצועי העסק</h2>
+        <p className="dash-v2-chart-sub">הכנסות מול הוצאות • מתחילת השנה</p>
       </div>
 
       {!hasData ? (

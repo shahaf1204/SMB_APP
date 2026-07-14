@@ -1,4 +1,4 @@
-import { CalendarClock, Receipt, Wallet } from 'lucide-react';
+import { Receipt, TrendingUp, Wallet } from 'lucide-react';
 import { formatCurrency } from '../lib/finance';
 
 export interface KpiInsight {
@@ -35,7 +35,7 @@ const KPI_CONFIG = [
   {
     key: 'expected' as const,
     label: 'הכנסות צפויות',
-    icon: CalendarClock,
+    icon: TrendingUp,
     variant: 'forecast',
   },
 ];

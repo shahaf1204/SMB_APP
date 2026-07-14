@@ -25,10 +25,6 @@ function eventChipVariant(eventDate: string): StatusChipVariant {
   return 'upcoming';
 }
 
-function isBirthdayThemed(title: string): boolean {
-  return /יום\s*הולדת|birthday|בלון|balloon|🎈|🎂|cake/i.test(title);
-}
-
 export function NextEventCard({ event, clientName, amount }: NextEventCardProps) {
   if (!event) {
     return (
@@ -60,19 +56,17 @@ export function NextEventCard({ event, clientName, amount }: NextEventCardProps)
 
         <div className="dash-v2-next-event-main">
           <h3 className="dash-v2-next-event-title">
-            {isBirthdayThemed(event.title) && (
-              <span className="dash-v2-next-event-emoji" aria-hidden>
-                🎈
-              </span>
-            )}
+            <span className="dash-v2-next-event-emoji" aria-hidden>
+              🎈
+            </span>
             {event.title}
           </h3>
           <span className="dash-v2-next-event-price">{formatCurrency(amount)}</span>
         </div>
 
         <div className="dash-v2-next-event-meta">
-          <span className="dash-v2-next-event-meta-item">
-            <User size={14} strokeWidth={1.75} aria-hidden />
+          <span className="dash-v2-next-event-meta-item dash-v2-next-event-meta-item--client">
+            <User size={13} strokeWidth={1.75} aria-hidden />
             {clientName ?? 'לא צוין'}
           </span>
           <span className="dash-v2-next-event-meta-item">
