@@ -138,8 +138,161 @@
 
 .ds-btn--secondary.ds-btn--loading .ds-btn__spinner,
 .ds-btn--ghost.ds-btn--loading .ds-btn__spinner {
-  border-color: rgba(15, 23, 42, 0.15);
+  border-color: rgba(15, 23, 42, 0.12);
   border-top-color: var(--ds-color-primary);
+}
+
+/* Icon Button */
+.ds-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: var(--ds-touch-target);
+  height: var(--ds-touch-target);
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--ds-radius-md);
+  background: transparent;
+  color: var(--ds-color-text-secondary);
+  cursor: pointer;
+  transition:
+    background-color var(--ds-transition-base),
+    color var(--ds-transition-base),
+    border-color var(--ds-transition-base),
+    box-shadow var(--ds-transition-base),
+    transform var(--ds-duration-fast) var(--ds-ease-out),
+    opacity var(--ds-transition-fast);
+}
+
+.ds-icon-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--ds-shadow-focus);
+}
+
+.ds-icon-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.ds-icon-btn--sm {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--ds-radius-sm);
+}
+
+.ds-icon-btn--lg {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--ds-radius-lg);
+}
+
+.ds-icon-btn--primary {
+  background: var(--ds-color-primary-subtle);
+  color: var(--ds-color-primary);
+}
+
+.ds-icon-btn--primary:hover:not(:disabled) {
+  background: var(--ds-color-primary-muted);
+  color: var(--ds-color-primary-hover);
+}
+
+.ds-icon-btn--secondary {
+  background: var(--ds-color-surface);
+  border-color: var(--ds-color-border);
+  box-shadow: var(--ds-shadow-xs);
+}
+
+.ds-icon-btn--secondary:hover:not(:disabled) {
+  background: var(--ds-color-bg-subtle);
+  border-color: var(--ds-color-border-strong);
+}
+
+.ds-icon-btn--ghost:hover:not(:disabled) {
+  background: var(--ds-color-bg-muted);
+  color: var(--ds-color-text);
+}
+
+.ds-icon-btn--danger {
+  background: var(--ds-color-danger-subtle);
+  color: var(--ds-color-danger);
+}
+
+.ds-icon-btn--danger:hover:not(:disabled) {
+  background: var(--ds-danger-100);
+  color: var(--ds-color-danger-hover);
+}
+
+.ds-icon-btn:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+/* Floating Action Button */
+.ds-fab {
+  position: fixed;
+  z-index: var(--ds-z-fab);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ds-space-2);
+  min-width: 56px;
+  height: 56px;
+  padding: 0 var(--ds-space-4);
+  border: none;
+  border-radius: var(--ds-radius-full);
+  background: var(--ds-color-primary);
+  color: var(--ds-color-text-inverse);
+  box-shadow: var(--ds-shadow-lg);
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-text-small-size);
+  font-weight: var(--ds-font-weight-semibold);
+  cursor: pointer;
+  transition:
+    background-color var(--ds-transition-base),
+    box-shadow var(--ds-transition-base),
+    transform var(--ds-duration-fast) var(--ds-ease-out),
+    opacity var(--ds-transition-fast);
+}
+
+.ds-fab:hover:not(:disabled) {
+  background: var(--ds-color-primary-hover);
+  box-shadow: var(--ds-shadow-xl);
+}
+
+.ds-fab:active:not(:disabled) {
+  transform: scale(0.96);
+  background: var(--ds-color-primary-active);
+}
+
+.ds-fab:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.ds-fab--extended {
+  padding-inline: var(--ds-space-5);
+}
+
+/* Default placement: bottom-start (RTL-aware) */
+.ds-fab--bottom-end {
+  inset-inline-end: var(--ds-space-4);
+  bottom: calc(var(--ds-nav-height) + var(--ds-space-4));
+}
+
+.ds-fab--bottom-center {
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--ds-nav-height) + var(--ds-space-4));
+}
+
+.ds-fab--bottom-center:hover:not(:disabled) {
+  transform: translateX(-50%) scale(1);
+}
+
+.ds-fab--bottom-center:active:not(:disabled) {
+  transform: translateX(-50%) scale(0.96);
 }
 
 /* ── Cards ── */
@@ -240,6 +393,77 @@
   margin-top: var(--ds-space-1);
   font-size: var(--ds-text-caption-size);
   color: var(--ds-color-text-muted);
+}
+
+/* Statistic Card (dashboard hero metric) */
+.ds-statistic-card {
+  padding: var(--ds-space-5);
+}
+
+.ds-statistic-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-3);
+  margin-bottom: var(--ds-space-3);
+}
+
+.ds-statistic-card__label {
+  font-size: var(--ds-text-small-size);
+  font-weight: var(--ds-font-weight-medium);
+  color: var(--ds-color-text-secondary);
+}
+
+.ds-statistic-card__value {
+  font-size: var(--ds-text-display-size);
+  font-weight: var(--ds-font-weight-bold);
+  letter-spacing: var(--ds-text-display-tracking);
+  color: var(--ds-color-text);
+  line-height: 1;
+  margin-bottom: var(--ds-space-2);
+}
+
+.ds-statistic-card__footer {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  flex-wrap: wrap;
+}
+
+.ds-statistic-card__delta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-1);
+  font-size: var(--ds-text-caption-size);
+  font-weight: var(--ds-font-weight-semibold);
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--ds-radius-full);
+}
+
+.ds-statistic-card__delta--up {
+  background: var(--ds-color-success-subtle);
+  color: var(--ds-success-700);
+}
+
+.ds-statistic-card__delta--down {
+  background: var(--ds-color-danger-subtle);
+  color: var(--ds-danger-700);
+}
+
+.ds-statistic-card__delta--neutral {
+  background: var(--ds-color-bg-muted);
+  color: var(--ds-color-text-secondary);
+}
+
+.ds-statistic-card__period {
+  font-size: var(--ds-text-caption-size);
+  color: var(--ds-color-text-muted);
+}
+
+.ds-statistic-card__chart {
+  margin-top: var(--ds-space-4);
+  padding-top: var(--ds-space-3);
+  border-top: 1px solid var(--ds-color-border);
 }
 
 /* Activity Card */
@@ -674,6 +898,24 @@
   background: var(--ds-color-accent-subtle);
   color: var(--ds-accent-800);
   border-color: var(--ds-accent-100);
+}
+
+.ds-chip--today {
+  background: var(--ds-color-primary-subtle);
+  color: var(--ds-primary-700);
+  border-color: var(--ds-primary-200);
+}
+
+.ds-chip--tomorrow {
+  background: var(--ds-color-accent-subtle);
+  color: var(--ds-accent-800);
+  border-color: var(--ds-accent-200);
+}
+
+.ds-chip--this-week {
+  background: var(--ds-color-bg-muted);
+  color: var(--ds-color-text-secondary);
+  border-color: var(--ds-color-border);
 }
 
 /* ── Icon wrapper ── */

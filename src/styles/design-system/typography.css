@@ -8,7 +8,7 @@
   font-size: var(--ds-text-display-size);
   line-height: var(--ds-text-display-line);
   font-weight: var(--ds-text-display-weight);
-  letter-spacing: -0.03em;
+  letter-spacing: var(--ds-text-display-tracking);
   color: var(--ds-color-text);
   margin: 0;
 }
@@ -18,7 +18,7 @@
   font-size: var(--ds-text-h1-size);
   line-height: var(--ds-text-h1-line);
   font-weight: var(--ds-text-h1-weight);
-  letter-spacing: -0.025em;
+  letter-spacing: var(--ds-text-h1-tracking);
   color: var(--ds-color-text);
   margin: 0;
 }
@@ -28,7 +28,7 @@
   font-size: var(--ds-text-h2-size);
   line-height: var(--ds-text-h2-line);
   font-weight: var(--ds-text-h2-weight);
-  letter-spacing: -0.02em;
+  letter-spacing: var(--ds-text-h2-tracking);
   color: var(--ds-color-text);
   margin: 0;
 }
@@ -38,6 +38,7 @@
   font-size: var(--ds-text-h3-size);
   line-height: var(--ds-text-h3-line);
   font-weight: var(--ds-text-h3-weight);
+  letter-spacing: var(--ds-text-h3-tracking);
   color: var(--ds-color-text);
   margin: 0;
 }

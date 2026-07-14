@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import {
+  Bell,
   Calendar,
   ChevronLeft,
   DollarSign,
+  Plus,
   Search,
   Sparkles,
   Users,
@@ -20,11 +22,13 @@ import {
   DefaultCard,
   Field,
   Icon,
+  IconButton,
   Input,
   MetricCard,
   SearchInput,
   Select,
   SettingsCard,
+  StatisticCard,
   StatusChip,
   Text,
   TimeInput,
@@ -169,16 +173,28 @@ export function DesignSystemPage() {
               </Button>
             </div>
             <div className="ds-showcase__row">
-              <Button variant="primary" size="sm">
-                Small
-              </Button>
-              <Button variant="primary" size="md">
-                Medium
-              </Button>
-              <Button variant="primary" size="lg">
-                Large
-              </Button>
+              <Button variant="primary" size="sm">Small</Button>
+              <Button variant="primary" size="md">Medium</Button>
+              <Button variant="primary" size="lg">Large</Button>
             </div>
+            <div className="ds-showcase__row">
+              <IconButton icon={Bell} variant="ghost" aria-label="התראות" />
+              <IconButton icon={Plus} variant="primary" aria-label="הוסף" />
+              <IconButton icon={Search} variant="secondary" aria-label="חיפוש" />
+            </div>
+          </div>
+        </section>
+
+        {/* FAB — preview only, not fixed in showcase container */}
+        <section className="ds-showcase__section">
+          <Text variant="h2" className="ds-showcase__section-title">
+            FAB
+          </Text>
+          <div className="ds-showcase__row">
+            <button type="button" className="ds-fab ds-fab--extended" style={{ position: 'static' }} aria-label="יצירה">
+              <Plus size={24} strokeWidth={2} aria-hidden />
+              <span>יצירה חדשה</span>
+            </button>
           </div>
         </section>
 
@@ -207,6 +223,15 @@ export function DesignSystemPage() {
                 icon={<Icon icon={Calendar} tone="primary" />}
               />
             </div>
+
+            <StatisticCard
+              label="סה״כ הכנסות"
+              value="₪48,200"
+              delta="up"
+              deltaLabel="+12.4%"
+              period="לעומת חודש קודם"
+              icon={<Icon icon={DollarSign} tone="muted" size="lg" />}
+            />
 
             <ActivityCard
               interactive
@@ -288,6 +313,9 @@ export function DesignSystemPage() {
             <StatusChip variant="paid" />
             <StatusChip variant="pending" />
             <StatusChip variant="vip" />
+            <StatusChip variant="today" />
+            <StatusChip variant="tomorrow" />
+            <StatusChip variant="this-week" />
             <Chip tone="neutral">Neutral</Chip>
           </div>
         </section>

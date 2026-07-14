@@ -1,6 +1,6 @@
 /**
- * Maps legacy CSS variables to design-system tokens.
- * Allows gradual migration without breaking existing pages.
+ * Maps legacy CSS variables → design-system tokens.
+ * Existing screens inherit new palette without migration.
  */
 :root {
   --color-primary: var(--ds-color-primary);
@@ -10,14 +10,17 @@
   --color-accent: var(--ds-color-accent);
   --color-danger: var(--ds-color-danger);
   --color-text: var(--ds-color-text);
+  --color-text-secondary: var(--ds-color-text-secondary);
   --color-text-muted: var(--ds-color-text-muted);
   --color-bg: var(--ds-color-bg);
-  --color-surface: var(--ds-color-bg-elevated);
+  --color-surface: var(--ds-color-surface);
   --color-border: var(--ds-color-border);
   --radius-sm: var(--ds-radius-sm);
   --radius-md: var(--ds-radius-md);
   --radius-lg: var(--ds-radius-lg);
+  --radius-xl: var(--ds-radius-xl);
   --shadow-sm: var(--ds-shadow-sm);
   --shadow-md: var(--ds-shadow-md);
+  --shadow-lg: var(--ds-shadow-lg);
   --app-max-width: var(--ds-app-max-width);
 }

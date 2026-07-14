@@ -1,6 +1,12 @@
 export { Button } from './Button';
 export type { ButtonProps, ButtonVariant, ButtonSize } from './Button';
 
+export { IconButton } from './IconButton';
+export type { IconButtonProps, IconButtonVariant, IconButtonSize } from './IconButton';
+
+export { Fab } from './Fab';
+export type { FabProps, FabPlacement } from './Fab';
+
 export { Text } from './Text';
 export type { TextProps, TextVariant, TextTone } from './Text';
 
@@ -10,12 +16,13 @@ export type { IconProps, IconSize, IconTone } from './Icon';
 export {
   DefaultCard,
   MetricCard,
+  StatisticCard,
   ActivityCard,
   ClientCard,
   SettingsCard,
   Avatar,
 } from './Card';
-export type { CardProps, MetricTone } from './Card';
+export type { CardProps, MetricTone, StatisticDelta } from './Card';
 
 export {
   Field,

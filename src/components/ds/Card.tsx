@@ -98,6 +98,51 @@ export function MetricCard({
   );
 }
 
+export type StatisticDelta = 'up' | 'down' | 'neutral';
+
+export function StatisticCard({
+  label,
+  value,
+  delta,
+  deltaLabel,
+  period,
+  icon,
+  chart,
+  className,
+  ...shell
+}: CardProps & {
+  label: string;
+  value: ReactNode;
+  delta?: StatisticDelta;
+  deltaLabel?: string;
+  period?: string;
+  icon?: ReactNode;
+  chart?: ReactNode;
+}) {
+  return (
+    <CardShell className={className} {...shell}>
+      <div className="ds-statistic-card">
+        <div className="ds-statistic-card__header">
+          <span className="ds-statistic-card__label">{label}</span>
+          {icon}
+        </div>
+        <div className="ds-statistic-card__value">{value}</div>
+        {(deltaLabel || period) && (
+          <div className="ds-statistic-card__footer">
+            {deltaLabel && delta && (
+              <span className={cn('ds-statistic-card__delta', `ds-statistic-card__delta--${delta}`)}>
+                {deltaLabel}
+              </span>
+            )}
+            {period && <span className="ds-statistic-card__period">{period}</span>}
+          </div>
+        )}
+        {chart && <div className="ds-statistic-card__chart">{chart}</div>}
+      </div>
+    </CardShell>
+  );
+}
+
 export function ActivityCard({
   title,
   meta,

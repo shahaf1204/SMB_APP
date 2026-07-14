@@ -1,28 +1,21 @@
 /**
- * Design system tokens — JS/TS access mirror of tokens.css
- * Use for logic, charts, and dynamic styling only.
- * Prefer CSS variables in components.
+ * Design system tokens — JS/TS mirror of tokens.css
  */
 
 export const brand = {
-  primary: '#2563eb',
-  success: '#059669',
-  accent: '#7c3aed',
+  primary: '#4F46E5',
+  success: '#10B981',
+  accent: '#F59E0B',
+  danger: '#EF4444',
 } as const;
 
-export const neutral = {
-  0: '#ffffff',
-  50: '#f8fafc',
-  100: '#f1f5f9',
-  200: '#e2e8f0',
-  300: '#cbd5e1',
-  400: '#94a3b8',
-  500: '#64748b',
-  600: '#475569',
-  700: '#334155',
-  800: '#1e293b',
-  900: '#0f172a',
-  950: '#020617',
+export const semantic = {
+  background: '#F8FAFC',
+  surface: '#FFFFFF',
+  border: '#E5E7EB',
+  text: '#0F172A',
+  textSecondary: '#64748B',
+  textMuted: '#94A3B8',
 } as const;
 
 export const spacing = {
@@ -40,25 +33,34 @@ export const spacing = {
 } as const;
 
 export const radius = {
-  sm: '6px',
-  md: '10px',
-  lg: '14px',
-  xl: '20px',
+  sm: '8px',
+  md: '12px',
+  lg: '16px',
+  xl: '24px',
   full: '9999px',
+} as const;
+
+export const shadow = {
+  xs: 'var(--ds-shadow-xs)',
+  sm: 'var(--ds-shadow-sm)',
+  md: 'var(--ds-shadow-md)',
+  lg: 'var(--ds-shadow-lg)',
+  xl: 'var(--ds-shadow-xl)',
 } as const;
 
 export const motion = {
   fast: '150ms',
   base: '200ms',
   slow: '250ms',
+  easeOut: 'cubic-bezier(0.16, 1, 0.3, 1)',
 } as const;
 
+/** Lucide icon sizes in px */
 export const iconSize = {
-  xs: 14,
   sm: 16,
   md: 20,
   lg: 24,
-  xl: 28,
+  xl: 32,
 } as const;
 
 export type StatusChipVariant =
@@ -67,7 +69,10 @@ export type StatusChipVariant =
   | 'cancelled'
   | 'paid'
   | 'pending'
-  | 'vip';
+  | 'vip'
+  | 'today'
+  | 'tomorrow'
+  | 'this-week';
 
 export const statusChipLabels: Record<StatusChipVariant, string> = {
   upcoming: 'בקרוב',
@@ -76,4 +81,7 @@ export const statusChipLabels: Record<StatusChipVariant, string> = {
   paid: 'שולם',
   pending: 'ממתין',
   vip: 'VIP',
+  today: 'היום',
+  tomorrow: 'מחר',
+  'this-week': 'השבוע',
 };
