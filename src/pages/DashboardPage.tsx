@@ -3,12 +3,12 @@ import { useLocation } from 'react-router-dom';
 import { CalendarExportBanner } from '../components/CalendarExportBanner';
 import type { CalendarExportOutcome } from '../lib/calendarExport';
 import { BottomNav } from '../components/BottomNav';
+import { DashboardHero } from '../components/dashboard/DashboardHero';
 import { DashboardInsights } from '../components/dashboard/DashboardInsights';
 import { DashboardMetricChart } from '../components/dashboard/DashboardMetricChart';
 import { DashboardQuickActions } from '../components/dashboard/DashboardQuickActions';
-import { KpiCards } from '../components/KpiCards';
+import { KpiCards, type KpiTrend } from '../components/KpiCards';
 import { NextEventCard } from '../components/NextEventCard';
-import { PageHeader } from '../components/PageHeader';
 import { buildCustomerSummaries } from '../lib/customers';
 import { calculateUnifiedTotals } from '../lib/engagementFinance';
 import { resolveExpenseTrackingMode } from '../lib/monthlyExpenses';
@@ -18,6 +18,15 @@ import {
   getEventRevenueTotal,
 } from '../lib/events';
 import { useAppStore } from '../store/useAppStore';
+import '../styles/dashboard.css';
+
+function formatTrend(current: number, previous: number): string {
+  if (previous === 0 && current === 0) return 'ללא שינוי';
+  if (previous === 0) return current > 0 ? 'חדש החודש' : '—';
+  const pct = Math.round(((current - previous) / previous) * 100);
+  const sign = pct > 0 ? '+' : '';
+  return `${sign}${pct}% מהחודש שעבר`;
+}
 
 export function DashboardPage() {
   const location = useLocation();
@@ -55,6 +64,30 @@ export function DashboardPage() {
     [events, eventValues, invoices, engagementSessions, monthlyExpenses, expenseMode],
   );
 
+  const prevTotals = useMemo(
+    () =>
+      calculateUnifiedTotals(
+        events,
+        eventValues,
+        invoices,
+        engagementSessions,
+        'lastMonth',
+        undefined,
+        monthlyExpenses,
+        expenseMode,
+      ),
+    [events, eventValues, invoices, engagementSessions, monthlyExpenses, expenseMode],
+  );
+
+  const trends = useMemo<KpiTrend>(
+    () => ({
+      revenue: formatTrend(totals.revenue, prevTotals.revenue),
+      expense: formatTrend(totals.expense, prevTotals.expense),
+      profit: formatTrend(totals.profit, prevTotals.profit),
+    }),
+    [totals, prevTotals],
+  );
+
   const expenseHint = useMemo(() => {
     const parts: string[] = [];
     if (totals.directExpense != null && totals.directExpense > 0) {
@@ -79,18 +112,26 @@ export function DashboardPage() {
 
   return (
     <div className="app-shell">
-      <div className="page page-dashboard">
-        <PageHeader />
+      <div className="page page-dashboard page-dashboard-v2">
+        <DashboardHero />
+
         {calendarExport && <CalendarExportBanner outcome={calendarExport} />}
 
+        <hr className="dash-v2-divider" aria-hidden />
+
         <NextEventCard event={nextEvent} clientName={clientName} amount={nextAmount} />
+
+        <hr className="dash-v2-divider" aria-hidden />
 
         <KpiCards
           revenue={totals.revenue}
           expense={totals.expense}
           profit={totals.profit}
           expenseHint={expenseHint}
+          trends={trends}
         />
+
+        <hr className="dash-v2-divider" aria-hidden />
 
         <DashboardInsights
           events={events}
@@ -100,7 +141,11 @@ export function DashboardPage() {
           revenue={totals.revenue}
         />
 
+        <hr className="dash-v2-divider" aria-hidden />
+
         <DashboardQuickActions />
+
+        <hr className="dash-v2-divider" aria-hidden />
 
         <DashboardMetricChart
           events={events}

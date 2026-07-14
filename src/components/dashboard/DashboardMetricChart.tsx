@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { BarChart3 } from 'lucide-react';
 import {
   Area,
   AreaChart,
@@ -23,11 +24,11 @@ const TABS: Array<{ id: MetricTab; label: string }> = [
 
 const CHART_THEME: Record<
   MetricTab,
-  { stroke: string; fill: string; gradientId: string; gradientColor: string }
+  { stroke: string; gradientId: string; gradientColor: string }
 > = {
-  revenue: { stroke: '#34D399', fill: '#A7F3D0', gradientId: 'gradRevenue', gradientColor: '#6EE7B7' },
-  expense: { stroke: '#F87171', fill: '#FECACA', gradientId: 'gradExpense', gradientColor: '#FCA5A5' },
-  profit: { stroke: '#818CF8', fill: '#C7D2FE', gradientId: 'gradProfit', gradientColor: '#A5B4FC' },
+  revenue: { stroke: '#10B981', gradientId: 'dashGradRevenue', gradientColor: '#6EE7B7' },
+  expense: { stroke: '#F59E0B', gradientId: 'dashGradExpense', gradientColor: '#FCD34D' },
+  profit: { stroke: '#4F46E5', gradientId: 'dashGradProfit', gradientColor: '#A5B4FC' },
 };
 
 interface DashboardMetricChartProps {
@@ -57,63 +58,59 @@ export function DashboardMetricChart({
   const peak = Math.max(...data.map((d) => d[tab]), 0);
 
   return (
-    <section className="dash-section card dash-chart-card dash-chart-card--premium" aria-label="גרף פיננסי">
-      <div className="dash-chart-header">
-        <div>
-          <h2 className="dash-section-label" style={{ margin: 0 }}>
-            מצב העסק
-          </h2>
-          {hasData && peak > 0 && (
-            <p className="dash-chart-peak">
-              שיא: {formatCurrency(peak)}
-            </p>
-          )}
-        </div>
-        <div className="pill-tabs dash-chart-tabs">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              className={`pill-tab ${tab === t.id ? 'pill-tab--active' : ''}`}
-              onClick={() => setTab(t.id)}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+    <section className="dash-v2-chart-card" aria-label="גרף פיננסי">
+      <div className="dash-v2-chart-head">
+        <h2 className="dash-v2-chart-title">מצב העסק</h2>
+        <p className="dash-v2-chart-sub">
+          {hasData && peak > 0
+            ? `שיא ${TABS.find((t) => t.id === tab)?.label}: ${formatCurrency(peak)}`
+            : 'מגמת הכנסות, הוצאות ורווח'}
+        </p>
+      </div>
+
+      <div className="dash-v2-segmented" role="tablist" aria-label="סוג מדד">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={tab === t.id}
+            className={`dash-v2-segment ${tab === t.id ? 'dash-v2-segment--active' : ''}`}
+            onClick={() => setTab(t.id)}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
       {!hasData ? (
-        <p className="empty-state" style={{ padding: '1.5rem 0' }}>
-          אין נתונים להצגה — הוסיפו אירועים עם הכנסות/הוצאות
-        </p>
+        <div className="dash-v2-chart-empty">
+          <span className="dash-v2-chart-empty-icon" aria-hidden>
+            <BarChart3 size={32} strokeWidth={1.5} />
+          </span>
+          <p>אין נתונים להצגה — הוסיפו אירועים עם הכנסות או הוצאות כדי לראות את המגמה.</p>
+        </div>
       ) : (
-        <div className="dash-chart-wrap dash-chart-wrap--area">
-          <ResponsiveContainer width="100%" height={210}>
-            <AreaChart data={data} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
+        <div className="dash-v2-chart-wrap">
+          <ResponsiveContainer width="100%" height={220}>
+            <AreaChart data={data} margin={{ top: 12, right: 8, left: 0, bottom: 4 }}>
               <defs>
-                <linearGradient id="gradRevenue" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={CHART_THEME.revenue.gradientColor} stopOpacity={0.55} />
-                  <stop offset="100%" stopColor={CHART_THEME.revenue.gradientColor} stopOpacity={0.05} />
-                </linearGradient>
-                <linearGradient id="gradExpense" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={CHART_THEME.expense.gradientColor} stopOpacity={0.5} />
-                  <stop offset="100%" stopColor={CHART_THEME.expense.gradientColor} stopOpacity={0.04} />
-                </linearGradient>
-                <linearGradient id="gradProfit" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={CHART_THEME.profit.gradientColor} stopOpacity={0.55} />
-                  <stop offset="100%" stopColor={CHART_THEME.profit.gradientColor} stopOpacity={0.05} />
-                </linearGradient>
+                {(['revenue', 'expense', 'profit'] as MetricTab[]).map((key) => (
+                  <linearGradient key={key} id={CHART_THEME[key].gradientId} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={CHART_THEME[key].gradientColor} stopOpacity={0.45} />
+                    <stop offset="100%" stopColor={CHART_THEME[key].gradientColor} stopOpacity={0.03} />
+                  </linearGradient>
+                ))}
               </defs>
-              <CartesianGrid strokeDasharray="4 6" stroke="rgba(99,102,241,0.08)" vertical={false} />
+              <CartesianGrid strokeDasharray="4 6" stroke="rgba(79, 70, 229, 0.06)" vertical={false} />
               <XAxis
                 dataKey="label"
-                tick={{ fontSize: 11, fill: 'var(--color-text-muted)' }}
+                tick={{ fontSize: 11, fill: 'var(--ds-color-text-muted)' }}
                 axisLine={false}
                 tickLine={false}
               />
               <YAxis
-                tick={{ fontSize: 11, fill: 'var(--color-text-muted)' }}
+                tick={{ fontSize: 11, fill: 'var(--ds-color-text-muted)' }}
                 axisLine={false}
                 tickLine={false}
                 width={44}
@@ -122,10 +119,11 @@ export function DashboardMetricChart({
               <Tooltip
                 formatter={(value: number) => [formatCurrency(value), TABS.find((t) => t.id === tab)?.label]}
                 contentStyle={{
-                  borderRadius: 14,
-                  border: '1px solid var(--color-border)',
+                  borderRadius: 12,
+                  border: '1px solid var(--ds-color-border)',
                   fontSize: 13,
-                  boxShadow: 'var(--shadow-card-hover)',
+                  fontFamily: 'var(--ds-font-family)',
+                  boxShadow: 'var(--ds-shadow-md)',
                 }}
               />
               <Area

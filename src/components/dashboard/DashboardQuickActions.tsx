@@ -17,7 +17,7 @@ const ACTIONS = [
   },
   {
     to: '/sources',
-    label: 'מקורות כניסה',
+    label: 'מקורות',
     icon: Inbox,
     variant: 'accent' as const,
   },
@@ -31,15 +31,17 @@ const ACTIONS = [
 
 export function DashboardQuickActions() {
   return (
-    <section className="dash-section" aria-label="פעולות מהירות">
-      <h2 className="dash-section-label">פעולות מהירות</h2>
-      <div className="quick-actions-row quick-actions-row--4">
+    <section className="dash-v2-section" aria-label="פעולות מהירות">
+      <div className="dash-v2-section-head">
+        <h2 className="dash-v2-section-title">פעולות מהירות</h2>
+      </div>
+      <div className="dash-v2-actions">
         {ACTIONS.map(({ to, label, icon: Icon, variant }) => (
-          <Link key={to} to={to} className="quick-action-btn">
-            <span className={`quick-action-btn-icon quick-action-btn-icon--${variant}`}>
-              <Icon size={20} strokeWidth={2} />
+          <Link key={to} to={to} className={`dash-v2-action dash-v2-action--${variant}`}>
+            <span className="dash-v2-action-icon" aria-hidden>
+              <Icon size={24} strokeWidth={1.75} />
             </span>
-            <span className="quick-action-btn-label">{label}</span>
+            <span className="dash-v2-action-label">{label}</span>
           </Link>
         ))}
       </div>

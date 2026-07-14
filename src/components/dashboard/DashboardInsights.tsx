@@ -34,38 +34,45 @@ export function DashboardInsights({
   const marginPct = revenue > 0 ? Math.round((profit / revenue) * 100) : null;
 
   return (
-    <section className="dash-insights" aria-label="תובנות מהירות">
-      <Link to="/activities" className="dash-insight-card dash-insight-card--violet">
-        <span className="dash-insight-icon" aria-hidden>
-          <CalendarDays size={18} strokeWidth={2} />
-        </span>
-        <span className="dash-insight-value">{weekEvents.length}</span>
-        <span className="dash-insight-label">אירועים השבוע</span>
-      </Link>
+    <section className="dash-v2-section" aria-label="תובנות מהירות">
+      <div className="dash-v2-section-head">
+        <h2 className="dash-v2-section-title">מבט מהיר</h2>
+        <p className="dash-v2-section-sub">השבוע · לקוחות · חשבוניות</p>
+      </div>
 
-      <Link to="/customers" className="dash-insight-card dash-insight-card--sky">
-        <span className="dash-insight-icon" aria-hidden>
-          <Users size={18} strokeWidth={2} />
-        </span>
-        <span className="dash-insight-value">{customerCount}</span>
-        <span className="dash-insight-label">לקוחות</span>
-      </Link>
+      <div className="dash-v2-insights">
+        <Link to="/activities" className="dash-v2-insight dash-v2-insight--events">
+          <span className="dash-v2-insight-icon" aria-hidden>
+            <CalendarDays size={20} strokeWidth={1.75} />
+          </span>
+          <span className="dash-v2-insight-value">{weekEvents.length}</span>
+          <span className="dash-v2-insight-label">אירועים השבוע</span>
+        </Link>
 
-      <Link to="/invoices" className="dash-insight-card dash-insight-card--amber">
-        <span className="dash-insight-icon" aria-hidden>
-          <FileText size={18} strokeWidth={2} />
-        </span>
-        <span className="dash-insight-value">{openInvoices.length}</span>
-        <span className="dash-insight-label">
-          {overdueCount > 0 ? `${overdueCount} באיחור` : 'חשבוניות פתוחות'}
-        </span>
-      </Link>
+        <Link to="/customers" className="dash-v2-insight dash-v2-insight--customers">
+          <span className="dash-v2-insight-icon" aria-hidden>
+            <Users size={20} strokeWidth={1.75} />
+          </span>
+          <span className="dash-v2-insight-value">{customerCount}</span>
+          <span className="dash-v2-insight-label">לקוחות</span>
+        </Link>
+
+        <Link to="/invoices" className="dash-v2-insight dash-v2-insight--invoices">
+          <span className="dash-v2-insight-icon" aria-hidden>
+            <FileText size={20} strokeWidth={1.75} />
+          </span>
+          <span className="dash-v2-insight-value">{openInvoices.length}</span>
+          <span className="dash-v2-insight-label">
+            {overdueCount > 0 ? `${overdueCount} באיחור` : 'חשבוניות פתוחות'}
+          </span>
+        </Link>
+      </div>
 
       {marginPct != null && revenue > 0 && (
-        <div className="dash-margin-strip">
+        <div className="dash-v2-margin">
           <span>מרווח החודש</span>
           <strong>{marginPct}%</strong>
-          <span className="dash-margin-sub">{formatCurrency(profit)} רווח</span>
+          <span className="dash-v2-margin-sub">{formatCurrency(profit)} רווח</span>
         </div>
       )}
     </section>
