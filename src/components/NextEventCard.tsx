@@ -1,4 +1,4 @@
-import { Calendar, CalendarClock, MapPin, Plus, User } from 'lucide-react';
+import { Calendar, MapPin, Plus, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { FormSourceChip } from './externalForms/FormSourceChip';
 import { StatusChip } from './ds/StatusChip';
@@ -28,17 +28,15 @@ function eventChipVariant(eventDate: string): StatusChipVariant {
 export function NextEventCard({ event, clientName, amount }: NextEventCardProps) {
   if (!event) {
     return (
-      <section className="dash-v2-section" aria-label="אירוע קרוב">
+      <section className="dash-v2-section dash-v2-section--tight" aria-label="אירוע קרוב">
         <div className="dash-v2-next-event-empty">
           <span className="dash-v2-next-event-empty-icon" aria-hidden>
-            <Calendar size={28} strokeWidth={1.5} />
+            <Calendar size={24} strokeWidth={1.5} />
           </span>
           <h2 className="dash-v2-next-event-empty-title">אין אירועים קרובים</h2>
-          <p className="dash-v2-next-event-empty-msg">
-            הוסיפו אירוע כדי לראות את הפרטים כאן — תאריך, מיקום ולקוח במקום אחד.
-          </p>
-          <Link to="/create/event" className="ds-btn ds-btn--primary">
-            <Plus size={18} strokeWidth={2} aria-hidden />
+          <p className="dash-v2-next-event-empty-msg">הוסיפו אירוע כדי לראות אותו כאן.</p>
+          <Link to="/create/event" className="ds-btn ds-btn--primary ds-btn--sm">
+            <Plus size={16} strokeWidth={2} aria-hidden />
             אירוע חדש
           </Link>
         </div>
@@ -49,52 +47,33 @@ export function NextEventCard({ event, clientName, amount }: NextEventCardProps)
   const chipVariant = eventChipVariant(event.eventDate);
 
   return (
-    <section className="dash-v2-section" aria-label="אירוע קרוב">
-      <div className="dash-v2-section-head">
-        <h2 className="dash-v2-section-title">האירוע הבא</h2>
-      </div>
-      <Link to={`/events/${event.id}/edit`} className="dash-v2-next-event">
-        <div className="dash-v2-next-event-top">
-          <span className="dash-v2-next-event-label">
-            <CalendarClock size={12} strokeWidth={2.5} style={{ display: 'inline', verticalAlign: -2, marginInlineEnd: 4 }} />
-            האירוע הבא
-          </span>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            <StatusChip variant={chipVariant} />
-            <FormSourceChip event={event} />
-          </div>
+    <section className="dash-v2-section dash-v2-section--tight" aria-label="אירוע קרוב">
+      <Link to={`/events/${event.id}/edit`} className="dash-v2-next-event dash-v2-lift">
+        <div className="dash-v2-next-event-badges">
+          <StatusChip variant={chipVariant} />
+          <FormSourceChip event={event} />
         </div>
 
-        <h3 className="dash-v2-next-event-title">{event.title}</h3>
-
-        <div className="dash-v2-next-event-details">
-          <div className="dash-v2-next-event-row">
-            <span className="dash-v2-next-event-row-icon" aria-hidden>
-              <User size={16} strokeWidth={1.75} />
-            </span>
-            <span>
-              לקוח: <strong>{clientName ?? 'לא צוין'}</strong>
-            </span>
-          </div>
-          <div className="dash-v2-next-event-row">
-            <span className="dash-v2-next-event-row-icon" aria-hidden>
-              <Calendar size={16} strokeWidth={1.75} />
-            </span>
-            <span>{formatDate(event.eventDate)}</span>
-          </div>
-          {event.location && (
-            <div className="dash-v2-next-event-row">
-              <span className="dash-v2-next-event-row-icon" aria-hidden>
-                <MapPin size={16} strokeWidth={1.75} />
-              </span>
-              <span>{event.location}</span>
-            </div>
-          )}
-        </div>
-
-        <div className="dash-v2-next-event-footer">
+        <div className="dash-v2-next-event-main">
+          <h3 className="dash-v2-next-event-title">{event.title}</h3>
           <span className="dash-v2-next-event-price">{formatCurrency(amount)}</span>
-          <span className="dash-v2-next-event-cta">לחצו לעריכה ←</span>
+        </div>
+
+        <div className="dash-v2-next-event-meta">
+          <span className="dash-v2-next-event-meta-item">
+            <User size={14} strokeWidth={1.75} aria-hidden />
+            {clientName ?? 'לא צוין'}
+          </span>
+          <span className="dash-v2-next-event-meta-item">
+            <Calendar size={14} strokeWidth={1.75} aria-hidden />
+            {formatDate(event.eventDate)}
+          </span>
+          {event.location && (
+            <span className="dash-v2-next-event-meta-item">
+              <MapPin size={14} strokeWidth={1.75} aria-hidden />
+              {event.location}
+            </span>
+          )}
         </div>
       </Link>
     </section>

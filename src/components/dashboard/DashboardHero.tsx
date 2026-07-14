@@ -1,69 +1,72 @@
-import { CalendarDays, FileText, ListTodo } from 'lucide-react';
 import { useMemo } from 'react';
-import { buildDailySummary } from '../../lib/dailySummary';
+import { findNextEvent } from '../../lib/events';
 import { useAppStore } from '../../store/useAppStore';
 
-const BULLET_ICONS = [CalendarDays, ListTodo, FileText] as const;
-
-function formatTodayDate(): { weekday: string; full: string } {
+function formatHeroDate(): string {
   const now = new Date();
-  const weekday = now.toLocaleDateString('he-IL', { weekday: 'long' });
-  const full = now.toLocaleDateString('he-IL', {
+  return now.toLocaleDateString('he-IL', {
+    weekday: 'long',
     day: 'numeric',
     month: 'long',
-    year: 'numeric',
   });
-  return { weekday, full };
+}
+
+function greetingForHour(hour: number): string {
+  if (hour < 12) return 'בוקר טוב';
+  if (hour < 17) return 'צהריים טובים';
+  if (hour < 21) return 'ערב טוב';
+  return 'לילה טוב';
+}
+
+function buildContextLine(events: ReturnType<typeof useAppStore.getState>['events']): string {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const weekEnd = new Date(today);
+  weekEnd.setDate(weekEnd.getDate() + 7);
+
+  const weekCount = events.filter((e) => {
+    const d = new Date(e.eventDate);
+    d.setHours(0, 0, 0, 0);
+    return d >= today && d <= weekEnd;
+  }).length;
+
+  if (weekCount > 0) {
+    return weekCount === 1
+      ? 'יש לך אירוע אחד השבוע 🎈'
+      : `יש לך ${weekCount} אירועים השבוע 🎈`;
+  }
+
+  const next = findNextEvent(events);
+  if (!next) return 'אין אירועים קרובים — זמן לתכנן';
+
+  const eventDay = new Date(next.eventDate);
+  eventDay.setHours(0, 0, 0, 0);
+  const days = Math.round((eventDay.getTime() - today.getTime()) / 86_400_000);
+
+  if (days === 0) return 'האירוע הבא שלך היום';
+  if (days === 1) return 'האירוע הבא שלך מחר';
+  return `האירוע הבא שלך בעוד ${days} ימים`;
 }
 
 export function DashboardHero() {
   const user = useAppStore((s) => s.user)!;
   const events = useAppStore((s) => s.events);
-  const leads = useAppStore((s) => s.leads);
-  const invoices = useAppStore((s) => s.invoices);
-  const tasks = useAppStore((s) => s.tasks);
-  const dismissedAutoTasks = useAppStore((s) => s.dismissedAutoTasks);
 
-  const summary = useMemo(
-    () =>
-      buildDailySummary(
-        user.displayName,
-        events,
-        leads,
-        invoices,
-        tasks,
-        dismissedAutoTasks,
-      ),
-    [user.displayName, events, leads, invoices, tasks, dismissedAutoTasks],
-  );
-
-  const date = useMemo(() => formatTodayDate(), []);
+  const greeting = useMemo(() => greetingForHour(new Date().getHours()), []);
+  const dateLine = useMemo(() => formatHeroDate(), []);
+  const contextLine = useMemo(() => buildContextLine(events), [events]);
 
   return (
     <header className="dash-v2-hero" aria-label="ברוכים הבאים">
-      <div className="dash-v2-hero-top">
-        <div>
-          <p className="dash-v2-hero-greeting">{summary.greeting}</p>
-          <h1 className="dash-v2-hero-name">{summary.userName}</h1>
-        </div>
-        <div className="dash-v2-hero-date">
-          <span className="dash-v2-hero-date-day">{date.weekday}</span>
-          <span className="dash-v2-hero-date-full">{date.full}</span>
-        </div>
-      </div>
-      <ul className="dash-v2-hero-summary">
-        {summary.bullets.map((b, i) => {
-          const Icon = BULLET_ICONS[i % BULLET_ICONS.length];
-          return (
-            <li key={b} className="dash-v2-hero-pill">
-              <span className="dash-v2-hero-pill-icon" aria-hidden>
-                <Icon size={16} strokeWidth={2} />
-              </span>
-              {b}
-            </li>
-          );
-        })}
-      </ul>
+      <p className="dash-v2-hero-greeting">{greeting}</p>
+      <h1 className="dash-v2-hero-name">{user.displayName}</h1>
+      <p className="dash-v2-hero-subtitle">
+        <span className="dash-v2-hero-subtitle-date">{dateLine}</span>
+        <span className="dash-v2-hero-subtitle-sep" aria-hidden>
+          ·
+        </span>
+        <span>{contextLine}</span>
+      </p>
     </header>
   );
 }

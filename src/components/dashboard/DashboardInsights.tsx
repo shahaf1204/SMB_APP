@@ -12,12 +12,6 @@ interface DashboardInsightsProps {
   revenue: number;
 }
 
-function weekEndIso(): string {
-  const d = new Date();
-  d.setDate(d.getDate() + 7);
-  return d.toISOString().slice(0, 10);
-}
-
 export function DashboardInsights({
   events,
   invoices,
@@ -25,41 +19,45 @@ export function DashboardInsights({
   profit,
   revenue,
 }: DashboardInsightsProps) {
-  const today = new Date().toISOString().slice(0, 10);
-  const weekEnd = weekEndIso();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-  const weekEvents = events.filter((e) => e.eventDate >= today && e.eventDate <= weekEnd);
+  const upcomingEvents = events.filter((e) => {
+    const d = new Date(e.eventDate);
+    d.setHours(0, 0, 0, 0);
+    return d >= today;
+  });
+
   const openInvoices = invoices.filter((i) => i.status !== 'paid');
   const overdueCount = invoices.filter(isInvoiceOverdue).length;
   const marginPct = revenue > 0 ? Math.round((profit / revenue) * 100) : null;
 
   return (
-    <section className="dash-v2-section" aria-label="תובנות מהירות">
-      <div className="dash-v2-section-head">
+    <section className="dash-v2-section dash-v2-section--tight" aria-label="תובנות מהירות">
+      <div className="dash-v2-section-head dash-v2-section-head--compact">
         <h2 className="dash-v2-section-title">מבט מהיר</h2>
-        <p className="dash-v2-section-sub">השבוע · לקוחות · חשבוניות</p>
       </div>
 
       <div className="dash-v2-insights">
-        <Link to="/activities" className="dash-v2-insight dash-v2-insight--events">
+        <Link to="/activities" className="dash-v2-insight dash-v2-insight--events dash-v2-lift">
           <span className="dash-v2-insight-icon" aria-hidden>
-            <CalendarDays size={20} strokeWidth={1.75} />
+            <CalendarDays size={18} strokeWidth={1.75} />
           </span>
-          <span className="dash-v2-insight-value">{weekEvents.length}</span>
-          <span className="dash-v2-insight-label">אירועים השבוע</span>
+          <span className="dash-v2-insight-value">{upcomingEvents.length}</span>
+          <span className="dash-v2-insight-label">אירועים קרובים</span>
         </Link>
 
-        <Link to="/customers" className="dash-v2-insight dash-v2-insight--customers">
+        <Link to="/customers" className="dash-v2-insight dash-v2-insight--customers dash-v2-lift">
           <span className="dash-v2-insight-icon" aria-hidden>
-            <Users size={20} strokeWidth={1.75} />
+            <Users size={18} strokeWidth={1.75} />
           </span>
           <span className="dash-v2-insight-value">{customerCount}</span>
           <span className="dash-v2-insight-label">לקוחות</span>
         </Link>
 
-        <Link to="/invoices" className="dash-v2-insight dash-v2-insight--invoices">
+        <Link to="/invoices" className="dash-v2-insight dash-v2-insight--invoices dash-v2-lift">
           <span className="dash-v2-insight-icon" aria-hidden>
-            <FileText size={20} strokeWidth={1.75} />
+            <FileText size={18} strokeWidth={1.75} />
           </span>
           <span className="dash-v2-insight-value">{openInvoices.length}</span>
           <span className="dash-v2-insight-label">

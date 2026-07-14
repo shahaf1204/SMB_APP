@@ -1,50 +1,68 @@
-import { Receipt, TrendingUp, Wallet } from 'lucide-react';
+import { CalendarClock, Receipt, Wallet } from 'lucide-react';
 import { formatCurrency } from '../lib/finance';
 
-export interface KpiTrend {
-  revenue?: string;
-  expense?: string;
-  profit?: string;
+export interface KpiInsight {
+  delta?: string;
+  sub: string;
+}
+
+export interface KpiInsights {
+  revenue: KpiInsight;
+  expense: KpiInsight;
+  expected: KpiInsight;
 }
 
 interface KpiCardsProps {
   revenue: number;
   expense: number;
-  profit: number;
-  expenseHint?: string;
-  trends?: KpiTrend;
+  expectedRevenue: number;
+  insights: KpiInsights;
 }
 
 const KPI_CONFIG = [
-  { key: 'revenue' as const, label: 'הכנסות', icon: Wallet, variant: 'revenue' },
-  { key: 'expense' as const, label: 'הוצאות', icon: Receipt, variant: 'expense' },
-  { key: 'profit' as const, label: 'רווח', icon: TrendingUp, variant: 'profit' },
+  {
+    key: 'revenue' as const,
+    label: 'הכנסות החודש',
+    icon: Wallet,
+    variant: 'revenue',
+  },
+  {
+    key: 'expense' as const,
+    label: 'הוצאות החודש',
+    icon: Receipt,
+    variant: 'expense',
+  },
+  {
+    key: 'expected' as const,
+    label: 'הכנסות צפויות',
+    icon: CalendarClock,
+    variant: 'forecast',
+  },
 ];
 
-export function KpiCards({ revenue, expense, profit, expenseHint, trends }: KpiCardsProps) {
-  const values = { revenue, expense, profit };
+export function KpiCards({ revenue, expense, expectedRevenue, insights }: KpiCardsProps) {
+  const values = { revenue, expense, expected: expectedRevenue };
 
   return (
-    <section className="dash-v2-section" aria-label="סיכום כספי — החודש">
-      <div className="dash-v2-section-head">
+    <section className="dash-v2-section dash-v2-section--tight" aria-label="סיכום כספי">
+      <div className="dash-v2-section-head dash-v2-section-head--compact">
         <h2 className="dash-v2-section-title">סיכום החודש</h2>
-        <p className="dash-v2-section-sub">הכנסות · הוצאות · רווח</p>
       </div>
       <div className="dash-v2-kpi-grid">
         {KPI_CONFIG.map(({ key, label, icon: Icon, variant }) => {
-          const trend = trends?.[key];
+          const insight = insights[key];
 
           return (
-            <div key={key} className={`dash-v2-kpi dash-v2-kpi--${variant}`}>
+            <div key={key} className={`dash-v2-kpi dash-v2-kpi--${variant} dash-v2-lift`}>
               <span className="dash-v2-kpi-icon" aria-hidden>
-                <Icon size={24} strokeWidth={1.75} />
+                <Icon size={20} strokeWidth={1.75} />
               </span>
               <span className="dash-v2-kpi-value">{formatCurrency(values[key])}</span>
               <span className="dash-v2-kpi-label">{label}</span>
-              {trend && <span className="dash-v2-kpi-trend">{trend}</span>}
-              {key === 'expense' && expenseHint && (
-                <span className="dash-v2-kpi-hint">{expenseHint}</span>
+              {insight.delta && (
+                <span className="dash-v2-kpi-delta">{insight.delta}</span>
               )}
+              <span className="dash-v2-kpi-sub">{insight.sub}</span>
             </div>
           );
         })}

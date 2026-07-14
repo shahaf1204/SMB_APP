@@ -7,7 +7,7 @@ import { DashboardHero } from '../components/dashboard/DashboardHero';
 import { DashboardInsights } from '../components/dashboard/DashboardInsights';
 import { DashboardMetricChart } from '../components/dashboard/DashboardMetricChart';
 import { DashboardQuickActions } from '../components/dashboard/DashboardQuickActions';
-import { KpiCards, type KpiTrend } from '../components/KpiCards';
+import { KpiCards, type KpiInsights } from '../components/KpiCards';
 import { NextEventCard } from '../components/NextEventCard';
 import { buildCustomerSummaries } from '../lib/customers';
 import { calculateUnifiedTotals } from '../lib/engagementFinance';
@@ -20,12 +20,36 @@ import {
 import { useAppStore } from '../store/useAppStore';
 import '../styles/dashboard.css';
 
-function formatTrend(current: number, previous: number): string {
-  if (previous === 0 && current === 0) return 'ללא שינוי';
-  if (previous === 0) return current > 0 ? 'חדש החודש' : '—';
+function formatTrendPct(current: number, previous: number): { delta: string; sub: string } {
+  if (previous === 0 && current === 0) return { delta: '—', sub: 'ללא שינוי' };
+  if (previous === 0) return { delta: 'חדש', sub: 'לעומת חודש שעבר' };
   const pct = Math.round(((current - previous) / previous) * 100);
   const sign = pct > 0 ? '+' : '';
-  return `${sign}${pct}% מהחודש שעבר`;
+  return { delta: `${sign}${pct}%`, sub: 'לעומת חודש שעבר' };
+}
+
+function sumExpectedRevenueNext30Days(
+  events: ReturnType<typeof useAppStore.getState>['events'],
+  eventValues: ReturnType<typeof useAppStore.getState>['eventValues'],
+): { total: number; count: number } {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const end = new Date(today);
+  end.setDate(end.getDate() + 30);
+
+  let total = 0;
+  let count = 0;
+
+  for (const event of events) {
+    const d = new Date(event.eventDate);
+    d.setHours(0, 0, 0, 0);
+    if (d >= today && d <= end) {
+      total += getEventRevenueTotal(event.id, eventValues);
+      count += 1;
+    }
+  }
+
+  return { total, count };
 }
 
 export function DashboardPage() {
@@ -79,25 +103,22 @@ export function DashboardPage() {
     [events, eventValues, invoices, engagementSessions, monthlyExpenses, expenseMode],
   );
 
-  const trends = useMemo<KpiTrend>(
-    () => ({
-      revenue: formatTrend(totals.revenue, prevTotals.revenue),
-      expense: formatTrend(totals.expense, prevTotals.expense),
-      profit: formatTrend(totals.profit, prevTotals.profit),
-    }),
-    [totals, prevTotals],
+  const forecast = useMemo(
+    () => sumExpectedRevenueNext30Days(events, eventValues),
+    [events, eventValues],
   );
 
-  const expenseHint = useMemo(() => {
-    const parts: string[] = [];
-    if (totals.directExpense != null && totals.directExpense > 0) {
-      parts.push(`ישירות ${totals.directExpense.toLocaleString('he-IL')} ₪`);
-    }
-    if (totals.monthlyExpense != null && totals.monthlyExpense > 0) {
-      parts.push(`חודשיות ${totals.monthlyExpense.toLocaleString('he-IL')} ₪`);
-    }
-    return parts.length ? parts.join(' · ') : undefined;
-  }, [totals.directExpense, totals.monthlyExpense]);
+  const kpiInsights = useMemo<KpiInsights>(
+    () => ({
+      revenue: formatTrendPct(totals.revenue, prevTotals.revenue),
+      expense: formatTrendPct(totals.expense, prevTotals.expense),
+      expected: {
+        delta: forecast.count > 0 ? `+${forecast.count} אירועים` : undefined,
+        sub: '30 הימים הקרובים',
+      },
+    }),
+    [totals, prevTotals, forecast.count],
+  );
 
   const customerCount = useMemo(
     () => buildCustomerSummaries(events, leads, invoices, categories, eventValues).length,
@@ -126,9 +147,8 @@ export function DashboardPage() {
         <KpiCards
           revenue={totals.revenue}
           expense={totals.expense}
-          profit={totals.profit}
-          expenseHint={expenseHint}
-          trends={trends}
+          expectedRevenue={forecast.total}
+          insights={kpiInsights}
         />
 
         <hr className="dash-v2-divider" aria-hidden />
