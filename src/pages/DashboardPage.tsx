@@ -138,9 +138,11 @@ export function DashboardPage() {
 
         {calendarExport && <CalendarExportBanner outcome={calendarExport} />}
 
+        <NextEventCard event={nextEvent} clientName={clientName} amount={nextAmount} />
+
         <hr className="dash-v2-divider" aria-hidden />
 
-        <NextEventCard event={nextEvent} clientName={clientName} amount={nextAmount} />
+        <DashboardQuickActions />
 
         <hr className="dash-v2-divider" aria-hidden />
 
@@ -160,10 +162,6 @@ export function DashboardPage() {
           profit={totals.profit}
           revenue={totals.revenue}
         />
-
-        <hr className="dash-v2-divider" aria-hidden />
-
-        <DashboardQuickActions />
 
         <hr className="dash-v2-divider" aria-hidden />
 

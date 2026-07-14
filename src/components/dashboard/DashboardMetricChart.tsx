@@ -39,10 +39,10 @@ export function DashboardMetricChart({
   const hasData = data.some((d) => d.revenue > 0 || d.expense > 0);
 
   return (
-    <section className="dash-v2-chart-card dash-v2-lift" aria-label="ביצועים עסקיים">
+    <section className="dash-v2-chart-card" aria-label="Business Performance">
       <div className="dash-v2-chart-head">
-        <h2 className="dash-v2-chart-title">ביצועים עסקיים</h2>
-        <p className="dash-v2-chart-sub">הכנסות מול הוצאות — מתחילת השנה</p>
+        <h2 className="dash-v2-chart-title">Business Performance</h2>
+        <p className="dash-v2-chart-sub">Revenue vs Expenses · YTD</p>
       </div>
 
       {!hasData ? (
@@ -54,8 +54,8 @@ export function DashboardMetricChart({
         </div>
       ) : (
         <div className="dash-v2-chart-wrap dash-v2-chart-animate">
-          <ResponsiveContainer width="100%" height={260}>
-            <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+          <ResponsiveContainer width="100%" height={288}>
+            <LineChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 6" stroke="rgba(15, 23, 42, 0.06)" vertical={false} />
               <XAxis
                 dataKey="label"
@@ -89,7 +89,7 @@ export function DashboardMetricChart({
                 align="left"
                 iconType="circle"
                 iconSize={8}
-                wrapperStyle={{ fontSize: 11, paddingBottom: 8 }}
+                wrapperStyle={{ fontSize: 11, paddingBottom: 4 }}
                 formatter={(value) => (value === 'revenue' ? 'הכנסות' : 'הוצאות')}
               />
               <Line

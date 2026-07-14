@@ -35,7 +35,7 @@ export function DashboardInsights({
   return (
     <section className="dash-v2-section dash-v2-section--tight" aria-label="תובנות מהירות">
       <div className="dash-v2-section-head dash-v2-section-head--compact">
-        <h2 className="dash-v2-section-title">מבט מהיר</h2>
+        <h2 className="dash-v2-section-title">סטטיסטיקה מהירה</h2>
       </div>
 
       <div className="dash-v2-insights">

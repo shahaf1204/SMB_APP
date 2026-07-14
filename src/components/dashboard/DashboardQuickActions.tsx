@@ -39,7 +39,7 @@ export function DashboardQuickActions() {
         {ACTIONS.map(({ to, label, icon: Icon, variant }) => (
           <Link key={to} to={to} className={`dash-v2-action dash-v2-action--${variant}`}>
             <span className="dash-v2-action-icon" aria-hidden>
-              <Icon size={24} strokeWidth={1.75} />
+              <Icon size={22} strokeWidth={1.75} />
             </span>
             <span className="dash-v2-action-label">{label}</span>
           </Link>

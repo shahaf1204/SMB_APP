@@ -46,7 +46,7 @@ export function KpiCards({ revenue, expense, expectedRevenue, insights }: KpiCar
   return (
     <section className="dash-v2-section dash-v2-section--tight" aria-label="סיכום כספי">
       <div className="dash-v2-section-head dash-v2-section-head--compact">
-        <h2 className="dash-v2-section-title">סיכום החודש</h2>
+        <h2 className="dash-v2-section-title">סיכום חודשי</h2>
       </div>
       <div className="dash-v2-kpi-grid">
         {KPI_CONFIG.map(({ key, label, icon: Icon, variant }) => {

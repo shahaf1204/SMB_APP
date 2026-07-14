@@ -25,6 +25,10 @@ function eventChipVariant(eventDate: string): StatusChipVariant {
   return 'upcoming';
 }
 
+function isBirthdayThemed(title: string): boolean {
+  return /יום\s*הולדת|birthday|בלון|balloon|🎈|🎂|cake/i.test(title);
+}
+
 export function NextEventCard({ event, clientName, amount }: NextEventCardProps) {
   if (!event) {
     return (
@@ -47,15 +51,22 @@ export function NextEventCard({ event, clientName, amount }: NextEventCardProps)
   const chipVariant = eventChipVariant(event.eventDate);
 
   return (
-    <section className="dash-v2-section dash-v2-section--tight" aria-label="אירוע קרוב">
-      <Link to={`/events/${event.id}/edit`} className="dash-v2-next-event dash-v2-lift">
+    <section className="dash-v2-section dash-v2-section--featured" aria-label="אירוע קרוב">
+      <Link to={`/events/${event.id}/edit`} className="dash-v2-next-event dash-v2-next-event--featured dash-v2-lift">
         <div className="dash-v2-next-event-badges">
-          <StatusChip variant={chipVariant} />
+          <StatusChip variant={chipVariant} className="dash-v2-next-event-chip" />
           <FormSourceChip event={event} />
         </div>
 
         <div className="dash-v2-next-event-main">
-          <h3 className="dash-v2-next-event-title">{event.title}</h3>
+          <h3 className="dash-v2-next-event-title">
+            {isBirthdayThemed(event.title) && (
+              <span className="dash-v2-next-event-emoji" aria-hidden>
+                🎈
+              </span>
+            )}
+            {event.title}
+          </h3>
           <span className="dash-v2-next-event-price">{formatCurrency(amount)}</span>
         </div>
 
