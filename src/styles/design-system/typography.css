@@ -81,3 +81,11 @@
 .ds-text-medium { font-weight: var(--ds-font-weight-medium); }
 .ds-text-semibold { font-weight: var(--ds-font-weight-semibold); }
 .ds-text-bold { font-weight: var(--ds-font-weight-bold); }
+
+.ds-financial {
+  font-size: var(--ds-text-financial-size);
+  font-weight: var(--ds-text-financial-weight);
+  letter-spacing: var(--ds-text-financial-tracking);
+  font-variant-numeric: tabular-nums;
+  color: var(--ds-color-text);
+}

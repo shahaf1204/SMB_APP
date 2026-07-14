@@ -1,0 +1,254 @@
+/**
+ * Product Design System — Unified foundations (v3)
+ * Badges · Dividers · Empty states · Button variants · Cards
+ */
+
+/* ── Buttons: radius + outline ── */
+.ds-btn {
+  border-radius: var(--ds-radius-button);
+  box-shadow: none;
+}
+
+.ds-btn--primary {
+  box-shadow: var(--ds-shadow-xs);
+}
+
+.ds-btn--primary:hover:not(:disabled) {
+  box-shadow: var(--ds-shadow-sm);
+}
+
+.ds-btn--outline {
+  background: transparent;
+  color: var(--ds-color-text);
+  border-color: var(--ds-color-border);
+}
+
+.ds-btn--outline:hover:not(:disabled) {
+  background: var(--ds-color-bg-subtle);
+  border-color: var(--ds-color-border-strong);
+  color: var(--ds-color-text);
+}
+
+.ds-btn--outline:active:not(:disabled) {
+  background: var(--ds-color-bg-muted);
+  transform: scale(0.98);
+}
+
+.ds-btn--secondary.ds-btn--loading .ds-btn__spinner,
+.ds-btn--outline.ds-btn--loading .ds-btn__spinner,
+.ds-btn--ghost.ds-btn--loading .ds-btn__spinner {
+  border-color: rgba(15, 23, 42, 0.1);
+  border-top-color: var(--ds-color-primary);
+}
+
+/* Icon button (4th style) */
+.ds-btn--icon {
+  width: var(--ds-touch-target);
+  height: var(--ds-touch-target);
+  min-height: var(--ds-touch-target);
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.ds-btn--icon-sm {
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+}
+
+.ds-btn--icon-lg {
+  width: 48px;
+  height: 48px;
+  min-height: 48px;
+}
+
+.ds-btn--icon-primary {
+  background: var(--ds-color-primary-subtle);
+  color: var(--ds-color-primary);
+  border-color: transparent;
+}
+
+.ds-btn--icon-primary:hover:not(:disabled) {
+  background: var(--ds-color-primary-muted);
+}
+
+.ds-btn--icon-secondary {
+  background: var(--ds-color-surface);
+  border-color: var(--ds-color-border);
+  color: var(--ds-color-text-secondary);
+}
+
+.ds-btn--icon-secondary:hover:not(:disabled) {
+  background: var(--ds-color-bg-subtle);
+}
+
+.ds-btn--icon-outline {
+  background: transparent;
+  border-color: var(--ds-color-border);
+  color: var(--ds-color-text-secondary);
+}
+
+.ds-btn--icon-outline:hover:not(:disabled) {
+  background: var(--ds-color-bg-subtle);
+  color: var(--ds-color-text);
+}
+
+.ds-btn--icon:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+/* ── Cards (unified language) ── */
+.ds-card {
+  border-radius: var(--ds-radius-card);
+  padding: 0;
+  box-shadow: var(--ds-shadow-xs);
+  border: 1px solid var(--ds-color-border);
+  background: var(--ds-color-surface);
+}
+
+.ds-card__body {
+  padding: var(--ds-card-padding);
+}
+
+.ds-card__header {
+  padding: var(--ds-card-padding);
+  padding-bottom: 0;
+}
+
+.ds-card__footer {
+  padding: var(--ds-space-2) var(--ds-card-padding) var(--ds-card-padding);
+}
+
+/* ── Unified badges ── */
+.ds-badge,
+.ds-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-1);
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--ds-radius-badge);
+  font-size: var(--ds-text-caption-size);
+  font-weight: var(--ds-font-weight-semibold);
+  line-height: 1.3;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.ds-badge--success,
+.ds-chip--success,
+.ds-chip--paid {
+  background: var(--ds-status-success-bg);
+  color: var(--ds-status-success-text);
+  border-color: var(--ds-success-100);
+}
+
+.ds-badge--waiting,
+.ds-chip--pending,
+.ds-chip--warning,
+.ds-chip--accent,
+.ds-chip--vip {
+  background: var(--ds-status-waiting-bg);
+  color: var(--ds-status-waiting-text);
+  border-color: var(--ds-accent-100);
+}
+
+.ds-badge--upcoming,
+.ds-chip--primary,
+.ds-chip--upcoming,
+.ds-chip--today,
+.ds-chip--tomorrow,
+.ds-chip--this-week {
+  background: var(--ds-status-upcoming-bg);
+  color: var(--ds-status-upcoming-text);
+  border-color: var(--ds-primary-100);
+}
+
+.ds-badge--completed,
+.ds-chip--completed {
+  background: var(--ds-status-completed-bg);
+  color: var(--ds-status-completed-text);
+  border-color: var(--ds-neutral-200);
+}
+
+.ds-badge--cancelled,
+.ds-chip--cancelled,
+.ds-chip--danger {
+  background: var(--ds-status-cancelled-bg);
+  color: var(--ds-status-cancelled-text);
+  border-color: var(--ds-danger-100);
+}
+
+.ds-chip--neutral {
+  background: var(--ds-neutral-100);
+  color: var(--ds-neutral-600);
+  border-color: var(--ds-neutral-200);
+}
+
+/* ── Divider ── */
+.ds-divider {
+  height: 1px;
+  margin: 0;
+  border: none;
+  background: var(--ds-color-border);
+  opacity: 0.6;
+}
+
+.ds-divider-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+}
+
+.ds-divider-wrap .ds-divider {
+  flex: 1;
+}
+
+.ds-divider__label {
+  font-size: var(--ds-text-caption-size);
+  color: var(--ds-color-text-muted);
+  white-space: nowrap;
+}
+
+/* ── Empty state ── */
+.ds-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--ds-space-8) var(--ds-space-4);
+  border-radius: var(--ds-radius-card);
+  background: var(--ds-color-surface);
+  border: 1px solid var(--ds-color-border);
+}
+
+.ds-empty__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--ds-color-bg-subtle);
+  margin-bottom: var(--ds-space-4);
+}
+
+.ds-empty__title {
+  margin-bottom: var(--ds-space-2);
+}
+
+.ds-empty__desc {
+  max-width: 280px;
+  margin-bottom: var(--ds-space-4);
+}
+
+.ds-empty__action {
+  text-decoration: none;
+}
+
+/* ── Financial numbers ── */
+.ds-financial {
+  font-size: var(--ds-text-financial-size);
+  font-weight: var(--ds-text-financial-weight);
+  letter-spacing: var(--ds-text-financial-tracking);
+  font-variant-numeric: tabular-nums;
+}

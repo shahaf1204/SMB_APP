@@ -1,150 +1,177 @@
-# SMB Design System v2
+# SMB Product Design System
 
-Mobile-first SaaS design language — **Linear × Stripe × Notion × Airbnb Host × Google Calendar**.
+Unified visual language for a **production SaaS** platform for service businesses.
 
-**Scope:** Reusable foundations only. No screen migrations yet.
+**Personality:** Calm · Modern · Premium · Friendly · Clean · Trustworthy  
+**References:** Stripe Dashboard, Linear, Notion, Arc, Apple HIG  
+**Not:** Monday.com, colorful, childish
 
-## Quick start
+---
+
+## Usage
 
 ```tsx
-import { Button, StatisticCard, StatusChip, Fab } from '@/components/ds';
+import {
+  Button,
+  IconButton,
+  Badge,
+  DefaultCard,
+  EmptyState,
+  Divider,
+  Text,
+  Icon,
+} from '@/components/ds';
 ```
 
-CSS variables load globally via `src/styles/design-system/index.css`.
-
-**Live reference:** `/dev/design-system`
+CSS tokens load globally via `src/styles/design-system/index.css`.
 
 ---
 
-## 1. Colors
+## Colors
 
-### Brand
+### Brand (3 only)
 
-| Token | Hex | Use |
-|-------|-----|-----|
-| `--ds-color-primary` | `#4F46E5` | CTAs, links, focus |
-| `--ds-color-success` | `#10B981` | Revenue, completed, paid |
-| `--ds-color-accent` | `#F59E0B` | VIP, highlights, tomorrow |
-| `--ds-color-danger` | `#EF4444` | Errors, destructive, cancelled |
+| Token | Role |
+|-------|------|
+| `--ds-color-primary` | Blue/violet — actions, upcoming |
+| `--ds-color-success` | Green — success, paid |
+| `--ds-color-accent` | Orange — waiting, attention |
 
-### Surfaces & text
+Everything else uses **neutral grays**. Danger red is semantic feedback only (cancelled).
 
-| Token | Hex |
-|-------|-----|
-| `--ds-color-bg` | `#F8FAFC` |
-| `--ds-color-surface` | `#FFFFFF` |
-| `--ds-color-border` | `#E5E7EB` |
-| `--ds-color-text` | `#0F172A` |
-| `--ds-color-text-secondary` | `#64748B` |
-| `--ds-color-text-muted` | `#94A3B8` |
+### Status semantics
 
-Each brand color has a 50–900 scale (`--ds-primary-*`, etc.).
+| Status | Color |
+|--------|-------|
+| Success | Green |
+| Waiting | Orange |
+| Upcoming | Blue |
+| Completed | Gray |
+| Cancelled | Red |
 
-Legacy screens inherit via `legacy-map.css` (`--color-primary` → `--ds-color-primary`).
+Use `<Badge variant="paid" />` — legacy variants map automatically.
 
 ---
 
-## 2. Typography
+## Spacing (8pt)
 
-**Font stack:** Inter → Plus Jakarta Sans → system UI
-
-| Variant | Class | Size |
-|---------|-------|------|
-| Display | `.ds-display` | 2.125rem |
-| H1 | `.ds-h1` | 1.625rem |
-| H2 | `.ds-h2` | 1.3125rem |
-| H3 | `.ds-h3` | 1.0625rem |
-| Body | `.ds-body` | 0.9375rem |
-| Small | `.ds-small` | 0.8125rem |
-| Caption | `.ds-caption` | 0.75rem |
-
-React: `<Text variant="h2">…</Text>`
-
----
-
-## 3. Spacing (8px grid)
-
-`--ds-space-2` (8px) through `--ds-space-16` (64px). Half-step `--ds-space-1` (4px) for tight gaps.
-
----
-
-## 4. Radius
+Use only: **4 · 8 · 16 · 24 · 32** px
 
 | Token | Value |
 |-------|-------|
-| `--ds-radius-sm` | 8px |
-| `--ds-radius-md` | 12px |
-| `--ds-radius-lg` | 16px |
-| `--ds-radius-xl` | 24px |
-
-Rounded interfaces preferred on cards, inputs, and buttons.
-
----
-
-## 5. Shadows
-
-`--ds-shadow-xs` → `--ds-shadow-xl` — subtle, low-contrast elevation.
+| `--ds-space-1` | 4px |
+| `--ds-space-2` | 8px |
+| `--ds-space-4` | 16px |
+| `--ds-space-6` | 24px |
+| `--ds-space-8` | 32px |
 
 ---
 
-## 6. Buttons
+## Radius
 
-| Component | Variants |
-|-----------|----------|
-| `Button` | primary, secondary, ghost, danger |
-| `IconButton` | primary, secondary, ghost, danger |
-| `Fab` | fixed primary action |
-
-All support hover, pressed (`scale`), disabled, and loading (Button only).
+| Element | Token | Value |
+|---------|-------|-------|
+| Cards | `--ds-radius-card` | 16px |
+| Buttons | `--ds-radius-button` | 14px |
+| Badges | `--ds-radius-badge` | 999px |
 
 ---
 
-## 7. Cards
+## Shadows
 
-| Component | Purpose |
+Very soft — almost invisible floating feel.
+
+`--ds-shadow-xs` → `--ds-shadow-lg`
+
+---
+
+## Typography
+
+| Variant | Class |
+|---------|-------|
+| Display | `.ds-display` |
+| H1–H3 | `.ds-h1` … `.ds-h3` |
+| Body | `.ds-body` |
+| Small | `.ds-small` |
+| Caption | `.ds-caption` |
+| **Financial** | `.ds-financial` |
+
+Financial numbers are slightly larger with tabular nums.
+
+---
+
+## Buttons (4 styles only)
+
+| Component | Variant |
 |-----------|---------|
-| `DefaultCard` | Generic container |
-| `MetricCard` | Compact KPI tile |
-| `StatisticCard` | Hero metric with delta + chart slot |
-| `ActivityCard` | Feed / notification row |
-| `ClientCard` | Customer list item |
-| `SettingsCard` | Settings navigation row |
+| `Button` | `primary` |
+| `Button` | `secondary` |
+| `Button` | `outline` |
+| `IconButton` | `primary` · `secondary` · `outline` |
+
+All support hover, pressed, disabled, loading (Button).
 
 ---
 
-## 8. Status chips
+## Cards
 
-`<StatusChip variant="upcoming|completed|cancelled|paid|pending|vip|today|tomorrow|this-week" />`
+All cards use `ds-card`:
 
-Hebrew labels built-in. Generic `<Chip tone="…">` for custom use.
+- 16px radius
+- Soft border
+- 16px padding (`--ds-card-padding`)
+- Consistent title hierarchy via `Text`
 
----
-
-## 9. Icons (Lucide only)
-
-`<Icon icon={Calendar} size="md" tone="primary" />`
-
-| Size | px |
-|------|-----|
-| sm | 16 |
-| md | 20 |
-| lg | 24 |
-| xl | 32 |
-
-Default `strokeWidth={1.75}`.
+Variants: `DefaultCard`, `MetricCard`, `StatisticCard`, `ActivityCard`, `ClientCard`, `SettingsCard`.
 
 ---
 
-## 10. Motion
+## Badges
 
-| Token | Value |
-|-------|-------|
-| `--ds-duration-fast` | 150ms |
-| `--ds-duration-base` | 200ms |
-| `--ds-duration-slow` | 250ms |
-| `--ds-ease-out` | cubic-bezier(0.16, 1, 0.3, 1) |
+**One component:** `<Badge variant="upcoming" />`
 
-Classes: `.ds-animate-fade-in`, `.ds-animate-slide-up`, `.ds-transition`
+Replaces all chip/status styles. `StatusChip` is a deprecated alias.
+
+---
+
+## Empty states
+
+**One component:** `<EmptyState />`
+
+- Lucide icon
+- Title
+- Description
+- Primary CTA
+
+---
+
+## Dividers
+
+`<Divider />` — very subtle 1px line.
+
+---
+
+## Icons
+
+**Lucide only** via `<Icon icon={…} size="md" />`.
+
+Sizes: 16 · 20 · 24 · 32 px.
+
+---
+
+## Motion
+
+Fast & professional: 120–220ms, ease-out.
+
+---
+
+## Migration plan
+
+1. ✅ Unified tokens + components (`components/ds`)
+2. ⏳ Replace legacy `.btn`, `.card`, `.empty-state-*` screen-by-screen
+3. ⏳ Remove `design-refresh.css` overrides when complete
+
+**Do not** mix legacy and DS classes on the same element.
 
 ---
 
@@ -152,20 +179,14 @@ Classes: `.ds-animate-fade-in`, `.ds-animate-slide-up`, `.ds-transition`
 
 ```
 src/styles/design-system/
-  tokens.css          ← all CSS variables
-  typography.css
-  motion.css
-  components.css
-  legacy-map.css      ← bridges old screens
+  tokens.css       — colors, spacing, radius, shadows
+  typography.css   — text hierarchy + .ds-financial
+  motion.css       — animations
+  components.css   — detailed component styles
+  foundation.css   — unified v3 foundations
+  legacy-map.css   — bridges old CSS vars
   index.css
 
-src/design-system/
-  tokens.ts           ← JS mirror
-  cn.ts
-
-src/components/ds/    ← React components
+src/components/ds/ — React components (single import path)
+src/design-system/ — cn, tokens.ts
 ```
-
-## Migration (later)
-
-Adopt `ds-*` components page-by-page. Do not mix legacy `.btn` and `Button` on the same view.

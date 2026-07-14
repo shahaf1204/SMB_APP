@@ -1,43 +1,36 @@
 /**
- * Design system tokens — JS/TS mirror of tokens.css
+ * Design system tokens — JS/TS mirror
  */
 
 export const brand = {
   primary: '#4F46E5',
   success: '#10B981',
-  accent: '#F59E0B',
-  danger: '#EF4444',
+  accent: '#F97316',
 } as const;
 
 export const semantic = {
   background: '#F8FAFC',
   surface: '#FFFFFF',
-  border: '#E5E7EB',
+  border: '#E2E8F0',
   text: '#0F172A',
   textSecondary: '#64748B',
   textMuted: '#94A3B8',
 } as const;
 
+/** 8pt spacing: 4 · 8 · 16 · 24 · 32 */
 export const spacing = {
-  0: '0',
-  1: '0.25rem',
-  2: '0.5rem',
-  3: '0.75rem',
-  4: '1rem',
-  5: '1.25rem',
-  6: '1.5rem',
-  8: '2rem',
-  10: '2.5rem',
-  12: '3rem',
-  16: '4rem',
+  xs: '4px',
+  sm: '8px',
+  md: '16px',
+  lg: '24px',
+  xl: '32px',
 } as const;
 
 export const radius = {
-  sm: '8px',
-  md: '12px',
-  lg: '16px',
-  xl: '24px',
-  full: '9999px',
+  card: '16px',
+  button: '14px',
+  badge: '999px',
+  input: '12px',
 } as const;
 
 export const shadow = {
@@ -45,17 +38,15 @@ export const shadow = {
   sm: 'var(--ds-shadow-sm)',
   md: 'var(--ds-shadow-md)',
   lg: 'var(--ds-shadow-lg)',
-  xl: 'var(--ds-shadow-xl)',
 } as const;
 
 export const motion = {
-  fast: '150ms',
-  base: '200ms',
-  slow: '250ms',
+  fast: '120ms',
+  base: '180ms',
+  slow: '220ms',
   easeOut: 'cubic-bezier(0.16, 1, 0.3, 1)',
 } as const;
 
-/** Lucide icon sizes in px */
 export const iconSize = {
   sm: 16,
   md: 20,
@@ -63,10 +54,17 @@ export const iconSize = {
   xl: 32,
 } as const;
 
-export type StatusChipVariant =
+/** Canonical status badge semantics */
+export type BadgeStatus =
+  | 'success'
+  | 'waiting'
   | 'upcoming'
   | 'completed'
-  | 'cancelled'
+  | 'cancelled';
+
+/** Extended variants (map to canonical status) */
+export type BadgeVariant =
+  | BadgeStatus
   | 'paid'
   | 'pending'
   | 'vip'
@@ -74,7 +72,9 @@ export type StatusChipVariant =
   | 'tomorrow'
   | 'this-week';
 
-export const statusChipLabels: Record<StatusChipVariant, string> = {
+export const badgeLabels: Record<BadgeVariant, string> = {
+  success: 'הצלחה',
+  waiting: 'ממתין',
   upcoming: 'בקרוב',
   completed: 'הושלם',
   cancelled: 'בוטל',
@@ -85,3 +85,32 @@ export const statusChipLabels: Record<StatusChipVariant, string> = {
   tomorrow: 'מחר',
   'this-week': 'השבוע',
 };
+
+export function resolveBadgeStatus(variant: BadgeVariant): BadgeStatus {
+  switch (variant) {
+    case 'success':
+    case 'paid':
+      return 'success';
+    case 'waiting':
+    case 'pending':
+    case 'vip':
+      return 'waiting';
+    case 'upcoming':
+    case 'today':
+    case 'tomorrow':
+    case 'this-week':
+      return 'upcoming';
+    case 'completed':
+      return 'completed';
+    case 'cancelled':
+      return 'cancelled';
+    default:
+      return 'upcoming';
+  }
+}
+
+/** @deprecated Use BadgeVariant */
+export type StatusChipVariant = BadgeVariant;
+
+/** @deprecated Use badgeLabels */
+export const statusChipLabels = badgeLabels;

@@ -1,11 +1,16 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { cn } from '../../design-system/cn';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+/** Primary · Secondary · Outline · Icon (via IconButton) */
+export type ButtonVariant = 'primary' | 'secondary' | 'outline';
+
+/** @deprecated Use outline */
+export type LegacyButtonVariant = 'ghost' | 'danger';
+
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: ButtonVariant;
+  variant?: ButtonVariant | LegacyButtonVariant;
   size?: ButtonSize;
   fullWidth?: boolean;
   loading?: boolean;
@@ -24,13 +29,14 @@ export function Button({
   ...rest
 }: ButtonProps) {
   const isDisabled = disabled || loading;
+  const resolvedVariant = variant === 'ghost' ? 'outline' : variant;
 
   return (
     <button
       type={type}
       className={cn(
         'ds-btn',
-        `ds-btn--${variant}`,
+        `ds-btn--${resolvedVariant}`,
         size !== 'md' && `ds-btn--${size}`,
         fullWidth && 'ds-btn--full',
         loading && 'ds-btn--loading',

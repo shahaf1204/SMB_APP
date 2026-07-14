@@ -3,7 +3,8 @@ import type { ButtonHTMLAttributes } from 'react';
 import { iconSize } from '../../design-system/tokens';
 import { cn } from '../../design-system/cn';
 
-export type IconButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+export type IconButtonVariant = 'primary' | 'secondary' | 'outline';
+
 export type IconButtonSize = 'sm' | 'md' | 'lg';
 
 export interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -14,23 +15,25 @@ export interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>
   'aria-label': string;
 }
 
+/** Icon button — fourth button style in the design system */
 export function IconButton({
   icon: LucideIcon,
-  variant = 'ghost',
+  variant = 'outline',
   size = 'md',
   className,
   type = 'button',
   ...rest
 }: IconButtonProps) {
-  const px = size === 'sm' ? iconSize.sm : size === 'lg' ? iconSize.xl : iconSize.md;
+  const px = size === 'sm' ? iconSize.sm : size === 'lg' ? iconSize.lg : iconSize.md;
 
   return (
     <button
       type={type}
       className={cn(
-        'ds-icon-btn',
-        `ds-icon-btn--${variant}`,
-        size !== 'md' && `ds-icon-btn--${size}`,
+        'ds-btn',
+        'ds-btn--icon',
+        `ds-btn--icon-${variant}`,
+        size !== 'md' && `ds-btn--icon-${size}`,
         className,
       )}
       {...rest}

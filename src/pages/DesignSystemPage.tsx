@@ -4,6 +4,7 @@ import {
   Calendar,
   ChevronLeft,
   DollarSign,
+  Inbox,
   Plus,
   Search,
   Sparkles,
@@ -14,12 +15,14 @@ import { BottomNav } from '../components/BottomNav';
 import {
   ActivityCard,
   Avatar,
+  Badge,
   Button,
   Checkbox,
-  Chip,
   ClientCard,
   DateInput,
   DefaultCard,
+  Divider,
+  EmptyState,
   Field,
   Icon,
   IconButton,
@@ -29,7 +32,6 @@ import {
   Select,
   SettingsCard,
   StatisticCard,
-  StatusChip,
   Text,
   TimeInput,
   Toggle,
@@ -49,6 +51,14 @@ const NEUTRAL_SWATCHES = [
   { token: '900', bg: 'var(--ds-neutral-900)' },
 ];
 
+const BADGE_STATUSES = [
+  'success',
+  'waiting',
+  'upcoming',
+  'completed',
+  'cancelled',
+] as const;
+
 export function DesignSystemPage() {
   const [toggleOn, setToggleOn] = useState(true);
   const [checked, setChecked] = useState(false);
@@ -62,20 +72,20 @@ export function DesignSystemPage() {
         </Link>
 
         <Text variant="display" style={{ marginBottom: 8 }}>
-          Design System
+          Product Design System
         </Text>
         <Text variant="small" tone="secondary" style={{ marginBottom: 24 }}>
-          מערכת עיצוב — רפרנס לפיתוח. לא מחליפה עדיין את מסכי האפליקציה.
+          שפה ויזואלית אחידה לכל האפליקציה — רפרנס לפיתוח. לא מחליפה עדיין מסכים קיימים.
         </Text>
 
         {/* Colors */}
         <section className="ds-showcase__section">
           <Text variant="h2" className="ds-showcase__section-title">
-            צבעים
+            צבעי מותג (3 בלבד)
           </Text>
           <div className="ds-showcase__stack">
             <div>
-              <Text variant="h3" style={{ marginBottom: 8 }}>Primary</Text>
+              <Text variant="h3" style={{ marginBottom: 8 }}>Primary — כחול/סגול</Text>
               <div className="ds-showcase__swatch-row">
                 {[50, 100, 200, 500, 600, 800].map((step) => (
                   <span
@@ -89,7 +99,7 @@ export function DesignSystemPage() {
               </div>
             </div>
             <div>
-              <Text variant="h3" style={{ marginBottom: 8 }}>Success</Text>
+              <Text variant="h3" style={{ marginBottom: 8 }}>Success — ירוק</Text>
               <div className="ds-showcase__swatch-row">
                 {[50, 100, 200, 500, 600, 800].map((step) => (
                   <span
@@ -103,7 +113,7 @@ export function DesignSystemPage() {
               </div>
             </div>
             <div>
-              <Text variant="h3" style={{ marginBottom: 8 }}>Accent</Text>
+              <Text variant="h3" style={{ marginBottom: 8 }}>Accent — כתום</Text>
               <div className="ds-showcase__swatch-row">
                 {[50, 100, 200, 500, 600, 800].map((step) => (
                   <span
@@ -117,7 +127,7 @@ export function DesignSystemPage() {
               </div>
             </div>
             <div>
-              <Text variant="h3" style={{ marginBottom: 8 }}>Neutral</Text>
+              <Text variant="h3" style={{ marginBottom: 8 }}>Neutral — אפורים</Text>
               <div className="ds-showcase__swatch-row">
                 {NEUTRAL_SWATCHES.map(({ token, bg }) => (
                   <span key={token} className="ds-showcase__swatch" style={{ background: bg }}>
@@ -142,20 +152,20 @@ export function DesignSystemPage() {
             <Text variant="body">Body — טקסט גוף רגיל לקריאה נוחה</Text>
             <Text variant="small">Small — טקסט משני ומטא-דאטה</Text>
             <Text variant="caption">Caption — תוויות קטנות וסטטוס</Text>
+            <p className="ds-financial">₪12,400.00 — Financial</p>
           </div>
         </section>
 
         {/* Buttons */}
         <section className="ds-showcase__section">
           <Text variant="h2" className="ds-showcase__section-title">
-            כפתורים
+            כפתורים (4 סגנונות)
           </Text>
           <div className="ds-showcase__stack">
             <div className="ds-showcase__row">
               <Button variant="primary">Primary</Button>
               <Button variant="secondary">Secondary</Button>
-              <Button variant="ghost">Ghost</Button>
-              <Button variant="danger">Danger</Button>
+              <Button variant="outline">Outline</Button>
             </div>
             <div className="ds-showcase__row">
               <Button variant="primary" disabled>
@@ -177,8 +187,9 @@ export function DesignSystemPage() {
               <Button variant="primary" size="md">Medium</Button>
               <Button variant="primary" size="lg">Large</Button>
             </div>
+            <Text variant="caption" tone="muted">Icon — כפתור אייקון</Text>
             <div className="ds-showcase__row">
-              <IconButton icon={Bell} variant="ghost" aria-label="התראות" />
+              <IconButton icon={Bell} variant="outline" aria-label="התראות" />
               <IconButton icon={Plus} variant="primary" aria-label="הוסף" />
               <IconButton icon={Search} variant="secondary" aria-label="חיפוש" />
             </div>
@@ -205,7 +216,7 @@ export function DesignSystemPage() {
           </Text>
           <div className="ds-showcase__stack">
             <DefaultCard header={<Text variant="h3">Default Card</Text>}>
-              <Text variant="body">כרטיס בסיסי עם גבול עדין וצל קל.</Text>
+              <Text variant="body">כרטיס בסיסי — רדיוס 16px, גבול עדין, צל רך.</Text>
             </DefaultCard>
 
             <div className="ds-showcase__grid ds-showcase__grid--2">
@@ -301,23 +312,55 @@ export function DesignSystemPage() {
           </div>
         </section>
 
-        {/* Chips */}
+        {/* Badges */}
         <section className="ds-showcase__section">
           <Text variant="h2" className="ds-showcase__section-title">
-            תגיות סטטוס
+            תגיות סטטוס (Badge)
+          </Text>
+          <Text variant="small" tone="secondary" style={{ marginBottom: 12 }}>
+            Success · Waiting · Upcoming · Completed · Cancelled
           </Text>
           <div className="ds-showcase__row">
-            <StatusChip variant="upcoming" />
-            <StatusChip variant="completed" />
-            <StatusChip variant="cancelled" />
-            <StatusChip variant="paid" />
-            <StatusChip variant="pending" />
-            <StatusChip variant="vip" />
-            <StatusChip variant="today" />
-            <StatusChip variant="tomorrow" />
-            <StatusChip variant="this-week" />
-            <Chip tone="neutral">Neutral</Chip>
+            {BADGE_STATUSES.map((status) => (
+              <Badge key={status} variant={status} />
+            ))}
           </div>
+          <Text variant="caption" tone="muted" style={{ marginTop: 16, marginBottom: 8 }}>
+            Legacy variants (ממופים אוטומטית)
+          </Text>
+          <div className="ds-showcase__row">
+            <Badge variant="paid" />
+            <Badge variant="pending" />
+            <Badge variant="vip" />
+            <Badge variant="today" />
+            <Badge variant="tomorrow" />
+            <Badge variant="this-week" />
+          </div>
+        </section>
+
+        {/* Empty state */}
+        <section className="ds-showcase__section">
+          <Text variant="h2" className="ds-showcase__section-title">
+            מצב ריק (Empty State)
+          </Text>
+          <DefaultCard>
+            <EmptyState
+              icon={Inbox}
+              title="אין פעילויות עדיין"
+              description="כשיתקבלו טפסים או לידים חדשים, הם יופיעו כאן."
+              actionLabel="הוסף מקור"
+              actionTo="/sources"
+            />
+          </DefaultCard>
+        </section>
+
+        {/* Divider */}
+        <section className="ds-showcase__section">
+          <Text variant="h2" className="ds-showcase__section-title">
+            מפריד (Divider)
+          </Text>
+          <Divider />
+          <Divider label="או" />
         </section>
 
         {/* Spacing & radius reference */}
@@ -326,19 +369,24 @@ export function DesignSystemPage() {
             ריווח · רדיוס · צל
           </Text>
           <Text variant="small" tone="secondary">
-            8pt grid · radius sm/md/lg/xl · shadows xs–lg
+            8pt grid: 4 · 8 · 16 · 24 · 32
           </Text>
           <div className="ds-showcase__row" style={{ marginTop: 12 }}>
-            {(['sm', 'md', 'lg', 'xl'] as const).map((r) => (
+            {[
+              { label: 'Card', radius: 'var(--ds-radius-card)' },
+              { label: 'Button', radius: 'var(--ds-radius-button)' },
+              { label: 'Badge', radius: 'var(--ds-radius-badge)' },
+            ].map(({ label, radius }) => (
               <div
-                key={r}
+                key={label}
                 style={{
-                  width: 64,
-                  height: 64,
+                  minWidth: 72,
+                  height: 48,
+                  padding: '0 12px',
                   background: 'var(--ds-color-bg-elevated)',
                   border: '1px solid var(--ds-color-border)',
-                  borderRadius: `var(--ds-radius-${r})`,
-                  boxShadow: 'var(--ds-shadow-sm)',
+                  borderRadius: radius,
+                  boxShadow: 'var(--ds-shadow-xs)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -346,7 +394,7 @@ export function DesignSystemPage() {
                   fontWeight: 600,
                 }}
               >
-                {r}
+                {label}
               </div>
             ))}
           </div>

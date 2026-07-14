@@ -1,3 +1,4 @@
+/** Unified design system components — use across all screens */
 export { Button } from './Button';
 export type { ButtonProps, ButtonVariant, ButtonSize } from './Button';
 
@@ -12,6 +13,15 @@ export type { TextProps, TextVariant, TextTone } from './Text';
 
 export { Icon } from './Icon';
 export type { IconProps, IconSize, IconTone } from './Icon';
+
+export { Badge, StatusChip, Chip } from './Badge';
+export type { BadgeProps } from './Badge';
+
+export { EmptyState } from './EmptyState';
+export type { EmptyStateProps } from './EmptyState';
+
+export { Divider } from './Divider';
+export type { DividerProps } from './Divider';
 
 export {
   DefaultCard,
@@ -42,6 +52,3 @@ export type {
   ToggleProps,
   CheckboxProps,
 } from './Input';
-
-export { StatusChip, Chip } from './StatusChip';
-export type { StatusChipProps, ChipTone } from './StatusChip';

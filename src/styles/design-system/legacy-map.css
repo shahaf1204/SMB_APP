@@ -1,6 +1,6 @@
 /**
  * Maps legacy CSS variables → design-system tokens.
- * Existing screens inherit new palette without migration.
+ * Enables gradual screen migration without layout changes.
  */
 :root {
   --color-primary: var(--ds-color-primary);
@@ -16,8 +16,8 @@
   --color-surface: var(--ds-color-surface);
   --color-border: var(--ds-color-border);
   --radius-sm: var(--ds-radius-sm);
-  --radius-md: var(--ds-radius-md);
-  --radius-lg: var(--ds-radius-lg);
+  --radius-md: var(--ds-radius-button);
+  --radius-lg: var(--ds-radius-card);
   --radius-xl: var(--ds-radius-xl);
   --shadow-sm: var(--ds-shadow-sm);
   --shadow-md: var(--ds-shadow-md);
