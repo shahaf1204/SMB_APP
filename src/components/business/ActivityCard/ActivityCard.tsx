@@ -84,15 +84,19 @@ function MetaRow({
   children,
   wrap,
   dir,
+  subtle,
+  className,
 }: {
   icon: LucideIcon;
   children: string;
   wrap?: boolean;
   dir?: 'ltr' | 'rtl';
+  subtle?: boolean;
+  className?: string;
 }) {
   return (
-    <div className="activity-card__meta-row">
-      <Icon icon={icon} size="sm" tone="muted" className="activity-card__meta-icon" />
+    <div className={cn('activity-card__meta-row', subtle && 'activity-card__meta-row--subtle', className)}>
+      <Icon icon={icon} size="sm" tone="muted" className="activity-card__meta-icon" strokeWidth={1.5} />
       <span
         dir={dir}
         className={cn(
@@ -125,7 +129,7 @@ function QuickActions({ actions }: { actions: ActivityQuickAction[] }) {
               action.onClick();
             }}
           >
-            <ActionIcon size={20} strokeWidth={1.75} aria-hidden />
+            <ActionIcon size={18} strokeWidth={1.65} aria-hidden />
           </button>
         );
       })}
@@ -217,7 +221,7 @@ export function ActivityCard({
     <>
       <header className="activity-card__header">
         <span className="activity-card__type-icon" aria-hidden>
-          <TypeIcon size={isHero ? 22 : 20} strokeWidth={1.75} />
+          <TypeIcon size={isHero ? 20 : 18} strokeWidth={1.65} />
         </span>
         <div className="activity-card__head-main">
           {activityTypeLabel && (
@@ -226,19 +230,6 @@ export function ActivityCard({
           <h3 id={`activity-card-title-${id}`} className="activity-card__title">
             {title}
           </h3>
-          {(status || stage) && (
-            <div className="activity-card__badges">
-              {status && (
-                <StatusBadge
-                  status={status}
-                  label={statusLabel ?? activityStatusLabels[status]}
-                />
-              )}
-              {stage && (
-                <span className="activity-card__stage">{stage}</span>
-              )}
-            </div>
-          )}
         </div>
       </header>
 
@@ -246,33 +237,51 @@ export function ActivityCard({
         <div className="activity-card__meta">
           {metaInline ? (
             <div className="activity-card__meta-inline">
-              {clientName && <span>{clientName}</span>}
+              {clientName && (
+                <span className="activity-card__client-inline">{clientName}</span>
+              )}
               {clientName && (dateLabel || timeLabel) && (
                 <span className="activity-card__meta-sep" aria-hidden>
                   ·
                 </span>
               )}
-              {dateLabel && <span>{dateLabel}</span>}
+              {dateLabel && <span className="activity-card__meta-secondary">{dateLabel}</span>}
               {dateLabel && timeLabel && (
                 <span className="activity-card__meta-sep" aria-hidden>
                   ·
                 </span>
               )}
-              {timeLabel && <span dir="ltr">{timeLabel}</span>}
+              {timeLabel && (
+                <span className="activity-card__meta-secondary" dir="ltr">
+                  {timeLabel}
+                </span>
+              )}
             </div>
           ) : (
             <>
-              {clientName && <MetaRow icon={User}>{clientName}</MetaRow>}
-              {dateLabel && <MetaRow icon={Calendar}>{dateLabel}</MetaRow>}
-              {timeLabel && (
-                <MetaRow icon={Clock} dir="ltr">
-                  {timeLabel}
+              {clientName && (
+                <MetaRow icon={User} className="activity-card__meta-row--client">
+                  {clientName}
                 </MetaRow>
               )}
-              {showLocation && locationLabel && (
-                <MetaRow icon={MapPin} wrap>
-                  {locationLabel}
-                </MetaRow>
+              {(dateLabel || timeLabel || showLocation) && (
+                <div className="activity-card__meta-secondary-group">
+                  {dateLabel && (
+                    <MetaRow icon={Calendar} subtle>
+                      {dateLabel}
+                    </MetaRow>
+                  )}
+                  {timeLabel && (
+                    <MetaRow icon={Clock} dir="ltr" subtle>
+                      {timeLabel}
+                    </MetaRow>
+                  )}
+                  {showLocation && locationLabel && (
+                    <MetaRow icon={MapPin} wrap subtle>
+                      {locationLabel}
+                    </MetaRow>
+                  )}
+                </div>
               )}
             </>
           )}
@@ -291,6 +300,20 @@ export function ActivityCard({
               paymentStatus={paymentStatus}
               label={paymentStatusLabel ?? paymentStatusLabels[paymentStatus]}
             />
+          )}
+        </div>
+      )}
+
+      {(status || stage) && (
+        <div className="activity-card__status-row">
+          {status && (
+            <StatusBadge
+              status={status}
+              label={statusLabel ?? activityStatusLabels[status]}
+            />
+          )}
+          {stage && (
+            <span className="activity-card__stage">{stage}</span>
           )}
         </div>
       )}

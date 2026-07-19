@@ -1,6 +1,6 @@
 /**
- * ActivityCard — business component (docs/design-system.md §11)
- * Uses --color-* tokens from legacy-map.css
+ * ActivityCard — premium SaaS polish (Linear / Stripe / Notion)
+ * Visual-only layer — see docs/design-system.md §11
  */
 
 .activity-card {
@@ -14,15 +14,48 @@
 .activity-card__inner {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
   width: 100%;
   min-width: 0;
 }
 
+/* ── Shell ── */
+.activity-card__shell {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border: 1px solid color-mix(in srgb, var(--color-border) 88%, transparent);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+  min-width: 0;
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .activity-card__shell {
+    transition:
+      border-color var(--motion-standard, 200ms) var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)),
+      box-shadow var(--motion-standard, 200ms) var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+  }
+
+  .activity-card--interactive:hover .activity-card__shell {
+    border-color: color-mix(in srgb, var(--color-border-strong) 70%, transparent);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.045);
+  }
+}
+
+.activity-card__shell > .activity-card__surface {
+  padding: var(--space-3) var(--space-4);
+}
+
+.activity-card__shell > .activity-card__actions {
+  padding: var(--space-1) var(--space-3) var(--space-3);
+}
+
+/* ── Surface (clickable body) ── */
 .activity-card__surface {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-2);
   width: 100%;
   min-width: 0;
   margin: 0;
@@ -36,70 +69,54 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-.activity-card__shell {
-  display: flex;
-  flex-direction: column;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-soft, var(--ds-shadow-xs));
-  min-width: 0;
-  overflow: hidden;
-}
-
-.activity-card__shell > .activity-card__surface {
-  padding: var(--space-4);
-}
-
-.activity-card__shell > .activity-card__actions {
-  margin-block-start: 0;
-  padding: var(--space-2) var(--space-4) var(--space-4);
-}
-
-.activity-card--hero .activity-card__shell > .activity-card__surface {
-  padding: var(--space-5);
-}
-
-.activity-card--compact .activity-card__shell > .activity-card__surface {
-  padding: var(--space-3) var(--space-4);
-  gap: var(--space-2);
-}
-
-.activity-card--timeline .activity-card__shell > .activity-card__surface {
-  padding: var(--space-3) var(--space-4);
-}
-
 .activity-card--interactive .activity-card__surface {
   cursor: pointer;
   text-decoration: none;
 }
 
 .activity-card--interactive .activity-card__surface:focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid color-mix(in srgb, var(--color-primary) 55%, transparent);
   outline-offset: -2px;
 }
 
 @media (prefers-reduced-motion: no-preference) {
   .activity-card--interactive .activity-card__surface {
-    transition: background var(--motion-standard, 200ms) var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+    transition: background var(--motion-fast, 150ms) var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
   }
 
   .activity-card--interactive .activity-card__surface:active {
-    background: var(--color-surface-muted);
+    background: color-mix(in srgb, var(--color-surface-muted) 45%, transparent);
   }
+}
+
+/* ── Compact ── */
+.activity-card--compact .activity-card__shell > .activity-card__surface {
+  padding: 10px var(--space-3);
+  gap: 6px;
+}
+
+/* ── Hero — next commitment, not oversized ── */
+.activity-card--hero .activity-card__shell {
+  border-radius: var(--radius-xl);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+}
+
+.activity-card--hero .activity-card__shell > .activity-card__surface {
+  padding: var(--space-5) var(--space-4);
+  gap: var(--space-3);
 }
 
 .activity-card--hero.activity-card--tone-new .activity-card__shell,
 .activity-card--hero.activity-card--tone-active .activity-card__shell {
-  border-inline-start: 3px solid var(--color-primary);
+  border-inline-start: 3px solid color-mix(in srgb, var(--color-primary) 72%, var(--color-border));
 }
 
 .activity-card--hero.activity-card--tone-waiting .activity-card__shell {
-  border-inline-start: 3px solid var(--color-accent);
+  border-inline-start: 3px solid color-mix(in srgb, var(--color-accent) 72%, var(--color-border));
 }
 
 .activity-card--hero.activity-card--tone-needs_attention .activity-card__shell {
-  border-inline-start: 3px solid var(--color-danger);
+  border-inline-start: 3px solid color-mix(in srgb, var(--color-danger) 65%, var(--color-border));
 }
 
 .activity-card--hero.activity-card--tone-completed .activity-card__shell,
@@ -107,20 +124,25 @@
   border-inline-start: 3px solid var(--color-border-strong);
 }
 
-.activity-card--hero .activity-card__shell {
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-card, var(--ds-shadow-md));
-}
-
+/* ── Timeline — chronological, not another card ── */
 .activity-card--timeline {
   display: flex;
   align-items: stretch;
-  gap: var(--space-3);
+  gap: var(--space-2);
 }
 
 .activity-card--timeline .activity-card__shell {
   flex: 1;
   min-width: 0;
+  background: color-mix(in srgb, var(--color-surface-muted) 38%, var(--color-surface));
+  border-color: color-mix(in srgb, var(--color-border) 72%, transparent);
+  box-shadow: none;
+  border-radius: var(--radius-md);
+}
+
+.activity-card--timeline .activity-card__shell > .activity-card__surface {
+  padding: 10px var(--space-3);
+  gap: 6px;
 }
 
 .activity-card__timeline-rail {
@@ -128,34 +150,31 @@
   flex-direction: column;
   align-items: center;
   flex-shrink: 0;
-  width: 12px;
-  padding-block-start: var(--space-4);
+  width: 14px;
+  padding-block-start: 14px;
 }
 
 .activity-card__timeline-dot {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: var(--radius-pill);
-  background: var(--color-primary);
-  border: 2px solid var(--color-surface);
-  box-shadow: 0 0 0 1px var(--color-primary-border);
+  background: color-mix(in srgb, var(--color-primary) 75%, var(--color-border));
   flex-shrink: 0;
 }
 
 .activity-card__timeline-line {
   flex: 1;
-  width: 2px;
-  min-height: var(--space-4);
-  margin-block-start: var(--space-1);
+  width: 1px;
+  min-height: var(--space-3);
+  margin-block-start: 4px;
   background: var(--color-border);
-  border-radius: var(--radius-pill);
 }
 
-/* Header */
+/* ── Header ── */
 .activity-card__header {
   display: flex;
   align-items: flex-start;
-  gap: var(--space-3);
+  gap: 10px;
   min-width: 0;
 }
 
@@ -164,21 +183,22 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-md);
-  background: var(--color-primary-soft);
-  color: var(--color-primary);
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--color-primary-soft) 55%, var(--color-surface-muted));
+  color: color-mix(in srgb, var(--color-primary) 78%, var(--color-text-secondary));
 }
 
 .activity-card--compact .activity-card__type-icon {
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
 }
 
 .activity-card--hero .activity-card__type-icon {
-  width: 44px;
-  height: 44px;
+  width: 38px;
+  height: 38px;
 }
 
 .activity-card__head-main {
@@ -188,143 +208,76 @@
 
 .activity-card__type-label {
   display: block;
-  font-size: var(--ds-text-caption-size, 12px);
-  font-weight: 600;
-  color: var(--color-text-secondary);
-  margin-block-end: var(--space-1);
-  line-height: 1.3;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  margin-block-end: 2px;
+  line-height: 1.25;
+  letter-spacing: 0.01em;
 }
 
 .activity-card__title {
   margin: 0;
-  font-size: var(--ds-text-h3-size, 18px);
-  font-weight: 600;
-  line-height: 1.35;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.018em;
   color: var(--color-text-primary);
   overflow-wrap: anywhere;
 }
 
 .activity-card--hero .activity-card__title {
-  font-size: var(--ds-text-h2-size, 22px);
-  font-weight: 700;
+  font-size: 1.1875rem;
+  line-height: 1.28;
+  letter-spacing: -0.022em;
 }
 
 .activity-card--compact .activity-card__title {
-  font-size: var(--ds-text-body-size, 15px);
+  font-size: 0.9375rem;
+  font-weight: 700;
 }
 
-.activity-card__badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin-block-start: var(--space-2);
-}
-
-.activity-card__stage {
-  display: inline-flex;
-  align-items: center;
-  font-size: var(--ds-text-caption-size, 12px);
-  font-weight: 500;
-  color: var(--color-text-secondary);
-  padding: 0.15rem 0.5rem;
-  border-radius: var(--radius-pill);
-  background: var(--color-surface-muted);
-  border: 1px solid var(--color-border);
-  white-space: nowrap;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.activity-card__badge {
-  display: inline-flex;
-  align-items: center;
-  font-size: var(--ds-text-caption-size, 12px);
-  font-weight: 600;
-  line-height: 1.3;
-  padding: 0.2rem 0.55rem;
-  border-radius: var(--radius-pill);
-  border: 1px solid transparent;
-  white-space: nowrap;
-}
-
-/* Status badge tones */
-.activity-card__badge--status-new {
-  background: var(--color-primary-soft);
-  color: var(--color-primary);
-  border-color: var(--color-primary-border);
-}
-
-.activity-card__badge--status-active {
-  background: var(--color-success-soft);
-  color: var(--color-success);
-  border-color: var(--color-success-border);
-}
-
-.activity-card__badge--status-waiting {
-  background: var(--color-accent-soft);
-  color: var(--color-accent);
-  border-color: var(--color-accent-border);
-}
-
-.activity-card__badge--status-completed,
-.activity-card__badge--status-cancelled {
-  background: var(--color-surface-muted);
-  color: var(--color-text-secondary);
-  border-color: var(--color-border);
-}
-
-.activity-card__badge--status-needs_attention {
-  background: var(--color-danger-soft);
-  color: var(--color-danger);
-  border-color: var(--color-danger-border);
-}
-
-/* Payment badge tones — visually separate from operational status */
-.activity-card__badge--payment-unpaid,
-.activity-card__badge--payment-partial {
-  background: var(--color-accent-soft);
-  color: var(--color-accent);
-  border-color: var(--color-accent-border);
-}
-
-.activity-card__badge--payment-paid {
-  background: var(--color-success-soft);
-  color: var(--color-success);
-  border-color: var(--color-success-border);
-}
-
-.activity-card__badge--payment-overdue {
-  background: var(--color-danger-soft);
-  color: var(--color-danger);
-  border-color: var(--color-danger-border);
-}
-
-/* Metadata */
+/* ── Metadata ── */
 .activity-card__meta {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: 4px;
   min-width: 0;
 }
 
-.activity-card--compact .activity-card__meta {
-  gap: var(--space-1);
+.activity-card__meta-secondary-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .activity-card__meta-row {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: 6px;
   min-width: 0;
-  font-size: var(--ds-text-small-size, 13px);
+  font-size: 0.8125rem;
+  line-height: 1.4;
   color: var(--color-text-secondary);
-  line-height: 1.45;
+}
+
+.activity-card__meta-row--client {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: color-mix(in srgb, var(--color-text-primary) 88%, var(--color-text-secondary));
+}
+
+.activity-card__meta-row--subtle {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.activity-card__meta-row--subtle .activity-card__meta-icon {
+  opacity: 0.72;
 }
 
 .activity-card__meta-icon {
   flex-shrink: 0;
-  color: var(--color-text-muted);
 }
 
 .activity-card__meta-text {
@@ -342,30 +295,41 @@
 .activity-card__meta-inline {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: var(--ds-text-small-size, 13px);
-  color: var(--color-text-secondary);
+  align-items: baseline;
+  gap: 6px;
+  line-height: 1.35;
 }
 
-.activity-card__meta-sep {
+.activity-card__client-inline {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: color-mix(in srgb, var(--color-text-primary) 85%, var(--color-text-secondary));
+}
+
+.activity-card__meta-secondary {
+  font-size: 0.75rem;
   color: var(--color-text-muted);
 }
 
-/* Financial */
+.activity-card__meta-sep {
+  color: color-mix(in srgb, var(--color-text-muted) 65%, transparent);
+  font-size: 0.75rem;
+}
+
+/* ── Financial ── */
 .activity-card__financial {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
   gap: var(--space-2);
-  padding-block-start: var(--space-1);
+  padding-block-start: 2px;
 }
 
 .activity-card__amount {
-  font-size: var(--ds-text-financial-size, 20px);
+  font-size: 1.0625rem;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.024em;
   font-variant-numeric: tabular-nums;
   color: var(--color-text-primary);
   direction: ltr;
@@ -373,41 +337,121 @@
 }
 
 .activity-card--hero .activity-card__amount {
-  font-size: 1.375rem;
+  font-size: 1.3125rem;
+  letter-spacing: -0.028em;
 }
 
 .activity-card--compact .activity-card__amount {
-  font-size: var(--ds-text-body-size, 15px);
+  font-size: 0.9375rem;
   font-weight: 600;
+}
+
+/* ── Status row (after amount — scan hierarchy) ── */
+.activity-card__status-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.activity-card__badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.2;
+  padding: 0.12rem 0.38rem;
+  border-radius: var(--radius-pill);
+  border: none;
+  white-space: nowrap;
+}
+
+.activity-card__badge--status-new {
+  background: color-mix(in srgb, var(--color-primary-soft) 72%, var(--color-surface));
+  color: color-mix(in srgb, var(--color-primary) 82%, var(--color-text-secondary));
+}
+
+.activity-card__badge--status-active {
+  background: color-mix(in srgb, var(--color-success-soft) 70%, var(--color-surface));
+  color: color-mix(in srgb, var(--color-success) 78%, var(--color-text-secondary));
+}
+
+.activity-card__badge--status-waiting {
+  background: color-mix(in srgb, var(--color-accent-soft) 68%, var(--color-surface));
+  color: color-mix(in srgb, var(--color-accent) 80%, var(--color-text-secondary));
+}
+
+.activity-card__badge--status-completed,
+.activity-card__badge--status-cancelled {
+  background: color-mix(in srgb, var(--color-surface-muted) 80%, var(--color-surface));
+  color: var(--color-text-muted);
+}
+
+.activity-card__badge--status-needs_attention {
+  background: color-mix(in srgb, var(--color-danger-soft) 65%, var(--color-surface));
+  color: color-mix(in srgb, var(--color-danger) 75%, var(--color-text-secondary));
+}
+
+.activity-card__badge--payment-unpaid,
+.activity-card__badge--payment-partial {
+  background: color-mix(in srgb, var(--color-accent-soft) 60%, var(--color-surface));
+  color: color-mix(in srgb, var(--color-accent) 75%, var(--color-text-muted));
+}
+
+.activity-card__badge--payment-paid {
+  background: color-mix(in srgb, var(--color-success-soft) 58%, var(--color-surface));
+  color: color-mix(in srgb, var(--color-success) 72%, var(--color-text-muted));
+}
+
+.activity-card__badge--payment-overdue {
+  background: color-mix(in srgb, var(--color-danger-soft) 58%, var(--color-surface));
+  color: color-mix(in srgb, var(--color-danger) 72%, var(--color-text-muted));
+}
+
+.activity-card__stage {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  padding: 0.1rem 0.35rem;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .activity-card__payment {
   flex-shrink: 0;
 }
 
-/* Progress */
+/* ── Progress — supportive, not dominant ── */
 .activity-card__progress {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: 4px;
 }
 
 .activity-card__progress-label {
-  font-size: var(--ds-text-caption-size, 12px);
-  color: var(--color-text-secondary);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  line-height: 1.3;
 }
 
 .activity-card__progress-track {
-  height: 6px;
+  height: 3px;
   border-radius: var(--radius-pill);
-  background: var(--color-surface-muted);
+  background: color-mix(in srgb, var(--color-surface-muted) 85%, var(--color-border));
   overflow: hidden;
 }
 
 .activity-card__progress-fill {
   height: 100%;
   border-radius: var(--radius-pill);
-  background: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 52%, var(--color-border-strong));
   transition: width var(--motion-standard, 200ms) var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
 }
 
@@ -417,69 +461,67 @@
   }
 }
 
-/* Footer */
-.activity-card__footer {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
+/* ── Tags — minimal ── */
 .activity-card__tags {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: 6px;
 }
 
 .activity-card__tag {
-  font-size: var(--ds-text-caption-size, 12px);
+  font-size: 10px;
   font-weight: 500;
-  color: var(--color-text-secondary);
-  padding: 0.15rem 0.5rem;
+  color: var(--color-text-muted);
+  padding: 0.08rem 0.35rem;
   border-radius: var(--radius-pill);
-  background: var(--color-surface-muted);
-  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-surface-muted) 55%, transparent);
 }
 
+/* ── Quick actions — floating circles ── */
 .activity-card__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
-  border-block-start: 1px solid var(--color-border);
+  gap: 6px;
+  justify-content: flex-end;
 }
 
 .activity-card__action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: var(--ds-touch-target, 44px);
+  height: var(--ds-touch-target, 44px);
   min-width: var(--ds-touch-target, 44px);
   min-height: var(--ds-touch-target, 44px);
-  padding: 0 var(--space-3);
-  gap: var(--space-2);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
-  color: var(--color-text-secondary);
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--color-surface-muted) 55%, transparent);
+  color: var(--color-text-muted);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
 
 .activity-card__action:hover {
-  background: var(--color-surface-muted);
-  color: var(--color-text-primary);
+  background: color-mix(in srgb, var(--color-surface-muted) 90%, var(--color-border));
+  color: var(--color-text-secondary);
 }
 
 .activity-card__action:focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid color-mix(in srgb, var(--color-primary) 50%, transparent);
   outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: no-preference) {
   .activity-card__action {
-    transition: background var(--motion-fast, 150ms) var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)),
+    transition:
+      background var(--motion-fast, 150ms) var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)),
+      color var(--motion-fast, 150ms) var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)),
       transform var(--motion-fast, 150ms) var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
   }
 
   .activity-card__action:active {
-    transform: scale(0.96);
+    transform: scale(0.94);
+    background: color-mix(in srgb, var(--color-border) 45%, var(--color-surface-muted));
   }
 }
