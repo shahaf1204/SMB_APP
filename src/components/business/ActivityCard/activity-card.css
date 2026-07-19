@@ -525,3 +525,217 @@
     background: color-mix(in srgb, var(--color-border) 45%, var(--color-surface-muted));
   }
 }
+
+/* ── Presentation: shared contextual elements ── */
+.activity-card__contextual {
+  display: inline-flex;
+  align-self: flex-start;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: color-mix(in srgb, var(--color-primary) 80%, var(--color-text-secondary));
+  padding: 0.1rem 0;
+  line-height: 1.3;
+}
+
+.activity-card__usage {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--color-text-primary) 90%, var(--color-text-secondary));
+  line-height: 1.35;
+}
+
+.activity-card__time-anchor {
+  display: block;
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+  line-height: 1.1;
+}
+
+.activity-card--compact.activity-card--presentation-appointment .activity-card__time-anchor {
+  font-size: 1.0625rem;
+  flex-shrink: 0;
+  min-width: 3.25rem;
+}
+
+.activity-card__schedule {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.activity-card__schedule-primary {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--color-text-primary) 92%, var(--color-text-secondary));
+  line-height: 1.35;
+}
+
+.activity-card__schedule-time {
+  font-variant-numeric: tabular-nums;
+}
+
+.activity-card__meta-row--emphasis {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--color-text-primary) 88%, var(--color-text-secondary));
+}
+
+.activity-card__client-header {
+  display: block;
+  margin-block-start: 2px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  line-height: 1.35;
+}
+
+.activity-card__stage-highlight {
+  display: inline-flex;
+  align-self: flex-start;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--color-text-primary) 85%, var(--color-text-secondary));
+  line-height: 1.35;
+}
+
+.activity-card__next-action {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+.activity-card__recurrence {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.activity-card__recurrence-pattern {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--color-primary) 75%, var(--color-text-secondary));
+}
+
+.activity-card__recurrence-next {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.activity-card__appointment-compact {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.activity-card__appointment-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.activity-card__header--inline {
+  gap: 8px;
+}
+
+.activity-card__header--inline .activity-card__type-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+
+.activity-card__financial--compact .activity-card__amount {
+  font-size: 0.875rem;
+}
+
+.activity-card__financial--value .activity-card__amount {
+  font-size: 1.0625rem;
+}
+
+.activity-card__financial--hero .activity-card__amount {
+  font-size: 1.375rem;
+}
+
+/* Progress tones */
+.activity-card__progress--journey .activity-card__progress-fill {
+  background: color-mix(in srgb, var(--color-primary) 62%, var(--color-border-strong));
+}
+
+.activity-card__progress--journey .activity-card__progress-label {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.activity-card__progress--usage .activity-card__progress-fill {
+  background: color-mix(in srgb, var(--color-success) 48%, var(--color-border-strong));
+}
+
+.activity-card__progress--project .activity-card__progress-fill {
+  background: color-mix(in srgb, var(--color-accent) 45%, var(--color-border-strong));
+}
+
+/* ── Presentation: icon container tints ── */
+.activity-card--presentation-event .activity-card__type-icon {
+  background: color-mix(in srgb, var(--color-primary-soft) 62%, var(--color-surface-muted));
+  color: color-mix(in srgb, var(--color-primary) 72%, var(--color-text-secondary));
+}
+
+.activity-card--presentation-appointment .activity-card__type-icon {
+  background: color-mix(in srgb, var(--color-surface-muted) 80%, var(--color-primary-soft));
+  color: color-mix(in srgb, var(--color-text-secondary) 85%, var(--color-primary));
+}
+
+.activity-card--presentation-journey .activity-card__type-icon {
+  background: color-mix(in srgb, var(--color-primary-soft) 50%, var(--color-surface-muted));
+  color: color-mix(in srgb, var(--color-primary) 68%, var(--color-text-secondary));
+}
+
+.activity-card--presentation-package .activity-card__type-icon {
+  background: color-mix(in srgb, var(--color-success-soft) 45%, var(--color-surface-muted));
+  color: color-mix(in srgb, var(--color-success) 65%, var(--color-text-secondary));
+}
+
+.activity-card--presentation-project .activity-card__type-icon {
+  background: color-mix(in srgb, var(--color-accent-soft) 42%, var(--color-surface-muted));
+  color: color-mix(in srgb, var(--color-accent) 62%, var(--color-text-secondary));
+}
+
+.activity-card--presentation-recurring .activity-card__type-icon {
+  background: color-mix(in srgb, var(--color-primary-soft) 48%, var(--color-surface-muted));
+  color: color-mix(in srgb, var(--color-primary) 65%, var(--color-text-secondary));
+}
+
+/* Journey hero accent */
+.activity-card--presentation-journey.activity-card--hero .activity-card__shell {
+  border-inline-start: 3px solid color-mix(in srgb, var(--color-primary) 68%, var(--color-border));
+}
+
+/* Package pass-like subtle surface */
+.activity-card--presentation-package .activity-card__shell {
+  background: color-mix(in srgb, var(--color-success-soft) 12%, var(--color-surface));
+}
+
+/* Project timeline chronological */
+.activity-card--presentation-project.activity-card--timeline .activity-card__timeline-dot {
+  background: color-mix(in srgb, var(--color-accent) 70%, var(--color-border));
+  width: 9px;
+  height: 9px;
+}
+
+.activity-card--presentation-project.activity-card--timeline .activity-card__shell {
+  border-inline-start: 2px solid color-mix(in srgb, var(--color-accent) 35%, transparent);
+}
+
+/* Recurring compact shell */
+.activity-card--presentation-recurring .activity-card__recurrence-pattern {
+  letter-spacing: -0.01em;
+}
+

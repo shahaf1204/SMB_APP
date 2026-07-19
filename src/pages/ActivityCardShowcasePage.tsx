@@ -1,45 +1,46 @@
 import {
-  Briefcase,
+  Activity,
   Camera,
   ChevronLeft,
-  Dumbbell,
-  PartyPopper,
+  Repeat2,
   Stethoscope,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
 import { ActivityCard } from '../components/business/ActivityCard';
+import type { ActivityCardProps } from '../components/business/ActivityCard';
 import { Text } from '../components/ds';
 
 const noop = () => undefined;
 
-const EXAMPLES = [
+type ShowcaseExample = {
+  key: string;
+  label: string;
+  props: ActivityCardProps;
+};
+
+const EXAMPLES: ShowcaseExample[] = [
   {
     key: 'event',
-    label: 'One-time event · Standard',
+    label: 'Event · Standard',
     props: {
       id: 'demo-event',
+      presentationType: 'event',
       title: 'יום הולדת עמית',
-      variant: 'standard' as const,
+      variant: 'standard',
       activityTypeLabel: 'אירוע חד-פעמי',
-      activityTypeIcon: PartyPopper,
+      contextualLabel: 'בעוד 5 ימים',
       clientName: 'משפחת כהן',
       dateLabel: 'יום א׳, 26 ביולי',
       timeLabel: '16:00–19:00',
       locationLabel: 'גן אירועים רמת אביב',
       amount: 4200,
-      currency: '₪',
-      status: 'active' as const,
+      status: 'active',
       stage: 'הכנה',
-      paymentStatus: 'partial' as const,
+      paymentStatus: 'partial',
       progressPercent: 65,
-      progressLabel: 'צ׳ק-ליסט הכנה · 65%',
-      tags: ['20 ילדים', 'עיצוב בלונים'],
+      progressLabel: 'צ׳ק-ליסט הכנה',
       onClick: noop,
-      quickActions: [
-        { type: 'call' as const, label: 'התקשר ללקוח', onClick: noop },
-        { type: 'edit' as const, label: 'עריכת פעילות', onClick: noop },
-      ],
     },
   },
   {
@@ -47,64 +48,42 @@ const EXAMPLES = [
     label: 'Appointment · Compact',
     props: {
       id: 'demo-appointment',
+      presentationType: 'appointment',
       title: 'פגישת טיפול',
-      variant: 'compact' as const,
+      variant: 'compact',
       activityTypeLabel: 'תור',
       activityTypeIcon: Stethoscope,
       clientName: 'דנה לוי',
       dateLabel: 'מחר',
       timeLabel: '10:30',
       amount: 350,
-      status: 'waiting' as const,
-      paymentStatus: 'unpaid' as const,
+      status: 'waiting',
+      paymentStatus: 'unpaid',
       onClick: noop,
     },
   },
   {
     key: 'journey',
-    label: 'Long-term journey · Hero',
+    label: 'Journey · Hero',
     props: {
       id: 'demo-journey',
+      presentationType: 'journey',
       title: 'ליווי עסקי',
-      variant: 'hero' as const,
+      variant: 'hero',
       activityTypeLabel: 'מסלול ליווי',
-      activityTypeIcon: Briefcase,
       clientName: 'רונית שטרן',
-      dateLabel: 'חודש 3 מתוך 6',
-      timeLabel: 'מפגש הבא: 22/07',
-      amount: 12000,
-      status: 'active' as const,
       stage: 'בתהליך',
-      paymentStatus: 'paid' as const,
-      progressPercent: 50,
-      progressLabel: '3 מתוך 6 מפגשים',
+      progressDetail: 'מפגש 3 מתוך 8',
+      progressPercent: 37.5,
+      nextActionLabel: 'הפגישה הבאה ב־22/07',
+      amount: 12000,
+      status: 'active',
+      paymentStatus: 'paid',
       onClick: noop,
       quickActions: [
-        { type: 'open' as const, label: 'פתיחת תיק', onClick: noop },
-        { type: 'invoice' as const, label: 'חשבונית', onClick: noop },
+        { type: 'open', label: 'פתיחת תיק', onClick: noop },
+        { type: 'invoice', label: 'חשבונית', onClick: noop },
       ],
-    },
-  },
-  {
-    key: 'photo',
-    label: 'Photography · Timeline',
-    props: {
-      id: 'demo-photo',
-      title: 'צילום משפחה',
-      variant: 'timeline' as const,
-      activityTypeLabel: 'פרויקט צילום',
-      activityTypeIcon: Camera,
-      clientName: 'משפחת אברהם',
-      dateLabel: '18/07/2026',
-      timeLabel: '17:00',
-      locationLabel: 'פארק הירקון',
-      amount: 1800,
-      status: 'active' as const,
-      stage: 'עריכה',
-      paymentStatus: 'paid' as const,
-      progressPercent: 40,
-      progressLabel: 'עריכה · 40%',
-      onClick: noop,
     },
   },
   {
@@ -112,23 +91,78 @@ const EXAMPLES = [
     label: 'Package · Standard',
     props: {
       id: 'demo-package',
+      presentationType: 'package',
       title: 'כרטיסיית אימונים',
-      variant: 'standard' as const,
+      variant: 'standard',
       activityTypeLabel: 'חבילה',
-      activityTypeIcon: Dumbbell,
+      usageLabel: '7 מתוך 10 מפגשים נוצלו',
       clientName: 'יוסי מזרחי',
       dateLabel: 'תוקף: 30/09/2026',
       amount: 900,
-      status: 'active' as const,
-      stage: 'מומש',
-      paymentStatus: 'paid' as const,
+      paymentStatus: 'paid',
       progressPercent: 70,
-      progressLabel: '7 מתוך 10 אימונים',
-      tags: ['סטודיו', 'חידוש אוטומטי'],
+      progressLabel: '3 מפגשים נותרו',
+      tags: ['VIP'],
       onClick: noop,
-      quickActions: [
-        { type: 'navigate' as const, label: 'ניווט לסטודיו', onClick: noop },
-      ],
+    },
+  },
+  {
+    key: 'project',
+    label: 'Project · Timeline',
+    props: {
+      id: 'demo-project',
+      presentationType: 'project',
+      title: 'צילום משפחה',
+      variant: 'timeline',
+      activityTypeLabel: 'פרויקט צילום',
+      activityTypeIcon: Camera,
+      stage: 'בעריכה',
+      deadlineLabel: 'מסירה עד 18/07',
+      clientName: 'משפחת אברהם',
+      progressPercent: 40,
+      progressDetail: 'עריכה · 40%',
+      amount: 1800,
+      status: 'active',
+      paymentStatus: 'paid',
+      onClick: noop,
+    },
+  },
+  {
+    key: 'recurring',
+    label: 'Recurring · Standard',
+    props: {
+      id: 'demo-recurring',
+      presentationType: 'recurring',
+      title: 'חוג אנגלית',
+      variant: 'standard',
+      activityTypeLabel: 'מפגש קבוע',
+      activityTypeIcon: Repeat2,
+      recurrenceLabel: 'כל יום שלישי',
+      nextOccurrenceLabel: '24/07',
+      clientName: 'קבוצת בוקר',
+      usageLabel: '8 משתתפים',
+      paymentStatus: 'paid',
+      status: 'active',
+      onClick: noop,
+    },
+  },
+  {
+    key: 'generic',
+    label: 'Generic · Standard (fallback)',
+    props: {
+      id: 'demo-generic',
+      presentationType: 'generic',
+      title: 'פעילות כללית',
+      variant: 'standard',
+      activityTypeLabel: 'כללי',
+      activityTypeIcon: Activity,
+      clientName: 'לקוח לדוגמה',
+      dateLabel: '19/07/2026',
+      timeLabel: '14:00',
+      amount: 500,
+      status: 'new',
+      paymentStatus: 'unpaid',
+      onClick: noop,
     },
   },
 ];
@@ -149,7 +183,7 @@ export function ActivityCardShowcasePage() {
           ActivityCard
         </Text>
         <Text variant="small" tone="secondary" style={{ marginBottom: 24 }}>
-          רכיב עסקי גנרי — דוגמאות בלבד, ללא נתוני production.
+          presentationType — דוגמאות בלבד, ללא נתוני production.
         </Text>
 
         <div className="ds-showcase__stack" style={{ gap: 32 }}>

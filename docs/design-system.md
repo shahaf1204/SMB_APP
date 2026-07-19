@@ -637,6 +637,7 @@ import { ActivityCard } from '@/components/business/ActivityCard';
 | `id` | `string` | Required — used for a11y ids |
 | `title` | `string` | Activity title (business-specific) |
 | `variant` | `'compact' \| 'standard' \| 'hero' \| 'timeline'` | Layout density |
+| `presentationType` | `'event' \| 'appointment' \| … \| 'generic'` | Visual hierarchy — default `generic` |
 | `activityTypeLabel` | `string?` | e.g. "תור", "פרויקט" |
 | `activityTypeIcon` | `LucideIcon?` | Semantic type icon |
 | `clientName` | `string?` | Linked client |
@@ -653,6 +654,13 @@ import { ActivityCard } from '@/components/business/ActivityCard';
 | `tags` | `string[]?` | Optional footer tags |
 | `onClick` | `(() => void)?` | Makes card body clickable |
 | `quickActions` | `ActivityQuickAction[]?` | `call \| navigate \| edit \| invoice \| open` |
+| `contextualLabel` | `string?` | Urgency/time context |
+| `nextActionLabel` | `string?` | Next step in journey |
+| `usageLabel` | `string?` | Package/session usage |
+| `deadlineLabel` | `string?` | Project delivery deadline |
+| `recurrenceLabel` | `string?` | Recurrence pattern |
+| `nextOccurrenceLabel` | `string?` | Next session date |
+| `progressDetail` | `string?` | Workflow detail text |
 
 **Variant behaviour:**
 
@@ -664,6 +672,52 @@ import { ActivityCard } from '@/components/business/ActivityCard';
 | `timeline` | Full rows + rail marker | Shown | Footer |
 
 **Legacy note:** `src/components/ds/Card.tsx` exports a simpler `ActivityCard` for the design-system showcase. Use the **business** `ActivityCard` for production activity lists.
+
+#### ActivityCard Presentation Types
+
+**Important distinction:**
+
+| Concept | Meaning |
+|---------|---------|
+| **Business type** | What kind of business the user owns (photography, coaching, etc.) |
+| **Presentation type** | How a *specific activity* should be visually composed |
+
+A photographer may use:
+- `appointment` for a consultation
+- `project` for editing/delivery
+- `event` for the shoot day itself
+
+The parent screen or adapter **must supply** `presentationType`. ActivityCard does not infer it from titles or business names.
+
+**Values:** `event` · `appointment` · `journey` · `package` · `project` · `recurring` · `generic` (default)
+
+| Presentation | Use when | Visual priority |
+|--------------|----------|-----------------|
+| `event` | One-time bookings, scheduled events | Context label → title → date/time → location → amount → client → status |
+| `appointment` | Treatments, lessons, meetings | Time anchor → title → client → date → status → payment |
+| `journey` | Long-term coaching, consulting, care | Client + title → stage → progress → next action → amount |
+| `package` | Session cards, prepaid packages | Usage → title → client → expiry → payment → usage progress |
+| `project` | Creative/delivery workflows | Title → stage → deadline → client → progress → amount |
+| `recurring` | Classes, clubs, subscriptions | Recurrence → title → client → usage → billing |
+| `generic` | Fallback | Title → client → date/time → amount → status |
+
+**Contextual display props** (optional — supplied by adapter):
+
+| Prop | Example |
+|------|---------|
+| `contextualLabel` | "בעוד 5 ימים", "היום" |
+| `nextActionLabel` | "הפגישה הבאה ב־22/07" |
+| `usageLabel` | "7 מתוך 10 מפגשים נוצלו" |
+| `deadlineLabel` | "מסירה עד 18/07" |
+| `recurrenceLabel` | "כל יום שלישי" |
+| `nextOccurrenceLabel` | "24/07" |
+| `progressDetail` | "מפגש 3 מתוך 8" |
+
+**Rules:**
+- Show only relevant fields per presentation (max ~3 metadata rows + amount/status/progress on lists)
+- Payment status never inferred from operational status
+- Lucide icons only; default icon per presentation if `activityTypeIcon` omitted
+- One component — `src/components/business/ActivityCard/`
 
 ---
 
