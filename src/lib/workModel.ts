@@ -1,4 +1,5 @@
 import type { Business, Engagement, WorkConcept } from '../types/models';
+import { normalizeBusinessWorkspace } from './workspace';
 
 export const WORK_CONCEPT_OPTIONS: Array<{
   id: WorkConcept;
@@ -160,13 +161,7 @@ export function isRecommendedCreateRoute(to: string, models: WorkConcept[]): boo
 }
 
 export function normalizeBusiness(business: Business | null): Business | null {
-  if (!business) return null;
-  const workModels = resolveWorkModels(business);
-  return {
-    ...business,
-    workModels,
-    primaryWorkModel: workModels.length > 1 ? 'mixed' : workModels[0],
-  };
+  return normalizeBusinessWorkspace(business);
 }
 
 export function toggleWorkModel(models: WorkConcept[], id: WorkConcept): WorkConcept[] {

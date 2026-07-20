@@ -1,13 +1,19 @@
-import { Briefcase, ChevronLeft, Database, Plug, User, Zap } from 'lucide-react';
+import { Briefcase, ChevronLeft, Database, Layers, Plug, User, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
 import { useAppStore } from '../store/useAppStore';
 
 const SETTINGS_SECTIONS = [
   {
+    to: '/settings/operating-model',
+    label: 'צורת העבודה של העסק',
+    desc: 'איך העסק מספק שירות — אירועים, פגישות, פרויקטים',
+    icon: Layers,
+  },
+  {
     to: '/settings/business',
     label: 'העסק שלי',
-    desc: 'קונספט עבודה, תבניות והגדרות',
+    desc: 'תבניות, הוצאות והגדרות נוספות',
     icon: Briefcase,
   },
   {

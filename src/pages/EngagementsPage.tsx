@@ -29,6 +29,7 @@ import {
   usesEngagementActivities,
   usesEventActivities,
 } from '../lib/workModel';
+import { useActivitiesWorkspace } from '../hooks/useActivitiesWorkspace';
 import type { Engagement, Event } from '../types/models';
 import { useAppStore } from '../store/useAppStore';
 interface ActivityItem {
@@ -165,6 +166,8 @@ export function EngagementsPage() {
   const engagements = useAppStore((s) => s.engagements ?? []);
   const formNotifications = useAppStore((s) => s.formNotifications);
 
+  const activitiesWorkspace = useActivitiesWorkspace();
+
   const newAutoEventIds = useMemo(
     () => getUnreadAutoActivityIds(formNotifications),
     [formNotifications],
@@ -275,8 +278,12 @@ export function EngagementsPage() {
       <div className="page">
         <div className="page-top-row">
           <div>
-            <h1 className="page-title">פעילויות</h1>
-            <p className="page-subtitle page-subtitle--inline">אירועים, ליוויים ופרויקטים</p>
+            <h1 className="page-title">{activitiesWorkspace.terminology.activityPlural}</h1>
+            <p className="page-subtitle page-subtitle--inline">
+              {activitiesWorkspace.primaryOperatingModel === 'hybrid'
+                ? 'אירועים, ליוויים ופרויקטים'
+                : `ניהול ${activitiesWorkspace.terminology.activityPlural.toLowerCase()}`}
+            </p>
           </div>
           <div className="wizard-btn-row">
             <Link to="/sources" className="btn btn-ghost btn-sm">
@@ -308,7 +315,13 @@ export function EngagementsPage() {
             actionTo="/create"
           />
         ) : (
-          <div className="activity-sections">
+          <div
+            className="activity-sections"
+            data-workspace-model={activitiesWorkspace.primaryOperatingModel}
+            data-workspace-grouping={activitiesWorkspace.groupingMode}
+            data-card-presentation={activitiesWorkspace.defaultCardPresentation}
+            data-workspace-filters={activitiesWorkspace.filterTabs.map((t) => t.id).join(',')}
+          >
             {showWeekShowcase && (
               <ThisWeekEventsShowcase
                 items={weekShowcaseItems}

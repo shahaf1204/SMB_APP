@@ -8,6 +8,7 @@ import {
   updateAccountDisplayName,
 } from '../lib/accountsRegistry';
 import { suggestWorkModelsFromPreset, normalizeBusiness } from '../lib/workModel';
+import { buildWorkspaceConfig, normalizeBusinessWorkspace } from '../lib/workspace';
 import { cloudSignOut } from '../lib/cloudSync';
 import { normalizeLeads } from '../lib/crm/leadNormalize';
 import { pushLeadStatusToCloud } from '../lib/crm/leadsSync';
@@ -51,6 +52,7 @@ import type {
   WorkConcept,
   Task,
 } from '../types/models';
+import type { BusinessWorkspaceConfig, OperatingModel } from '../types/workspace';
 import type { IntegrationConnection, IntegrationLog } from '../types/integrations';
 import { applyWebhookPaymentUpdate } from '../lib/integrations/service';
 import { normalizeIntegrationConnection } from '../types/integrations';
@@ -87,10 +89,16 @@ interface AppActions {
     businessTypeFromList: boolean;
     presetId?: string;
     workModels?: WorkConcept[];
+    workspace?: BusinessWorkspaceConfig;
     /** @deprecated */
     primaryWorkModel?: WorkConcept | 'mixed';
   }) => void;
   updateWorkModels: (models: WorkConcept[]) => void;
+  updateWorkspaceConfig: (params: {
+    primaryOperatingModel: OperatingModel;
+    enabledOperatingModels: OperatingModel[];
+    terminology?: BusinessWorkspaceConfig['terminology'];
+  }) => void;
   updateExpenseTrackingMode: (mode: ExpenseTrackingMode) => void;
   addMonthlyExpense: (
     expense: Omit<MonthlyExpense, 'id' | 'businessId' | 'createdAt' | 'updatedAt'>,
@@ -444,6 +452,7 @@ export const useAppStore = create<Store>()(
         businessTypeFromList,
         presetId,
         workModels,
+        workspace: workspaceInput,
         primaryWorkModel,
       }) => {
         const user = get().user;
@@ -456,6 +465,34 @@ export const useAppStore = create<Store>()(
           (primaryWorkModel && primaryWorkModel !== 'mixed'
             ? [primaryWorkModel]
             : suggestWorkModelsFromPreset(presetId));
+
+        const workspace =
+          workspaceInput ??
+          buildWorkspaceConfig({
+            primaryOperatingModel: 'hybrid',
+            enabledOperatingModels: ['event'],
+            businessType: presetId,
+            onboardingCompleted: false,
+          });
+
+        const applyBusinessPatch = (base: Business): Business =>
+          normalizeBusinessWorkspace({
+            ...base,
+            name: trimmedName,
+            businessType,
+            isGeneric,
+            businessTypeFromList,
+            ...(presetId ? { presetId } : {}),
+            workModels: resolvedWorkModels,
+            primaryWorkModel:
+              resolvedWorkModels.length > 1 ? 'mixed' : resolvedWorkModels[0],
+            workspace: {
+              ...workspace,
+              businessType: presetId ?? workspace.businessType,
+              onboardingCompleted: workspace.onboardingCompleted,
+              updatedAt: new Date().toISOString(),
+            },
+          })!;
 
         if (prev) {
           let categories = get().categories;
@@ -481,17 +518,7 @@ export const useAppStore = create<Store>()(
             categories = categoryDefs.map((c) => ({ ...c, id: createId() }));
           }
           set({
-            business: {
-              ...prev,
-              name: trimmedName,
-              businessType,
-              isGeneric,
-              businessTypeFromList,
-              ...(presetId ? { presetId } : {}),
-              workModels: resolvedWorkModels,
-              primaryWorkModel:
-                resolvedWorkModels.length > 1 ? 'mixed' : resolvedWorkModels[0],
-            },
+            business: applyBusinessPatch(prev),
             categories,
           });
           get().ensureCustomerSourceCategory();
@@ -507,26 +534,23 @@ export const useAppStore = create<Store>()(
               displayName: user.displayName,
               email: user.email ?? archived.user!.email,
             },
-            business: normalizeBusiness({
-              ...archived.business,
-              name: trimmedName,
-              businessType,
-              isGeneric,
-              businessTypeFromList,
-              ...(presetId ? { presetId } : {}),
-              workModels:
-                workModels ??
-                archived.business.workModels ??
-                (primaryWorkModel && primaryWorkModel !== 'mixed'
-                  ? [primaryWorkModel]
-                  : suggestWorkModelsFromPreset(presetId ?? archived.business.presetId)),
-            })!,
+            business: applyBusinessPatch(
+              normalizeBusiness({
+                ...archived.business,
+                workModels:
+                  workModels ??
+                  archived.business.workModels ??
+                  (primaryWorkModel && primaryWorkModel !== 'mixed'
+                    ? [primaryWorkModel]
+                    : suggestWorkModelsFromPreset(presetId ?? archived.business.presetId)),
+              })!,
+            ),
           });
           get().ensureCustomerSourceCategory();
           return;
         }
 
-        const business: Business = {
+        const business = applyBusinessPatch({
           id: createId(),
           name: trimmedName,
           userId: user.id,
@@ -537,7 +561,7 @@ export const useAppStore = create<Store>()(
           workModels: resolvedWorkModels,
           primaryWorkModel:
             resolvedWorkModels.length > 1 ? 'mixed' : resolvedWorkModels[0],
-        };
+        });
 
         let categoryDefs: Omit<Category, 'id'>[];
         if (presetId) {
@@ -581,10 +605,40 @@ export const useAppStore = create<Store>()(
         const business = get().business;
         if (!business || models.length === 0) return;
         set({
-          business: normalizeBusiness({
+          business: normalizeBusinessWorkspace({
             ...business,
             workModels: models,
-          })!,
+            primaryWorkModel: models.length > 1 ? 'mixed' : models[0],
+          }),
+        });
+      },
+
+      updateWorkspaceConfig: ({
+        primaryOperatingModel,
+        enabledOperatingModels,
+        terminology,
+      }) => {
+        const business = get().business;
+        if (!business) return;
+
+        const now = new Date().toISOString();
+        const workspace = buildWorkspaceConfig({
+          primaryOperatingModel,
+          enabledOperatingModels,
+          businessType: business.presetId ?? business.workspace?.businessType,
+          onboardingCompleted: true,
+          terminology: terminology ?? business.workspace?.terminology,
+        });
+
+        set({
+          business: normalizeBusinessWorkspace({
+            ...business,
+            workspace: {
+              ...workspace,
+              createdAt: business.workspace?.createdAt ?? workspace.createdAt,
+              updatedAt: now,
+            },
+          }),
         });
       },
 
@@ -1514,7 +1568,7 @@ export const useAppStore = create<Store>()(
     }),
     {
       name: STORAGE_KEY,
-      version: 12,
+      version: 13,
       storage: createJSONStorage(() => safeJsonStorage),
       onRehydrateStorage: () => (_state, err) => {
         if (err) {
@@ -1524,8 +1578,9 @@ export const useAppStore = create<Store>()(
       },
       migrate: (persisted, version) => {
         const p = normalizeEngagementState(persisted as Partial<AppState>) as Partial<AppState>;
+        let next = p;
         if (version < 12) {
-          return {
+          next = {
             ...p,
             invoices: migrateInvoices(p.invoices),
             integrationConnections: migrateIntegrationConnections(p.integrationConnections),
@@ -1533,7 +1588,13 @@ export const useAppStore = create<Store>()(
             paymentTransactions: [],
           };
         }
-        return p;
+        if (version < 13 && next.business) {
+          next = {
+            ...next,
+            business: normalizeBusinessWorkspace(next.business) ?? next.business,
+          };
+        }
+        return next;
       },
       merge: (persisted, current) => {
         try {
@@ -1568,7 +1629,7 @@ export const useAppStore = create<Store>()(
             formNotifications: Array.isArray(p.formNotifications) ? p.formNotifications : [],
             monthlyExpenses: Array.isArray(p.monthlyExpenses) ? p.monthlyExpenses : [],
             business: p.business
-              ? normalizeBusiness({
+              ? normalizeBusinessWorkspace({
                   ...p.business,
                   expenseTrackingMode: p.business.expenseTrackingMode ?? 'both',
                 })

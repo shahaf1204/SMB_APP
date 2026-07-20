@@ -2888,6 +2888,45 @@ a {
   position: relative;
 }
 
+.operating-model-card .operating-model-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 10px;
+  background: var(--color-surface-muted, #f3f4f6);
+  color: var(--color-primary);
+}
+
+.operating-model-card.active .operating-model-card__icon {
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.work-model-option-check {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.55rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid var(--color-border, #e5e7eb);
+  font-size: 0.65rem;
+  line-height: 1;
+  color: var(--color-primary);
+  background: var(--color-card, #fff);
+}
+
+.work-model-option-multi.active .work-model-option-check {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+}
+
 .backup-info {
   margin: 0 0 0.65rem;
   font-size: 0.82rem;

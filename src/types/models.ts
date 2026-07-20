@@ -4,6 +4,7 @@ import type {
   ExternalFormSubmission,
   FormActivityNotification,
 } from './externalForms';
+import type { BusinessWorkspaceConfig } from './workspace';
 
 export type ValueType = 'text' | 'number' | 'date' | 'duration';
 export type MetricRole = 'revenue' | 'expense' | 'neutral';
@@ -283,6 +284,8 @@ export interface Business {
   primaryWorkModel?: PrimaryWorkModel;
   /** How expenses appear in forms and dashboard totals. */
   expenseTrackingMode?: ExpenseTrackingMode;
+  /** Persistent workspace — operating models, terminology, onboarding */
+  workspace?: BusinessWorkspaceConfig;
 }
 
 export interface Category {

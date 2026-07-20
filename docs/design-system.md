@@ -1022,4 +1022,84 @@ Direction:  RTL · Hebrew UI · LTR numbers
 
 ---
 
-*Last updated: product design system v1 — documentation only. No screen redesigns implied.*
+## 21. Business Workspace Configuration
+
+The app adapts screens to each business through a **persistent workspace configuration** — not one-off onboarding choices.
+
+### Business type vs operating model
+
+| Concept | Field | Meaning | Examples |
+|---------|-------|---------|----------|
+| **Business type** | `businessType` / `presetId` | What kind of business the user owns | photographer, therapist, coach, consultant |
+| **Operating model** | `primaryOperatingModel`, `enabledOperatingModels` | How the business delivers service | event, appointment, journey, package, recurring, project, hybrid |
+
+These are **independent**. A photographer may use `appointment` for consultation, `event` for the shoot, and `project` for delivery.
+
+### Primary vs enabled models
+
+- **Primary operating model** — drives default terminology, dashboard metrics, quick actions, default workflow, and new-activity form fields.
+- **Enabled operating models** — additional models the business uses. Always includes the primary model (except `hybrid`, which requires at least two enabled non-hybrid models).
+- **Hybrid** — explicit choice when no single model dominates; shows mixed summaries and concept-based filters.
+
+### Configuration shape
+
+Stored on `Business.workspace` (`BusinessWorkspaceConfig`), persisted via Zustand → localStorage → optional Supabase snapshot.
+
+Key fields: `primaryOperatingModel`, `enabledOperatingModels`, `onboardingCompleted`, `terminology`, `defaultWorkflowTemplateId`, timestamps.
+
+Legacy `workModels` / `primaryWorkModel` are **synced from workspace** for backward compatibility — do not diverge them manually.
+
+### Central configuration map
+
+All model-specific defaults live in **`src/config/operatingModelConfig.ts`** — not scattered `if/else` on pages.
+
+Each model defines:
+
+- `cardPresentation` — ActivityCard layout type
+- `groupingMode` — Activities page section strategy
+- `workflowStageIds` — default pipeline stages
+- `recommendedFilterIds` — Activities filter tabs
+- `dashboardMetricIds` — dashboard KPI keys
+- `quickActionIds` — dashboard/create shortcuts
+- `formFieldIds` — shared activity form sections (`src/config/activityFormSchema.ts`)
+
+### How presentationType is selected
+
+1. Parent passes `presentationType` to `ActivityCard` — **never infer from title or preset name**.
+2. New activities use the primary model’s `cardPresentation`.
+3. Existing activities keep their current type when workspace config changes.
+4. Settings shows a warning before changing primary model: defaults and views update; existing data is preserved.
+
+### Configuration-driven screen behavior
+
+| Screen | Hook / source | What adapts |
+|--------|---------------|-------------|
+| Onboarding | `OperatingModelCard`, 2-step model selection | Primary + optional additional models |
+| Settings | `/settings/operating-model` | Edit primary, enabled models, terminology |
+| Activities | `useActivitiesWorkspace()` | Terminology, grouping mode, filter tab ids, card presentation default |
+| Dashboard | `useWorkspaceConfig()` (future) | Metrics, quick actions |
+| Create | `activityFormSchema.ts` (future) | Visible form fields per model |
+
+Do **not** expose developer terms in Hebrew UI (`presentationType`, `operatingModel`, `config`, `schema`). Use: צורת עבודה, סוג פעילות, תהליך, כרטיסייה, פרויקט, מפגש קבוע.
+
+### Migration rules
+
+- Existing users without `BusinessWorkspaceConfig` are migrated on persist **v13**.
+- Map legacy `WorkConcept` → `OperatingModel` only — **do not** infer from preset names like `birthday` or `photographer`.
+- Multiple legacy concepts → `hybrid`; single concept → matching model.
+- Set `onboardingCompleted: true` for migrated users.
+- Never delete activities, invoices, or integration data.
+
+Full model reference: **`docs/operating-models.md`**.
+
+### Onboarding UI
+
+- Mobile-first, calm, premium — reusable `OperatingModelCard` with Lucide icons.
+- Step 1 (existing): business name + type.
+- Step 2: primary operating model (Hebrew cards).
+- Step 3: optional additional models + confirm.
+- No childish illustrations; primary selected state; one main CTA per step.
+
+---
+
+*Last updated: workspace configuration layer — operating models, onboarding, settings, centralized config map.*
