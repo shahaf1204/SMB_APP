@@ -1,8 +1,6 @@
 import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { MapPin, User } from 'lucide-react';
 import { cn } from '../../../design-system/cn';
-import { Icon } from '../../ds/Icon';
 import type { ActivityPaymentStatus, ActivityStatus } from './types';
 import {
   activityStatusLabels,
@@ -10,7 +8,131 @@ import {
   paymentStatusLabels,
 } from './types';
 
-export function StatusBadge({
+/* ── Shared v2 anatomy — composable sections ── */
+
+/** A. Context row — subtle semantic label */
+export function ContextHeader({
+  children,
+  tone = 'default',
+}: {
+  children: string;
+  tone?: 'default' | 'urgent' | 'muted' | 'accent';
+}) {
+  return (
+    <p className={cn('activity-card__context', `activity-card__context--${tone}`)}>
+      {children}
+    </p>
+  );
+}
+
+/** B. Title row — icon supports recognition, title dominates */
+export function TitleRow({
+  id,
+  title,
+  TypeIcon,
+  isHero,
+  isCompact,
+}: {
+  id: string;
+  title: string;
+  TypeIcon: LucideIcon;
+  isHero?: boolean;
+  isCompact?: boolean;
+}) {
+  const iconSize = isCompact ? 15 : isHero ? 17 : 16;
+
+  return (
+    <header className="activity-card__title-row">
+      <span className="activity-card__icon" aria-hidden>
+        <TypeIcon size={iconSize} strokeWidth={1.75} />
+      </span>
+      <h3
+        id={`activity-card-title-${id}`}
+        className={cn(
+          'activity-card__title',
+          isHero && 'activity-card__title--hero',
+          isCompact && 'activity-card__title--compact',
+        )}
+      >
+        {title}
+      </h3>
+    </header>
+  );
+}
+
+/** C. Client / relationship */
+export function ClientLine({ children }: { children: string }) {
+  return <p className="activity-card__client">{children}</p>;
+}
+
+/** D. Primary operational metadata — typography, no boxes */
+export function MetaLine({
+  children,
+  emphasis,
+  muted,
+  dir,
+}: {
+  children: ReactNode;
+  emphasis?: boolean;
+  muted?: boolean;
+  dir?: 'ltr' | 'rtl';
+}) {
+  return (
+    <p
+      className={cn(
+        'activity-card__meta-line',
+        emphasis && 'activity-card__meta-line--emphasis',
+        muted && 'activity-card__meta-line--muted',
+      )}
+      dir={dir}
+    >
+      {children}
+    </p>
+  );
+}
+
+export function MetaCompound({
+  parts,
+}: {
+  parts: Array<{ text: string; dir?: 'ltr' | 'rtl'; muted?: boolean; emphasis?: boolean }>;
+}) {
+  const visible = parts.filter((p) => p.text);
+  if (!visible.length) return null;
+
+  return (
+    <p className="activity-card__meta-line">
+      {visible.map((part, index) => (
+        <span key={`${part.text}-${index}`}>
+          {index > 0 && <span className="activity-card__sep" aria-hidden> · </span>}
+          <span
+            className={cn(
+              part.muted && 'activity-card__meta-line--muted',
+              part.emphasis && 'activity-card__meta-line--emphasis',
+            )}
+            dir={part.dir}
+          >
+            {part.text}
+          </span>
+        </span>
+      ))}
+    </p>
+  );
+}
+
+/** Appointment time anchor — compact contextual emphasis */
+export function TimeAnchor({ children, compact }: { children: string; compact?: boolean }) {
+  return (
+    <p
+      className={cn('activity-card__time-anchor', compact && 'activity-card__time-anchor--compact')}
+      dir="ltr"
+    >
+      {children}
+    </p>
+  );
+}
+
+/** E + F. Financial value + operational / payment status */
+export function StatusPill({
   status,
   label,
 }: {
@@ -18,13 +140,14 @@ export function StatusBadge({
   label: string;
 }) {
   return (
-    <span className={cn('activity-card__badge', `activity-card__badge--status-${status}`)}>
+    <span className={cn('activity-card__pill', `activity-card__pill--status-${status}`)}>
+      <span className="activity-card__pill-dot" aria-hidden />
       {label}
     </span>
   );
 }
 
-export function PaymentBadge({
+export function PaymentPill({
   paymentStatus,
   label,
 }: {
@@ -34,106 +157,222 @@ export function PaymentBadge({
   return (
     <span
       className={cn(
-        'activity-card__badge',
-        'activity-card__payment',
-        `activity-card__badge--payment-${paymentStatus}`,
+        'activity-card__pill',
+        'activity-card__pill--payment',
+        `activity-card__pill--payment-${paymentStatus}`,
       )}
     >
+      <span className="activity-card__pill-dot" aria-hidden />
       {label}
     </span>
   );
 }
 
-export function ContextualLabel({ children }: { children: string }) {
-  return <span className="activity-card__contextual">{children}</span>;
-}
-
-export function UsageLabel({ children }: { children: string }) {
-  return <span className="activity-card__usage">{children}</span>;
-}
-
-export function TimeAnchor({ children }: { children: string }) {
-  return (
-    <span className="activity-card__time-anchor" dir="ltr">
-      {children}
-    </span>
-  );
-}
-
-export function CardHeader({
-  id,
-  title,
-  activityTypeLabel,
-  TypeIcon,
-  isHero,
-  clientName,
-  showClientInHeader,
+export function FinancialStatusRow({
+  amount,
+  currency,
+  status,
+  paymentStatus,
+  statusLabel,
+  paymentStatusLabel,
+  stage,
+  invertPills,
 }: {
-  id: string;
-  title: string;
-  activityTypeLabel?: string | null;
-  TypeIcon: LucideIcon;
-  isHero: boolean;
-  clientName?: string | null;
-  showClientInHeader?: boolean;
+  amount?: number | string | null;
+  currency: string;
+  status?: ActivityStatus | null;
+  paymentStatus?: ActivityPaymentStatus | null;
+  statusLabel?: string;
+  paymentStatusLabel?: string;
+  /** Workflow stage as plain text when no operational status */
+  stage?: string | null;
+  /** Payment before operational — recurring example */
+  invertPills?: boolean;
 }) {
-  return (
-    <header className="activity-card__header">
-      <span className="activity-card__type-icon" aria-hidden>
-        <TypeIcon size={isHero ? 20 : 18} strokeWidth={1.65} />
-      </span>
-      <div className="activity-card__head-main">
-        {activityTypeLabel && (
-          <span className="activity-card__type-label">{activityTypeLabel}</span>
-        )}
-        <h3 id={`activity-card-title-${id}`} className="activity-card__title">
-          {title}
-        </h3>
-        {showClientInHeader && clientName && (
-          <span className="activity-card__client-header">{clientName}</span>
-        )}
-      </div>
-    </header>
-  );
-}
+  const hasAmount = amount != null && amount !== '';
+  if (!hasAmount && !status && !paymentStatus && !stage) return null;
 
-export function MetaRow({
-  icon,
-  children,
-  wrap,
-  dir,
-  subtle,
-  emphasis,
-  className,
-}: {
-  icon: LucideIcon;
-  children: string;
-  wrap?: boolean;
-  dir?: 'ltr' | 'rtl';
-  subtle?: boolean;
-  emphasis?: boolean;
-  className?: string;
-}) {
+  const operational = status ? (
+    <StatusPill
+      status={status}
+      label={statusLabel ?? activityStatusLabels[status]}
+    />
+  ) : stage ? (
+    <span className="activity-card__stage-text">{stage}</span>
+  ) : null;
+
+  const payment = paymentStatus ? (
+    <PaymentPill
+      paymentStatus={paymentStatus}
+      label={paymentStatusLabel ?? paymentStatusLabels[paymentStatus]}
+    />
+  ) : null;
+
+  const pills = invertPills ? (
+    <>
+      {payment}
+      {operational}
+    </>
+  ) : (
+    <>
+      {operational}
+      {payment}
+    </>
+  );
+
   return (
-    <div
-      className={cn(
-        'activity-card__meta-row',
-        subtle && 'activity-card__meta-row--subtle',
-        emphasis && 'activity-card__meta-row--emphasis',
-        className,
+    <div className="activity-card__financial-row">
+      {hasAmount && (
+        <span className="activity-card__amount">
+          {formatActivityAmount(amount!, currency)}
+        </span>
       )}
-    >
-      <Icon icon={icon} size="sm" tone="muted" className="activity-card__meta-icon" strokeWidth={1.5} />
-      <span
-        dir={dir}
-        className={cn(
-          'activity-card__meta-text',
-          wrap && 'activity-card__meta-text--wrap',
-        )}
-      >
-        {children}
-      </span>
+      {(operational || payment) && (
+        <div className="activity-card__pill-group">{pills}</div>
+      )}
     </div>
+  );
+}
+
+/** F. Progress — meaningful label + optional thin bar */
+export function ProgressSection({
+  detail,
+  percent,
+  showBar = true,
+  tone = 'default',
+}: {
+  detail?: string | null;
+  percent?: number | null;
+  showBar?: boolean;
+  tone?: 'default' | 'journey' | 'usage' | 'project' | 'event';
+}) {
+  const clamped =
+    percent != null ? Math.min(100, Math.max(0, percent)) : null;
+
+  if (!detail && clamped == null) return null;
+
+  return (
+    <div className={cn('activity-card__progress', tone !== 'default' && `activity-card__progress--${tone}`)}>
+      {detail && <span className="activity-card__progress-detail">{detail}</span>}
+      {showBar && clamped != null && (
+        <div
+          className="activity-card__progress-track"
+          role="progressbar"
+          aria-valuenow={clamped}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={detail ?? undefined}
+        >
+          <div
+            className="activity-card__progress-fill"
+            style={{ width: `${clamped}%` }}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** F. Next action / milestone */
+export function NextActionLine({ children }: { children: string }) {
+  return <p className="activity-card__next">{children}</p>;
+}
+
+/** Optional tags — max enforced by parent */
+export function TagRow({ tags }: { tags: string[] }) {
+  if (!tags.length) return null;
+
+  return (
+    <div className="activity-card__tags">
+      {tags.map((tag) => (
+        <span key={tag} className="activity-card__tag">
+          {tag}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/** Shared body wrapper — consistent vertical rhythm */
+export function CardBody({ children }: { children: ReactNode }) {
+  return <div className="activity-card__body">{children}</div>;
+}
+
+/* ── Legacy aliases kept for gradual migration inside layouts ── */
+
+export const ContextualLabel = ContextHeader;
+export const UsageLabel = ContextHeader;
+export const CardHeader = TitleRow;
+export const ClientRow = ClientLine;
+export const NextAction = NextActionLine;
+export const TagsSection = TagRow;
+
+export function StageHighlight({ stage }: { stage: string }) {
+  return <MetaLine emphasis>{stage}</MetaLine>;
+}
+
+export function StatusSection({
+  status,
+  stage,
+  statusLabel,
+}: {
+  status?: ActivityStatus | null;
+  stage?: string | null;
+  statusLabel?: string;
+}) {
+  if (!status && !stage) return null;
+  return (
+    <div className="activity-card__pill-group activity-card__pill-group--standalone">
+      {status && (
+        <StatusPill
+          status={status}
+          label={statusLabel ?? activityStatusLabels[status]}
+        />
+      )}
+      {stage && !status && <span className="activity-card__stage-text">{stage}</span>}
+    </div>
+  );
+}
+
+export function FinancialRow({
+  amount,
+  currency,
+  paymentStatus,
+  paymentStatusLabel,
+}: {
+  amount?: number | string | null;
+  currency: string;
+  paymentStatus?: ActivityPaymentStatus | null;
+  paymentStatusLabel?: string;
+  emphasis?: string;
+}) {
+  return (
+    <FinancialStatusRow
+      amount={amount}
+      currency={currency}
+      paymentStatus={paymentStatus}
+      paymentStatusLabel={paymentStatusLabel}
+    />
+  );
+}
+
+export function ProgressBlock({
+  progressPercent,
+  progressLabel,
+  progressDetail,
+  tone = 'default',
+}: {
+  progressPercent?: number | null;
+  progressLabel?: string | null;
+  progressDetail?: string | null;
+  tone?: 'default' | 'journey' | 'usage' | 'project';
+}) {
+  return (
+    <ProgressSection
+      detail={progressDetail ?? progressLabel}
+      percent={progressPercent}
+      tone={tone}
+    />
   );
 }
 
@@ -151,160 +390,20 @@ export function EmphasizedSchedule({
   if (!dateLabel && !timeLabel && !(showLocation && locationLabel)) return null;
 
   return (
-    <div className="activity-card__schedule">
+    <>
       {(dateLabel || timeLabel) && (
-        <div className="activity-card__schedule-primary">
-          {dateLabel && <span>{dateLabel}</span>}
-          {dateLabel && timeLabel && (
-            <span className="activity-card__meta-sep" aria-hidden> · </span>
-          )}
-          {timeLabel && (
-            <span className="activity-card__schedule-time" dir="ltr">
-              {timeLabel}
-            </span>
-          )}
-        </div>
+        <MetaCompound
+          parts={[
+            { text: dateLabel ?? '' },
+            { text: timeLabel ?? '', dir: 'ltr' },
+          ]}
+        />
       )}
       {showLocation && locationLabel && (
-        <MetaRow icon={MapPin} subtle wrap>
-          {locationLabel}
-        </MetaRow>
+        <MetaLine muted>{locationLabel}</MetaLine>
       )}
-    </div>
+    </>
   );
-}
-
-export function ClientRow({ clientName }: { clientName: string }) {
-  return (
-    <MetaRow icon={User} className="activity-card__meta-row--client">
-      {clientName}
-    </MetaRow>
-  );
-}
-
-export function FinancialRow({
-  amount,
-  currency,
-  paymentStatus,
-  paymentStatusLabel,
-  emphasis = 'default',
-}: {
-  amount?: number | string | null;
-  currency: string;
-  paymentStatus?: ActivityPaymentStatus | null;
-  paymentStatusLabel?: string;
-  emphasis?: 'default' | 'compact' | 'hero' | 'value';
-}) {
-  const hasAmount = amount != null && amount !== '';
-  if (!hasAmount && !paymentStatus) return null;
-
-  return (
-    <div
-      className={cn(
-        'activity-card__financial',
-        emphasis !== 'default' && `activity-card__financial--${emphasis}`,
-      )}
-    >
-      {hasAmount && (
-        <span className="activity-card__amount">
-          {formatActivityAmount(amount!, currency)}
-        </span>
-      )}
-      {paymentStatus && (
-        <PaymentBadge
-          paymentStatus={paymentStatus}
-          label={paymentStatusLabel ?? paymentStatusLabels[paymentStatus]}
-        />
-      )}
-    </div>
-  );
-}
-
-export function StatusSection({
-  status,
-  stage,
-  statusLabel,
-}: {
-  status?: ActivityStatus | null;
-  stage?: string | null;
-  statusLabel?: string;
-}) {
-  if (!status && !stage) return null;
-
-  return (
-    <div className="activity-card__status-row">
-      {status && (
-        <StatusBadge
-          status={status}
-          label={statusLabel ?? activityStatusLabels[status]}
-        />
-      )}
-      {stage && <span className="activity-card__stage">{stage}</span>}
-    </div>
-  );
-}
-
-export function StageHighlight({ stage }: { stage: string }) {
-  return <span className="activity-card__stage-highlight">{stage}</span>;
-}
-
-export function ProgressBlock({
-  progressPercent,
-  progressLabel,
-  progressDetail,
-  tone = 'default',
-}: {
-  progressPercent?: number | null;
-  progressLabel?: string | null;
-  progressDetail?: string | null;
-  tone?: 'default' | 'journey' | 'usage' | 'project';
-}) {
-  const label = progressDetail ?? progressLabel;
-  const clampedPercent =
-    progressPercent != null
-      ? Math.min(100, Math.max(0, progressPercent))
-      : null;
-
-  if (!label && clampedPercent == null) return null;
-
-  return (
-    <div className={cn('activity-card__progress', tone !== 'default' && `activity-card__progress--${tone}`)}>
-      {label && <span className="activity-card__progress-label">{label}</span>}
-      {clampedPercent != null && (
-        <div
-          className="activity-card__progress-track"
-          role="progressbar"
-          aria-valuenow={clampedPercent}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label={label ?? undefined}
-        >
-          <div
-            className="activity-card__progress-fill"
-            style={{ width: `${clampedPercent}%` }}
-          />
-        </div>
-      )}
-    </div>
-  );
-}
-
-export function TagsSection({ tags }: { tags: string[] }) {
-  if (!tags.length) return null;
-
-  return (
-    <div className="activity-card__tags">
-      {tags.map((tag) => (
-        <span key={tag} className="activity-card__tag">
-          {tag}
-        </span>
-      ))}
-    </div>
-  );
-}
-
-export function NextAction({ children }: { children: string }) {
-  return <p className="activity-card__next-action">{children}</p>;
 }
 
 export function RecurrenceRow({
@@ -317,16 +416,45 @@ export function RecurrenceRow({
   if (!recurrenceLabel && !nextOccurrenceLabel) return null;
 
   return (
-    <div className="activity-card__recurrence">
-      {recurrenceLabel && (
-        <span className="activity-card__recurrence-pattern">{recurrenceLabel}</span>
-      )}
+    <>
+      {recurrenceLabel && <ContextHeader tone="accent">{recurrenceLabel}</ContextHeader>}
       {nextOccurrenceLabel && (
-        <span className="activity-card__recurrence-next">
+        <MetaLine muted>
           המפגש הבא: <span dir="ltr">{nextOccurrenceLabel}</span>
-        </span>
+        </MetaLine>
       )}
-    </div>
+    </>
+  );
+}
+
+export function MetaGroup({ children }: { children: ReactNode }) {
+  return <div className="activity-card__meta-group">{children}</div>;
+}
+
+export function MetaRow({
+  children,
+  dir,
+  subtle,
+  emphasis,
+  className,
+}: {
+  icon?: LucideIcon;
+  children: string;
+  wrap?: boolean;
+  dir?: 'ltr' | 'rtl';
+  subtle?: boolean;
+  emphasis?: boolean;
+  className?: string;
+}) {
+  return (
+    <MetaLine
+      dir={dir}
+      emphasis={emphasis}
+      muted={subtle}
+      // className passthrough via wrapper if needed
+    >
+      <span className={className}>{children}</span>
+    </MetaLine>
   );
 }
 
@@ -335,22 +463,14 @@ export function InlineMeta({
 }: {
   parts: Array<{ text: string; dir?: 'ltr' | 'rtl'; className?: string }>;
 }) {
-  const visible = parts.filter((p) => p.text);
-  if (!visible.length) return null;
-
   return (
-    <div className="activity-card__meta-inline">
-      {visible.map((part, index) => (
-        <span key={`${part.text}-${index}`}>
-          {index > 0 && (
-            <span className="activity-card__meta-sep" aria-hidden> · </span>
-          )}
-          <span className={part.className} dir={part.dir}>
-            {part.text}
-          </span>
-        </span>
-      ))}
-    </div>
+    <MetaCompound
+      parts={parts.map((p) => ({
+        text: p.text,
+        dir: p.dir,
+        muted: p.className?.includes('meta-secondary'),
+      }))}
+    />
   );
 }
 
@@ -361,7 +481,6 @@ export function AppointmentCompactBody({
   clientName,
   dateLabel,
   TypeIcon,
-  activityTypeLabel,
 }: {
   id: string;
   title: string;
@@ -373,25 +492,13 @@ export function AppointmentCompactBody({
 }) {
   return (
     <div className="activity-card__appointment-compact">
-      {timeLabel && <TimeAnchor>{timeLabel}</TimeAnchor>}
-      <div className="activity-card__appointment-body">
-        <div className="activity-card__header activity-card__header--inline">
-          <span className="activity-card__type-icon" aria-hidden>
-            <TypeIcon size={16} strokeWidth={1.65} />
-          </span>
-          <div className="activity-card__head-main">
-            {activityTypeLabel && (
-              <span className="activity-card__type-label">{activityTypeLabel}</span>
-            )}
-            <h3 id={`activity-card-title-${id}`} className="activity-card__title">
-              {title}
-            </h3>
-          </div>
-        </div>
-        <InlineMeta
+      {timeLabel && <TimeAnchor compact>{timeLabel}</TimeAnchor>}
+      <div className="activity-card__appointment-main">
+        <TitleRow id={id} title={title} TypeIcon={TypeIcon} isCompact />
+        <MetaCompound
           parts={[
-            { text: clientName ?? '', className: 'activity-card__client-inline' },
-            { text: dateLabel ?? '', className: 'activity-card__meta-secondary' },
+            { text: clientName ?? '' },
+            { text: dateLabel ?? '', muted: true },
           ]}
         />
       </div>
@@ -399,6 +506,22 @@ export function AppointmentCompactBody({
   );
 }
 
-export function MetaGroup({ children }: { children: ReactNode }) {
-  return <div className="activity-card__meta">{children}</div>;
+export function StatusBadge({
+  status,
+  label,
+}: {
+  status: ActivityStatus;
+  label: string;
+}) {
+  return <StatusPill status={status} label={label} />;
+}
+
+export function PaymentBadge({
+  paymentStatus,
+  label,
+}: {
+  paymentStatus: ActivityPaymentStatus;
+  label: string;
+}) {
+  return <PaymentPill paymentStatus={paymentStatus} label={label} />;
 }

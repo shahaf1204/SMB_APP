@@ -578,33 +578,111 @@ Must work for: event prep, coaching milestones, editing pipeline, package sessio
 
 ---
 
-### ActivityCard
+### ActivityCard v2
 
-**Purpose:** Generic list/detail preview for any Activity type.
+**Purpose:** The reference operational card for the entire product — generic list/detail preview for any Activity type.
+
+**Mandatory principle:** ActivityCard must communicate **operational state before** displaying secondary metadata.
+
+#### Shared visual anatomy
+
+All presentation types share one skeleton:
+
+| Section | Role |
+|---------|------|
+| **A. Context row** | Lightweight semantic label — urgency, recurrence, remaining sessions, deadline |
+| **B. Title row** | Small Lucide icon + strongest text element (activity title) |
+| **C. Client** | Relationship line — plain typography, no chip |
+| **D. Primary metadata** | Date/time, location, stage — whitespace + type, not boxes |
+| **E. Financial + status row** | Amount (tabular nums) + operational pill + payment pill |
+| **F. Progress / next action** | Meaningful label; thin bar only when useful |
+| **G. Quick actions** | Optional footer — max 3, 44px touch targets |
+
+#### Visual scan order
+
+1. Contextual state  
+2. Activity title  
+3. Client or relationship  
+4. Date / time / deadline / next occurrence  
+5. Financial value  
+6. Operational status (+ payment when relevant)  
+7. Progress or next action  
+
+Title is always the strongest text. Amount is second-strongest when present — never larger than title.
+
+#### Maximum information density
+
+- Max **one** operational status pill  
+- Max **one** payment status pill  
+- Max **one** optional tag row (max 3 tags)  
+- Max **3** quick actions  
+- No outlined chip grids, heavy separators, or redundant type labels  
+- Whitespace and typography carry hierarchy  
+
+#### Amount rules
+
+- Financial typography token + `tabular-nums`  
+- Currency in readable RTL/LTR order (`dir="ltr"` on amount)  
+- Optional context only via adapter copy — not inline with unrelated metadata  
+
+#### Status separation
+
+| Layer | Examples |
+|-------|----------|
+| **Operational** | חדש · פעיל · ממתין · דורש טיפול · הושלם · בוטל |
+| **Payment** | לא שולם · שולם חלקית · שולם · באיחור |
+
+Compact semantic pills with status dot — never color alone.
+
+#### Progress rules
+
+Progress must explain **meaning**, not just percentage:
+
+| Type | Example |
+|------|---------|
+| Journey | מפגש 3 מתוך 8 |
+| Package | 7 מתוך 10 נוצלו |
+| Project | שלב 3 מתוך 5 |
+| Event | הכנה • 65% |
+
+One thin bar, soft track, semantic accent. Hide when no useful information. Prefer `progressDetail` over generic `%` when detail exists.
+
+#### Card shell
+
+- White surface · subtle border · very soft shadow  
+- 16–20px radius · 16px internal padding  
+- Optional narrow semantic accent on logical start (per presentation type)  
+- No gradients · not both heavy border and strong shadow  
+
+#### Icon treatment
+
+Lucide only · smaller container · soft semantic tint · supports recognition, does not dominate.
+
+Default mapping: `event` CalendarDays · `appointment` CalendarClock · `journey` Route · `package` TicketCheck · `project` FolderKanban · `recurring` Repeat2 · `generic` Activity
 
 **Possible fields** (compose as needed — not all required):
 
 | Field | Notes |
 |-------|-------|
-| Activity type icon | Lucide, semantic container |
-| Title | H3 — business-specific label |
-| Client | Name, linked |
+| Activity type icon | Lucide, small semantic container |
+| Title | H3 — strongest element |
+| Client | Name |
 | Date / time | Israeli format |
 | Location | Optional |
 | Amount | Financial number style |
-| Status badge | StatusBadge |
-| Workflow stage | Small label or progress |
-| Progress | Bar or “3/10 מפגשים” |
-| Quick actions | Icon row: call, WhatsApp, mark paid |
+| Status | Operational pill — separate from payment |
+| Workflow stage | Plain text or context row |
+| Progress | Meaningful detail + optional thin bar |
+| Quick actions | Max 3 icon buttons |
 
 **Variants:**
 
 | Variant | Use |
 |---------|-----|
-| **Compact** | Dense lists, calendar sidebars |
-| **Standard** | Default activity feed |
-| **Hero** | Dashboard “next up” focal card |
-| **Timeline** | Chronological day/week view |
+| **Compact** | Context + title + client + time/status; progress only if essential |
+| **Standard** | Full operational summary; max ~3 metadata rows |
+| **Hero** | Stronger title + context; one next-action line; not excessively tall |
+| **Timeline** | Compact body + meaningful chronological rail marker |
 
 **Title examples (must all work):**
 
@@ -620,6 +698,8 @@ Must work for: event prep, coaching milestones, editing pipeline, package sessio
 | Item | Location |
 |------|----------|
 | Component | `src/components/business/ActivityCard/ActivityCard.tsx` |
+| Parts | `src/components/business/ActivityCard/ActivityCardParts.tsx` |
+| Layouts | `src/components/business/ActivityCard/presentationLayouts.tsx` |
 | Types | `src/components/business/ActivityCard/types.ts` |
 | Styles | `src/components/business/ActivityCard/activity-card.css` |
 | Dev showcase | `/dev/activity-card` |
@@ -638,38 +718,38 @@ import { ActivityCard } from '@/components/business/ActivityCard';
 | `title` | `string` | Activity title (business-specific) |
 | `variant` | `'compact' \| 'standard' \| 'hero' \| 'timeline'` | Layout density |
 | `presentationType` | `'event' \| 'appointment' \| … \| 'generic'` | Visual hierarchy — default `generic` |
-| `activityTypeLabel` | `string?` | e.g. "תור", "פרויקט" |
+| `activityTypeLabel` | `string?` | Optional — not shown by default in v2 |
 | `activityTypeIcon` | `LucideIcon?` | Semantic type icon |
-| `clientName` | `string?` | Linked client |
+| `clientName` | `string?` | Client line |
 | `dateLabel` | `string?` | Pre-formatted date |
 | `timeLabel` | `string?` | Pre-formatted time (`dir="ltr"`) |
-| `locationLabel` | `string?` | Hidden in compact |
+| `locationLabel` | `string?` | Secondary meta |
 | `amount` | `number \| string?` | Financial number typography |
 | `currency` | `string?` | Default `₪` |
 | `status` | `ActivityStatus?` | Operational — separate from payment |
-| `stage` | `string?` | Workflow label from business config |
+| `stage` | `string?` | Workflow label |
 | `paymentStatus` | `ActivityPaymentStatus?` | Never inferred from `status` |
-| `progressPercent` | `number?` | 0–100; hidden when absent |
-| `progressLabel` | `string?` | e.g. "3 מתוך 6 מפגשים" |
-| `tags` | `string[]?` | Optional footer tags |
+| `progressPercent` | `number?` | 0–100; bar hidden when absent |
+| `progressLabel` | `string?` | Context or usage label |
+| `tags` | `string[]?` | Max 3 rendered |
 | `onClick` | `(() => void)?` | Makes card body clickable |
-| `quickActions` | `ActivityQuickAction[]?` | `call \| navigate \| edit \| invoice \| open` |
-| `contextualLabel` | `string?` | Urgency/time context |
-| `nextActionLabel` | `string?` | Next step in journey |
+| `quickActions` | `ActivityQuickAction[]?` | Max 3 · `call \| navigate \| edit \| invoice \| open` |
+| `contextualLabel` | `string?` | Context row |
+| `nextActionLabel` | `string?` | Next step |
 | `usageLabel` | `string?` | Package/session usage |
-| `deadlineLabel` | `string?` | Project delivery deadline |
+| `deadlineLabel` | `string?` | Project deadline context |
 | `recurrenceLabel` | `string?` | Recurrence pattern |
 | `nextOccurrenceLabel` | `string?` | Next session date |
-| `progressDetail` | `string?` | Workflow detail text |
+| `progressDetail` | `string?` | Meaningful progress text |
 
 **Variant behaviour:**
 
 | Variant | Metadata | Progress | Quick actions |
 |---------|----------|----------|---------------|
-| `compact` | Inline client · date · time | Hidden | Footer (if provided) |
-| `standard` | Full rows + location | Shown when data present | Footer |
-| `hero` | Full rows + accent border | Shown | Footer inside card |
-| `timeline` | Full rows + rail marker | Shown | Footer |
+| `compact` | Title + client + primary time | Hidden unless essential | Max 3 footer |
+| `standard` | Full rows, max ~3 meta lines | When meaningful | Max 3 footer |
+| `hero` | Stronger title + context | Journey / event when relevant | Max 3 footer |
+| `timeline` | Compact + rail marker | Label only when meaningful | Max 3 footer |
 
 **Legacy note:** `src/components/ds/Card.tsx` exports a simpler `ActivityCard` for the design-system showcase. Use the **business** `ActivityCard` for production activity lists.
 
@@ -691,15 +771,15 @@ The parent screen or adapter **must supply** `presentationType`. ActivityCard do
 
 **Values:** `event` · `appointment` · `journey` · `package` · `project` · `recurring` · `generic` (default)
 
-| Presentation | Use when | Visual priority |
-|--------------|----------|-----------------|
-| `event` | One-time bookings, scheduled events | Context label → title → date/time → location → amount → client → status |
-| `appointment` | Treatments, lessons, meetings | Time anchor → title → client → date → status → payment |
-| `journey` | Long-term coaching, consulting, care | Client + title → stage → progress → next action → amount |
-| `package` | Session cards, prepaid packages | Usage → title → client → expiry → payment → usage progress |
-| `project` | Creative/delivery workflows | Title → stage → deadline → client → progress → amount |
-| `recurring` | Classes, clubs, subscriptions | Recurrence → title → client → usage → billing |
-| `generic` | Fallback | Title → client → date/time → amount → status |
+| Presentation | Visual priority (v2) |
+|--------------|----------------------|
+| `event` | Context → title → client → date/time/location → amount+status → preparation progress |
+| `appointment` | Time anchor → title → client/location → amount+status |
+| `journey` | Process context → title → client → session progress → next meeting → value |
+| `package` | Remaining sessions → title → client → usage+expiry → payment |
+| `project` | Deadline context → title → client → stage → next action → amount |
+| `recurring` | Recurrence → title → group → next occurrence+participants → payment+status |
+| `generic` | Title → client → date/time → amount+status |
 
 **Contextual display props** (optional — supplied by adapter):
 
@@ -714,10 +794,11 @@ The parent screen or adapter **must supply** `presentationType`. ActivityCard do
 | `progressDetail` | "מפגש 3 מתוך 8" |
 
 **Rules:**
-- Show only relevant fields per presentation (max ~3 metadata rows + amount/status/progress on lists)
+- One shared skeleton across all presentations — accent, icon tint, and metadata order differ
 - Payment status never inferred from operational status
 - Lucide icons only; default icon per presentation if `activityTypeIcon` omitted
 - One component — `src/components/business/ActivityCard/`
+- Dev reference: `/dev/activity-card` (ActivityCard v2 showcase)
 
 ---
 

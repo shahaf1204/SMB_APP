@@ -19,8 +19,8 @@ const STATUS_TONE = {
 } as const;
 
 /**
- * Context-aware ActivityCard — one component, presentation-driven layout.
- * See docs/design-system.md §11 ActivityCard Presentation Types.
+ * ActivityCard v2 — shared operational card language, presentation-driven layout.
+ * See docs/design-system.md §11 ActivityCard v2.
  */
 export function ActivityCard({
   id,
@@ -63,8 +63,9 @@ export function ActivityCard({
     && hasProgressData(progressPercent, progressLabel, progressDetail);
 
   const showLocation = !isCompact && Boolean(locationLabel);
-  const showTags = Boolean(tags?.length);
-  const showQuickActions = Boolean(quickActions?.length);
+  const visibleTags = tags?.slice(0, 3) ?? [];
+  const visibleQuickActions = quickActions?.slice(0, 3) ?? [];
+  const showQuickActions = visibleQuickActions.length > 0;
   const showFinancial =
     (amount != null && amount !== '') || Boolean(paymentStatus);
 
@@ -92,7 +93,7 @@ export function ActivityCard({
     paymentStatus,
     progressPercent,
     progressLabel,
-    tags,
+    tags: visibleTags,
     statusLabel,
     paymentStatusLabel,
     contextualLabel,
@@ -107,7 +108,7 @@ export function ActivityCard({
     isTimeline,
     TypeIcon,
     showProgress,
-    showTags,
+    showTags: visibleTags.length > 0,
     showFinancial,
     showLocation,
   };
@@ -151,7 +152,7 @@ export function ActivityCard({
           )}
 
           {showQuickActions && (
-            <QuickActions actions={quickActions!} />
+            <QuickActions actions={visibleQuickActions} />
           )}
         </div>
       </div>
