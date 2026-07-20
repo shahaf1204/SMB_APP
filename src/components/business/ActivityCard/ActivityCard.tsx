@@ -1,4 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
+import { CalendarDays } from 'lucide-react';
 import { cn } from '../../../design-system/cn';
 import { QuickActions } from './ActivityCardActions';
 import { PRESENTATION_LAYOUTS } from './presentationLayouts';
@@ -139,6 +140,12 @@ export function ActivityCard({
     >
       {isTimeline && timelineAnchor && (
         <div className="activity-card__timeline-rail" aria-hidden>
+          <CalendarDays
+            className="activity-card__timeline-icon"
+            size={14}
+            strokeWidth={1.75}
+            aria-hidden
+          />
           <span className="activity-card__timeline-anchor">{timelineAnchor}</span>
           <span className="activity-card__timeline-line" />
         </div>

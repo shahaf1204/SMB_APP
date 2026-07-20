@@ -134,12 +134,20 @@
 
 /* ── A. Context row ── */
 .activity-card__context {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   margin: 0;
   font-size: 0.75rem;
   font-weight: 600;
   line-height: 1.35;
   letter-spacing: 0.01em;
   color: color-mix(in srgb, var(--color-primary) 72%, var(--color-text-secondary));
+}
+
+.activity-card__context-icon {
+  flex-shrink: 0;
+  opacity: 0.88;
 }
 
 .activity-card__context--urgent {
@@ -226,16 +234,48 @@
   font-size: 0.9375rem;
 }
 
-/* ── C. Client ── */
-.activity-card__client {
-  margin: 0;
-  font-size: 0.875rem;
-  font-weight: 500;
-  line-height: 1.35;
-  color: color-mix(in srgb, var(--color-text-primary) 82%, var(--color-text-secondary));
+/* ── C. Client — now MetaItem; legacy class unused ── */
+
+/* ── D. Metadata — semantic icon rows ── */
+.activity-card__meta-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  min-width: 0;
 }
 
-/* ── D. Metadata ── */
+.activity-card__meta-icon {
+  flex-shrink: 0;
+  margin-block-start: 2px;
+  color: color-mix(in srgb, var(--color-text-muted) 88%, var(--color-text-secondary));
+  opacity: 0.9;
+}
+
+.activity-card__meta-item-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.activity-card__meta-item--emphasis .activity-card__meta-item-text,
+.activity-card__meta-item-text--emphasis {
+  font-weight: 600;
+  color: color-mix(in srgb, var(--color-text-primary) 88%, var(--color-text-secondary));
+}
+
+.activity-card__meta-item--emphasis .activity-card__meta-icon {
+  color: color-mix(in srgb, var(--color-text-secondary) 75%, var(--color-primary));
+}
+
+.activity-card__meta-item--muted .activity-card__meta-item-text,
+.activity-card__meta-item-text--muted {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
 .activity-card__meta-line {
   margin: 0;
   font-size: 0.8125rem;
@@ -265,6 +305,22 @@
 }
 
 /* ── Appointment time anchor ── */
+.activity-card__time-anchor-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.activity-card__time-anchor-row--compact {
+  align-items: flex-start;
+}
+
+.activity-card__time-anchor-icon {
+  flex-shrink: 0;
+  color: color-mix(in srgb, var(--color-text-secondary) 80%, var(--color-primary));
+  margin-block-start: 2px;
+}
+
 .activity-card__time-anchor {
   margin: 0;
   font-size: 1.5rem;
@@ -320,6 +376,17 @@
   flex-direction: column;
   gap: 2px;
   min-width: 0;
+}
+
+.activity-card__amount-label-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.activity-card__amount-icon {
+  color: var(--color-text-muted);
+  opacity: 0.85;
 }
 
 .activity-card__amount-label {
@@ -426,9 +493,17 @@
 }
 
 .activity-card__stage-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--color-text-secondary);
+}
+
+.activity-card__stage-icon {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
 }
 
 /* ── F. Progress ── */
@@ -438,6 +513,17 @@
   gap: 4px;
   margin-block-start: 2px;
   padding-block-start: 4px;
+}
+
+.activity-card__progress-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.activity-card__progress-icon {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
 }
 
 .activity-card__progress-detail {
@@ -495,11 +581,19 @@
 }
 
 .activity-card__next-action-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.02em;
   color: color-mix(in srgb, var(--color-primary) 70%, var(--color-text-secondary));
   line-height: 1.25;
+}
+
+.activity-card__next-action-icon {
+  flex-shrink: 0;
+  opacity: 0.9;
 }
 
 .activity-card__next-action-text {
@@ -601,8 +695,13 @@
   align-items: center;
   flex-shrink: 0;
   width: 3.25rem;
-  padding-block-start: 14px;
-  gap: 6px;
+  padding-block-start: 12px;
+  gap: 4px;
+}
+
+.activity-card__timeline-icon {
+  flex-shrink: 0;
+  color: color-mix(in srgb, var(--color-accent) 70%, var(--color-text-muted));
 }
 
 .activity-card__timeline-anchor {

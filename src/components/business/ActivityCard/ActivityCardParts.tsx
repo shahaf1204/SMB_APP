@@ -8,6 +8,68 @@ import {
   paymentStatusLabels,
 } from './types';
 import { amountContextLabelFor } from './financialContext';
+import {
+  contextIcon,
+  locationIcon,
+  MetaIcons,
+  progressIcon,
+} from './metaIcons';
+
+const META_ICON_SIZE = 14;
+const META_ICON_STROKE = 1.75;
+const INLINE_ICON_SIZE = 12;
+
+/** Semantic icon + text row — base scan pattern for metadata */
+export function MetaIconGlyph({
+  icon: Icon,
+  size = META_ICON_SIZE,
+  className,
+}: {
+  icon: LucideIcon;
+  size?: number;
+  className?: string;
+}) {
+  return (
+    <Icon
+      className={cn('activity-card__meta-icon', className)}
+      size={size}
+      strokeWidth={META_ICON_STROKE}
+      aria-hidden
+    />
+  );
+}
+
+export function MetaItem({
+  icon,
+  children,
+  emphasis,
+  muted,
+  dir,
+  className,
+}: {
+  icon: LucideIcon;
+  children: ReactNode;
+  emphasis?: boolean;
+  muted?: boolean;
+  dir?: 'ltr' | 'rtl';
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        'activity-card__meta-item',
+        emphasis && 'activity-card__meta-item--emphasis',
+        muted && 'activity-card__meta-item--muted',
+        className,
+      )}
+    >
+      <MetaIconGlyph icon={icon} />
+      <span className="activity-card__meta-item-text" dir={dir}>
+        {children}
+      </span>
+    </div>
+  );
+}
 
 /* ── Shared v2 anatomy — composable sections ── */
 
@@ -15,13 +77,18 @@ import { amountContextLabelFor } from './financialContext';
 export function ContextHeader({
   children,
   tone = 'default',
+  icon,
 }: {
   children: string;
   tone?: 'default' | 'urgent' | 'muted' | 'accent';
+  icon?: LucideIcon;
 }) {
+  const Icon = icon ?? contextIcon(tone);
+
   return (
     <p className={cn('activity-card__context', `activity-card__context--${tone}`)}>
-      {children}
+      <MetaIconGlyph icon={Icon} size={13} className="activity-card__context-icon" />
+      <span>{children}</span>
     </p>
   );
 }
@@ -63,7 +130,7 @@ export function TitleRow({
 
 /** C. Client / relationship */
 export function ClientLine({ children }: { children: string }) {
-  return <p className="activity-card__client">{children}</p>;
+  return <MetaItem icon={MetaIcons.client}>{children}</MetaItem>;
 }
 
 /** D. Primary operational metadata — typography, no boxes */
@@ -72,12 +139,22 @@ export function MetaLine({
   emphasis,
   muted,
   dir,
+  icon,
 }: {
   children: ReactNode;
   emphasis?: boolean;
   muted?: boolean;
   dir?: 'ltr' | 'rtl';
+  icon?: LucideIcon;
 }) {
+  if (icon) {
+    return (
+      <MetaItem icon={icon} emphasis={emphasis} muted={muted} dir={dir}>
+        {children}
+      </MetaItem>
+    );
+  }
+
   return (
     <p
       className={cn(
@@ -92,23 +169,53 @@ export function MetaLine({
   );
 }
 
+export function ScheduleMeta({
+  dateLabel,
+  timeLabel,
+  emphasis,
+}: {
+  dateLabel?: string | null;
+  timeLabel?: string | null;
+  emphasis?: boolean;
+}) {
+  if (!dateLabel && !timeLabel) return null;
+
+  return (
+    <MetaItem icon={MetaIcons.schedule} emphasis={emphasis}>
+      {dateLabel && <span>{dateLabel}</span>}
+      {dateLabel && timeLabel && <span className="activity-card__sep" aria-hidden> · </span>}
+      {timeLabel && <span dir="ltr">{timeLabel}</span>}
+    </MetaItem>
+  );
+}
+
+export function LocationMeta({ children }: { children: string }) {
+  return (
+    <MetaItem icon={locationIcon(children)} muted>
+      {children}
+    </MetaItem>
+  );
+}
+
 export function MetaCompound({
   parts,
+  icon = MetaIcons.schedule,
 }: {
   parts: Array<{ text: string; dir?: 'ltr' | 'rtl'; muted?: boolean; emphasis?: boolean }>;
+  icon?: LucideIcon;
 }) {
   const visible = parts.filter((p) => p.text);
   if (!visible.length) return null;
 
   return (
-    <p className="activity-card__meta-line">
+    <MetaItem icon={icon}>
       {visible.map((part, index) => (
         <span key={`${part.text}-${index}`}>
           {index > 0 && <span className="activity-card__sep" aria-hidden> · </span>}
           <span
             className={cn(
-              part.muted && 'activity-card__meta-line--muted',
-              part.emphasis && 'activity-card__meta-line--emphasis',
+              part.muted && 'activity-card__meta-item-text--muted',
+              part.emphasis && 'activity-card__meta-item-text--emphasis',
             )}
             dir={part.dir}
           >
@@ -116,19 +223,31 @@ export function MetaCompound({
           </span>
         </span>
       ))}
-    </p>
+    </MetaItem>
   );
 }
 
 /** Appointment time anchor — compact contextual emphasis */
 export function TimeAnchor({ children, compact }: { children: string; compact?: boolean }) {
   return (
-    <p
-      className={cn('activity-card__time-anchor', compact && 'activity-card__time-anchor--compact')}
-      dir="ltr"
+    <div
+      className={cn(
+        'activity-card__time-anchor-row',
+        compact && 'activity-card__time-anchor-row--compact',
+      )}
     >
-      {children}
-    </p>
+      <MetaIconGlyph
+        icon={MetaIcons.time}
+        size={compact ? 16 : 18}
+        className="activity-card__time-anchor-icon"
+      />
+      <p
+        className={cn('activity-card__time-anchor', compact && 'activity-card__time-anchor--compact')}
+        dir="ltr"
+      >
+        {children}
+      </p>
+    </div>
   );
 }
 
@@ -208,7 +327,10 @@ export function FinancialStatusRow({
       label={statusLabel ?? activityStatusLabels[status]}
     />
   ) : stage ? (
-    <span className="activity-card__stage-text">{stage}</span>
+    <span className="activity-card__stage-text">
+      <MetaIconGlyph icon={MetaIcons.stage} size={INLINE_ICON_SIZE} className="activity-card__stage-icon" />
+      {stage}
+    </span>
   ) : null;
 
   const payment = paymentStatus ? (
@@ -236,7 +358,14 @@ export function FinancialStatusRow({
         {hasAmount ? (
           <div className="activity-card__amount-stack">
             {contextLabel && (
-              <span className="activity-card__amount-label">{contextLabel}</span>
+              <span className="activity-card__amount-label-row">
+                <MetaIconGlyph
+                  icon={MetaIcons.amount}
+                  size={INLINE_ICON_SIZE}
+                  className="activity-card__amount-icon"
+                />
+                <span className="activity-card__amount-label">{contextLabel}</span>
+              </span>
             )}
             <span className="activity-card__amount">
               {formatActivityAmount(amount!, currency)}
@@ -270,9 +399,16 @@ export function ProgressSection({
 
   if (!detail && clamped == null) return null;
 
+  const Icon = progressIcon(tone);
+
   return (
     <div className={cn('activity-card__progress', tone !== 'default' && `activity-card__progress--${tone}`)}>
-      {detail && <span className="activity-card__progress-detail">{detail}</span>}
+      {detail && (
+        <div className="activity-card__progress-header">
+          <MetaIconGlyph icon={Icon} size={INLINE_ICON_SIZE} className="activity-card__progress-icon" />
+          <span className="activity-card__progress-detail">{detail}</span>
+        </div>
+      )}
       {showBar && clamped != null && (
         <div
           className="activity-card__progress-track"
@@ -296,7 +432,14 @@ export function ProgressSection({
 export function NextActionSection({ children }: { children: string }) {
   return (
     <div className="activity-card__next-action">
-      <span className="activity-card__next-action-label">השלב הבא</span>
+      <span className="activity-card__next-action-label">
+        <MetaIconGlyph
+          icon={MetaIcons.nextAction}
+          size={INLINE_ICON_SIZE}
+          className="activity-card__next-action-icon"
+        />
+        השלב הבא
+      </span>
       <p className="activity-card__next-action-text">{children}</p>
     </div>
   );
@@ -337,7 +480,7 @@ export const NextAction = NextActionSection;
 export const TagsSection = TagRow;
 
 export function StageHighlight({ stage }: { stage: string }) {
-  return <MetaLine emphasis>{stage}</MetaLine>;
+  return <MetaLine icon={MetaIcons.stage} emphasis>{stage}</MetaLine>;
 }
 
 export function StatusSection({
@@ -358,7 +501,12 @@ export function StatusSection({
           label={statusLabel ?? activityStatusLabels[status]}
         />
       )}
-      {stage && !status && <span className="activity-card__stage-text">{stage}</span>}
+      {stage && !status && (
+        <span className="activity-card__stage-text">
+          <MetaIconGlyph icon={MetaIcons.stage} size={INLINE_ICON_SIZE} />
+          {stage}
+        </span>
+      )}
     </div>
   );
 }
@@ -420,17 +568,8 @@ export function EmphasizedSchedule({
 
   return (
     <>
-      {(dateLabel || timeLabel) && (
-        <MetaCompound
-          parts={[
-            { text: dateLabel ?? '' },
-            { text: timeLabel ?? '', dir: 'ltr' },
-          ]}
-        />
-      )}
-      {showLocation && locationLabel && (
-        <MetaLine muted>{locationLabel}</MetaLine>
-      )}
+      <ScheduleMeta dateLabel={dateLabel} timeLabel={timeLabel} emphasis />
+      {showLocation && locationLabel && <LocationMeta>{locationLabel}</LocationMeta>}
     </>
   );
 }
@@ -446,9 +585,13 @@ export function RecurrenceRow({
 
   return (
     <>
-      {recurrenceLabel && <ContextHeader tone="accent">{recurrenceLabel}</ContextHeader>}
+      {recurrenceLabel && (
+        <ContextHeader tone="accent" icon={MetaIcons.recurrence}>
+          {recurrenceLabel}
+        </ContextHeader>
+      )}
       {nextOccurrenceLabel && (
-        <MetaLine muted>
+        <MetaLine icon={MetaIcons.nextOccurrence} muted>
           המפגש הבא: <span dir="ltr">{nextOccurrenceLabel}</span>
         </MetaLine>
       )}
@@ -466,6 +609,7 @@ export function MetaRow({
   subtle,
   emphasis,
   className,
+  icon,
 }: {
   icon?: LucideIcon;
   children: string;
@@ -476,12 +620,7 @@ export function MetaRow({
   className?: string;
 }) {
   return (
-    <MetaLine
-      dir={dir}
-      emphasis={emphasis}
-      muted={subtle}
-      // className passthrough via wrapper if needed
-    >
+    <MetaLine dir={dir} emphasis={emphasis} muted={subtle} icon={icon}>
       <span className={className}>{children}</span>
     </MetaLine>
   );
@@ -489,11 +628,14 @@ export function MetaRow({
 
 export function InlineMeta({
   parts,
+  icon = MetaIcons.client,
 }: {
   parts: Array<{ text: string; dir?: 'ltr' | 'rtl'; className?: string }>;
+  icon?: LucideIcon;
 }) {
   return (
     <MetaCompound
+      icon={icon}
       parts={parts.map((p) => ({
         text: p.text,
         dir: p.dir,
@@ -519,17 +661,23 @@ export function AppointmentCompactBody({
   TypeIcon: LucideIcon;
   activityTypeLabel?: string | null;
 }) {
+  const hasRemote = Boolean(clientName && /מרחוק|online|zoom/i.test(clientName));
+
   return (
     <div className="activity-card__appointment-compact">
       {timeLabel && <TimeAnchor compact>{timeLabel}</TimeAnchor>}
       <div className="activity-card__appointment-main">
         <TitleRow id={id} title={title} TypeIcon={TypeIcon} isCompact />
-        <MetaCompound
-          parts={[
-            { text: clientName ?? '' },
-            { text: dateLabel ?? '', muted: true },
-          ]}
-        />
+        {clientName && (
+          <MetaItem icon={hasRemote ? MetaIcons.remote : MetaIcons.client}>
+            {clientName}
+          </MetaItem>
+        )}
+        {dateLabel && (
+          <MetaItem icon={MetaIcons.date} muted>
+            {dateLabel}
+          </MetaItem>
+        )}
       </div>
     </div>
   );
