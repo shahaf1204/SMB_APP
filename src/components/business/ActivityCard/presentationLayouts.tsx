@@ -7,7 +7,7 @@ import {
   FinancialStatusRow,
   MetaCompound,
   MetaLine,
-  NextActionLine,
+  NextActionSection,
   ProgressSection,
   TagRow,
   TimeAnchor,
@@ -30,12 +30,64 @@ function buildProgressDetail(
   return fallback ?? null;
 }
 
+function FinancialFooter({
+  ctx,
+  progressDetail,
+  showBar = true,
+  progressTone = 'default' as const,
+}: {
+  ctx: ActivityCardLayoutContext;
+  progressDetail?: string | null;
+  showBar?: boolean;
+  progressTone?: 'default' | 'journey' | 'usage' | 'project' | 'event';
+}) {
+  const {
+    presentationType,
+    amount,
+    currency,
+    status,
+    paymentStatus,
+    statusLabel,
+    paymentStatusLabel,
+    stage,
+    nextActionLabel,
+    progressPercent,
+    showProgress,
+  } = ctx;
+
+  const hasProgressContent =
+    showProgress && (progressDetail != null || progressPercent != null);
+
+  return (
+    <>
+      <FinancialStatusRow
+        amount={amount}
+        currency={currency}
+        status={status}
+        paymentStatus={paymentStatus}
+        statusLabel={statusLabel}
+        paymentStatusLabel={paymentStatusLabel}
+        stage={stage}
+        presentationType={presentationType}
+      />
+      {nextActionLabel && <NextActionSection>{nextActionLabel}</NextActionSection>}
+      {hasProgressContent && (
+        <ProgressSection
+          detail={progressDetail}
+          percent={progressPercent}
+          tone={progressTone}
+          showBar={showBar && progressPercent != null}
+        />
+      )}
+    </>
+  );
+}
+
 function renderEvent(ctx: ActivityCardLayoutContext): ReactNode {
   const {
     id, title, TypeIcon, isHero, isCompact,
     contextualLabel, clientName, dateLabel, timeLabel, locationLabel, showLocation,
-    amount, currency, status, paymentStatus, statusLabel, paymentStatusLabel,
-    progressPercent, showProgress, showTags, tags,
+    showTags, tags,
   } = ctx;
 
   const progressDetail = buildProgressDetail(ctx);
@@ -51,22 +103,7 @@ function renderEvent(ctx: ActivityCardLayoutContext): ReactNode {
         locationLabel={locationLabel}
         showLocation={!isCompact && showLocation}
       />
-      <FinancialStatusRow
-        amount={amount}
-        currency={currency}
-        status={status}
-        paymentStatus={paymentStatus}
-        statusLabel={statusLabel}
-        paymentStatusLabel={paymentStatusLabel}
-      />
-      {showProgress && (
-        <ProgressSection
-          detail={progressDetail}
-          percent={progressPercent}
-          tone="event"
-          showBar={progressPercent != null}
-        />
-      )}
+      <FinancialFooter ctx={ctx} progressDetail={progressDetail} progressTone="event" />
       {showTags && tags && <TagRow tags={tags} />}
     </CardBody>
   );
@@ -104,7 +141,6 @@ function renderAppointment(ctx: ActivityCardLayoutContext): ReactNode {
   const {
     id, title, TypeIcon, isCompact, isHero,
     timeLabel, clientName, locationLabel,
-    amount, currency, status, paymentStatus, statusLabel, paymentStatusLabel,
   } = ctx;
 
   if (isCompact) {
@@ -119,14 +155,7 @@ function renderAppointment(ctx: ActivityCardLayoutContext): ReactNode {
           clientName={clientLine || clientName}
           TypeIcon={TypeIcon}
         />
-        <FinancialStatusRow
-          amount={amount}
-          currency={currency}
-          status={status}
-          paymentStatus={paymentStatus}
-          statusLabel={statusLabel}
-          paymentStatusLabel={paymentStatusLabel}
-        />
+        <FinancialFooter ctx={ctx} />
       </CardBody>
     );
   }
@@ -137,15 +166,8 @@ function renderAppointment(ctx: ActivityCardLayoutContext): ReactNode {
     <CardBody>
       {timeLabel && <TimeAnchor>{timeLabel}</TimeAnchor>}
       <TitleRow id={id} title={title} TypeIcon={TypeIcon} isHero={isHero} />
-      {(clientMeta) && <ClientLine>{clientMeta}</ClientLine>}
-      <FinancialStatusRow
-        amount={amount}
-        currency={currency}
-        status={status}
-        paymentStatus={paymentStatus}
-        statusLabel={statusLabel}
-        paymentStatusLabel={paymentStatusLabel}
-      />
+      {clientMeta && <ClientLine>{clientMeta}</ClientLine>}
+      <FinancialFooter ctx={ctx} />
     </CardBody>
   );
 }
@@ -153,34 +175,23 @@ function renderAppointment(ctx: ActivityCardLayoutContext): ReactNode {
 function renderJourney(ctx: ActivityCardLayoutContext): ReactNode {
   const {
     id, title, TypeIcon, isHero,
-    clientName, stage, contextualLabel, nextActionLabel,
-    amount, currency, status, paymentStatus, statusLabel, paymentStatusLabel,
-    progressDetail, progressPercent, showProgress,
+    clientName, stage, contextualLabel, progressDetail, progressPercent, showProgress,
   } = ctx;
 
   const context = contextualLabel ?? stage ?? 'בתהליך';
+  const detail = progressDetail ?? undefined;
+  const showBar = progressPercent != null && !(detail?.includes('מתוך') ?? false);
 
   return (
     <CardBody>
       {context && <ContextHeader tone="accent">{context}</ContextHeader>}
       <TitleRow id={id} title={title} TypeIcon={TypeIcon} isHero={isHero} />
       {clientName && <ClientLine>{clientName}</ClientLine>}
-      {showProgress && progressDetail && (
-        <ProgressSection
-          detail={progressDetail}
-          percent={progressPercent}
-          tone="journey"
-          showBar={progressPercent != null && !progressDetail.includes('מתוך')}
-        />
-      )}
-      {nextActionLabel && <NextActionLine>{nextActionLabel}</NextActionLine>}
-      <FinancialStatusRow
-        amount={amount}
-        currency={currency}
-        status={status}
-        paymentStatus={paymentStatus}
-        statusLabel={statusLabel}
-        paymentStatusLabel={paymentStatusLabel}
+      <FinancialFooter
+        ctx={ctx}
+        progressDetail={showProgress ? detail : null}
+        progressTone="journey"
+        showBar={showBar}
       />
     </CardBody>
   );
@@ -189,9 +200,7 @@ function renderJourney(ctx: ActivityCardLayoutContext): ReactNode {
 function renderPackage(ctx: ActivityCardLayoutContext): ReactNode {
   const {
     id, title, TypeIcon, isHero,
-    usageLabel, progressLabel, clientName, dateLabel,
-    amount, currency, paymentStatus, paymentStatusLabel,
-    progressPercent, showProgress,
+    usageLabel, progressLabel, clientName, dateLabel, showProgress, progressPercent,
   } = ctx;
 
   const contextHeader = progressLabel ?? undefined;
@@ -203,20 +212,13 @@ function renderPackage(ctx: ActivityCardLayoutContext): ReactNode {
       {clientName && <ClientLine>{clientName}</ClientLine>}
       {usageLabel && <MetaLine emphasis>{usageLabel}</MetaLine>}
       {dateLabel && <MetaLine muted>{dateLabel}</MetaLine>}
-      <FinancialStatusRow
-        amount={amount}
-        currency={currency}
-        paymentStatus={paymentStatus}
-        paymentStatusLabel={paymentStatusLabel}
+      <FinancialFooter
+        ctx={ctx}
+        progressDetail={
+          showProgress && progressPercent != null && !usageLabel ? progressLabel : null
+        }
+        progressTone="usage"
       />
-      {showProgress && progressPercent != null && !usageLabel && (
-        <ProgressSection
-          detail={progressLabel}
-          percent={progressPercent}
-          tone="usage"
-          showBar
-        />
-      )}
     </CardBody>
   );
 }
@@ -224,9 +226,7 @@ function renderPackage(ctx: ActivityCardLayoutContext): ReactNode {
 function renderProject(ctx: ActivityCardLayoutContext): ReactNode {
   const {
     id, title, TypeIcon, isHero, isTimeline,
-    stage, clientName, deadlineLabel, contextualLabel, nextActionLabel,
-    amount, currency, status, paymentStatus, statusLabel, paymentStatusLabel,
-    progressDetail, progressPercent, showProgress,
+    stage, clientName, deadlineLabel, contextualLabel, progressDetail, showProgress,
   } = ctx;
 
   const context = contextualLabel ?? deadlineLabel;
@@ -237,22 +237,11 @@ function renderProject(ctx: ActivityCardLayoutContext): ReactNode {
       <TitleRow id={id} title={title} TypeIcon={TypeIcon} isHero={isHero} isCompact={isTimeline} />
       {clientName && <ClientLine>{clientName}</ClientLine>}
       {stage && <MetaLine emphasis>{stage}</MetaLine>}
-      {nextActionLabel && <NextActionLine>{nextActionLabel}</NextActionLine>}
-      {showProgress && progressDetail && (
-        <ProgressSection
-          detail={progressDetail}
-          percent={progressPercent}
-          tone="project"
-          showBar={false}
-        />
-      )}
-      <FinancialStatusRow
-        amount={amount}
-        currency={currency}
-        status={status}
-        paymentStatus={paymentStatus}
-        statusLabel={statusLabel}
-        paymentStatusLabel={paymentStatusLabel}
+      <FinancialFooter
+        ctx={ctx}
+        progressDetail={showProgress ? progressDetail : null}
+        progressTone="project"
+        showBar={false}
       />
     </CardBody>
   );
@@ -262,7 +251,8 @@ function renderRecurring(ctx: ActivityCardLayoutContext): ReactNode {
   const {
     id, title, TypeIcon, isHero,
     recurrenceLabel, nextOccurrenceLabel, clientName, usageLabel,
-    paymentStatus, paymentStatusLabel, status, statusLabel,
+    paymentStatus, paymentStatusLabel, status, statusLabel, nextActionLabel,
+    presentationType,
   } = ctx;
 
   return (
@@ -283,7 +273,9 @@ function renderRecurring(ctx: ActivityCardLayoutContext): ReactNode {
         statusLabel={statusLabel}
         currency="₪"
         invertPills
+        presentationType={presentationType}
       />
+      {nextActionLabel && <NextActionSection>{nextActionLabel}</NextActionSection>}
     </CardBody>
   );
 }
@@ -292,8 +284,7 @@ function renderGeneric(ctx: ActivityCardLayoutContext): ReactNode {
   const {
     id, title, TypeIcon, isHero, isCompact,
     clientName, dateLabel, timeLabel, locationLabel, showLocation,
-    amount, currency, status, stage, paymentStatus, statusLabel, paymentStatusLabel,
-    progressPercent, progressLabel, showProgress, showTags, tags,
+    progressLabel, showTags, tags,
   } = ctx;
 
   return (
@@ -309,18 +300,7 @@ function renderGeneric(ctx: ActivityCardLayoutContext): ReactNode {
         />
       )}
       {showLocation && locationLabel && <MetaLine muted>{locationLabel}</MetaLine>}
-      <FinancialStatusRow
-        amount={amount}
-        currency={currency}
-        status={status}
-        paymentStatus={paymentStatus}
-        statusLabel={statusLabel}
-        paymentStatusLabel={paymentStatusLabel}
-        stage={stage}
-      />
-      {showProgress && (
-        <ProgressSection detail={progressLabel} percent={progressPercent} />
-      )}
+      <FinancialFooter ctx={ctx} progressDetail={progressLabel} />
       {showTags && tags && <TagRow tags={tags} />}
     </CardBody>
   );

@@ -1,12 +1,13 @@
 import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '../../../design-system/cn';
-import type { ActivityPaymentStatus, ActivityStatus } from './types';
+import type { ActivityPaymentStatus, ActivityStatus, ActivityPresentationType } from './types';
 import {
   activityStatusLabels,
   formatActivityAmount,
   paymentStatusLabels,
 } from './types';
+import { amountContextLabelFor } from './financialContext';
 
 /* ── Shared v2 anatomy — composable sections ── */
 
@@ -177,6 +178,8 @@ export function FinancialStatusRow({
   paymentStatusLabel,
   stage,
   invertPills,
+  presentationType,
+  amountContextLabel,
 }: {
   amount?: number | string | null;
   currency: string;
@@ -188,9 +191,16 @@ export function FinancialStatusRow({
   stage?: string | null;
   /** Payment before operational — recurring example */
   invertPills?: boolean;
+  presentationType?: ActivityPresentationType;
+  amountContextLabel?: string | null;
 }) {
   const hasAmount = amount != null && amount !== '';
   if (!hasAmount && !status && !paymentStatus && !stage) return null;
+
+  const contextLabel =
+    hasAmount
+      ? (amountContextLabel ?? (presentationType ? amountContextLabelFor(presentationType) : null))
+      : null;
 
   const operational = status ? (
     <StatusPill
@@ -221,15 +231,24 @@ export function FinancialStatusRow({
   );
 
   return (
-    <div className="activity-card__financial-row">
-      {hasAmount && (
-        <span className="activity-card__amount">
-          {formatActivityAmount(amount!, currency)}
-        </span>
-      )}
-      {(operational || payment) && (
-        <div className="activity-card__pill-group">{pills}</div>
-      )}
+    <div className="activity-card__financial-block">
+      <div className="activity-card__financial-row">
+        {hasAmount ? (
+          <div className="activity-card__amount-stack">
+            {contextLabel && (
+              <span className="activity-card__amount-label">{contextLabel}</span>
+            )}
+            <span className="activity-card__amount">
+              {formatActivityAmount(amount!, currency)}
+            </span>
+          </div>
+        ) : (
+          <span aria-hidden />
+        )}
+        {(operational || payment) && (
+          <div className="activity-card__pill-group">{pills}</div>
+        )}
+      </div>
     </div>
   );
 }
@@ -273,9 +292,19 @@ export function ProgressSection({
   );
 }
 
-/** F. Next action / milestone */
+/** Next action — drives work, between financial and progress */
+export function NextActionSection({ children }: { children: string }) {
+  return (
+    <div className="activity-card__next-action">
+      <span className="activity-card__next-action-label">השלב הבא</span>
+      <p className="activity-card__next-action-text">{children}</p>
+    </div>
+  );
+}
+
+/** @deprecated alias */
 export function NextActionLine({ children }: { children: string }) {
-  return <p className="activity-card__next">{children}</p>;
+  return <NextActionSection>{children}</NextActionSection>;
 }
 
 /** Optional tags — max enforced by parent */
@@ -304,7 +333,7 @@ export const ContextualLabel = ContextHeader;
 export const UsageLabel = ContextHeader;
 export const CardHeader = TitleRow;
 export const ClientRow = ClientLine;
-export const NextAction = NextActionLine;
+export const NextAction = NextActionSection;
 export const TagsSection = TagRow;
 
 export function StageHighlight({ stage }: { stage: string }) {

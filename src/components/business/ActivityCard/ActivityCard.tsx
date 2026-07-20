@@ -113,6 +113,9 @@ export function ActivityCard({
     showLocation,
   };
 
+  const timelineAnchor =
+    deadlineLabel ?? dateLabel ?? contextualLabel ?? null;
+
   const surfaceProps = onClick
     ? {
         type: 'button' as const,
@@ -134,9 +137,9 @@ export function ActivityCard({
       data-activity-id={id}
       data-presentation-type={presentationType}
     >
-      {isTimeline && (
+      {isTimeline && timelineAnchor && (
         <div className="activity-card__timeline-rail" aria-hidden>
-          <span className="activity-card__timeline-dot" />
+          <span className="activity-card__timeline-anchor">{timelineAnchor}</span>
           <span className="activity-card__timeline-line" />
         </div>
       )}
