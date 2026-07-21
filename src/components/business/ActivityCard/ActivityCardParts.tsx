@@ -86,10 +86,12 @@ export function ContextHeader({
   const Icon = icon ?? contextIcon(tone);
 
   return (
-    <p className={cn('activity-card__context', `activity-card__context--${tone}`)}>
-      <MetaIconGlyph icon={Icon} size={13} className="activity-card__context-icon" />
-      <span>{children}</span>
-    </p>
+    <div className={cn('activity-card__context-wrap', `activity-card__context-wrap--${tone}`)}>
+      <p className={cn('activity-card__context', `activity-card__context--${tone}`)}>
+        <MetaIconGlyph icon={Icon} size={13} className="activity-card__context-icon" />
+        <span>{children}</span>
+      </p>
+    </div>
   );
 }
 
@@ -450,6 +452,56 @@ export function NextActionLine({ children }: { children: string }) {
   return <NextActionSection>{children}</NextActionSection>;
 }
 
+/** Operational tail — financial → next action → progress (configurable) */
+export function OperationalFooter({
+  financial,
+  nextAction,
+  progress,
+  progressFirst = false,
+}: {
+  financial: ReactNode;
+  nextAction?: ReactNode;
+  progress?: ReactNode;
+  progressFirst?: boolean;
+}) {
+  if (!financial && !nextAction && !progress) return null;
+
+  return (
+    <CardSection zone="operational">
+      {progressFirst && progress}
+      {financial}
+      {nextAction}
+      {!progressFirst && progress}
+    </CardSection>
+  );
+}
+
+export function buildFinancialRow(ctx: {
+  presentationType?: ActivityPresentationType;
+  amount?: number | string | null;
+  currency?: string;
+  status?: ActivityStatus | null;
+  paymentStatus?: ActivityPaymentStatus | null;
+  statusLabel?: string;
+  paymentStatusLabel?: string;
+  stage?: string | null;
+  invertPills?: boolean;
+}) {
+  return (
+    <FinancialStatusRow
+      amount={ctx.amount}
+      currency={ctx.currency ?? '₪'}
+      status={ctx.status}
+      paymentStatus={ctx.paymentStatus}
+      statusLabel={ctx.statusLabel}
+      paymentStatusLabel={ctx.paymentStatusLabel}
+      stage={ctx.stage}
+      presentationType={ctx.presentationType}
+      invertPills={ctx.invertPills}
+    />
+  );
+}
+
 /** Optional tags — max enforced by parent */
 export function TagRow({ tags }: { tags: string[] }) {
   if (!tags.length) return null;
@@ -461,6 +513,21 @@ export function TagRow({ tags }: { tags: string[] }) {
           {tag}
         </span>
       ))}
+    </div>
+  );
+}
+
+/** Visual section — whitespace blocks, not borders */
+export function CardSection({
+  children,
+  zone,
+}: {
+  children: ReactNode;
+  zone: 'context' | 'identity' | 'schedule' | 'operational';
+}) {
+  return (
+    <div className={cn('activity-card__section', `activity-card__section--${zone}`)}>
+      {children}
     </div>
   );
 }

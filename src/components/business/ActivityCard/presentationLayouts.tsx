@@ -1,13 +1,15 @@
 import type { ReactNode } from 'react';
 import {
   AppointmentCompactBody,
+  buildFinancialRow,
   CardBody,
+  CardSection,
   ClientLine,
   ContextHeader,
-  FinancialStatusRow,
   LocationMeta,
   MetaLine,
   NextActionSection,
+  OperationalFooter,
   ProgressSection,
   ScheduleMeta,
   TagRow,
@@ -32,17 +34,16 @@ function buildProgressDetail(
   return fallback ?? null;
 }
 
-function FinancialFooter({
-  ctx,
-  progressDetail,
-  showBar = true,
-  progressTone = 'default' as const,
-}: {
-  ctx: ActivityCardLayoutContext;
-  progressDetail?: string | null;
-  showBar?: boolean;
-  progressTone?: 'default' | 'journey' | 'usage' | 'project' | 'event';
-}) {
+function operationalTail(
+  ctx: ActivityCardLayoutContext,
+  opts: {
+    progressDetail?: string | null;
+    showBar?: boolean;
+    progressTone?: 'default' | 'journey' | 'usage' | 'project' | 'event';
+    progressFirst?: boolean;
+    invertPills?: boolean;
+  } = {},
+) {
   const {
     presentationType,
     amount,
@@ -57,31 +58,47 @@ function FinancialFooter({
     showProgress,
   } = ctx;
 
+  const {
+    progressDetail,
+    showBar = true,
+    progressTone = 'default',
+    progressFirst = false,
+    invertPills,
+  } = opts;
+
   const hasProgressContent =
     showProgress && (progressDetail != null || progressPercent != null);
 
   return (
-    <>
-      <FinancialStatusRow
-        amount={amount}
-        currency={currency}
-        status={status}
-        paymentStatus={paymentStatus}
-        statusLabel={statusLabel}
-        paymentStatusLabel={paymentStatusLabel}
-        stage={stage}
-        presentationType={presentationType}
-      />
-      {nextActionLabel && <NextActionSection>{nextActionLabel}</NextActionSection>}
-      {hasProgressContent && (
-        <ProgressSection
-          detail={progressDetail}
-          percent={progressPercent}
-          tone={progressTone}
-          showBar={showBar && progressPercent != null}
-        />
-      )}
-    </>
+    <OperationalFooter
+      progressFirst={progressFirst}
+      financial={buildFinancialRow({
+        presentationType,
+        amount,
+        currency,
+        status,
+        paymentStatus,
+        statusLabel,
+        paymentStatusLabel,
+        stage,
+        invertPills,
+      })}
+      nextAction={
+        nextActionLabel ? (
+          <NextActionSection>{nextActionLabel}</NextActionSection>
+        ) : undefined
+      }
+      progress={
+        hasProgressContent ? (
+          <ProgressSection
+            detail={progressDetail}
+            percent={progressPercent}
+            tone={progressTone}
+            showBar={showBar && progressPercent != null}
+          />
+        ) : undefined
+      }
+    />
   );
 }
 
@@ -93,46 +110,33 @@ function renderEvent(ctx: ActivityCardLayoutContext): ReactNode {
   } = ctx;
 
   const progressDetail = buildProgressDetail(ctx);
+  const hasSchedule =
+    dateLabel || timeLabel || (!isCompact && showLocation && locationLabel);
 
   return (
     <CardBody>
       {contextualLabel && (
-        <ContextHeader tone="default" icon={MetaIcons.context}>
-          {contextualLabel}
-        </ContextHeader>
+        <CardSection zone="context">
+          <ContextHeader tone="urgent" icon={MetaIcons.context}>
+            {contextualLabel}
+          </ContextHeader>
+        </CardSection>
       )}
-      <TitleRow id={id} title={title} TypeIcon={TypeIcon} isHero={isHero} isCompact={isCompact} />
-      {clientName && <ClientLine>{clientName}</ClientLine>}
-      <EmphasizedScheduleBlock
-        dateLabel={dateLabel}
-        timeLabel={timeLabel}
-        locationLabel={locationLabel}
-        showLocation={!isCompact && showLocation}
-      />
-      <FinancialFooter ctx={ctx} progressDetail={progressDetail} progressTone="event" />
+      <CardSection zone="identity">
+        <TitleRow id={id} title={title} TypeIcon={TypeIcon} isHero={isHero} isCompact={isCompact} />
+        {clientName && <ClientLine>{clientName}</ClientLine>}
+      </CardSection>
+      {hasSchedule && (
+        <CardSection zone="schedule">
+          <ScheduleMeta dateLabel={dateLabel} timeLabel={timeLabel} emphasis />
+          {!isCompact && showLocation && locationLabel && (
+            <LocationMeta>{locationLabel}</LocationMeta>
+          )}
+        </CardSection>
+      )}
+      {operationalTail(ctx, { progressDetail, progressTone: 'event' })}
       {showTags && tags && <TagRow tags={tags} />}
     </CardBody>
-  );
-}
-
-function EmphasizedScheduleBlock({
-  dateLabel,
-  timeLabel,
-  locationLabel,
-  showLocation,
-}: {
-  dateLabel?: string | null;
-  timeLabel?: string | null;
-  locationLabel?: string | null;
-  showLocation: boolean;
-}) {
-  if (!dateLabel && !timeLabel && !(showLocation && locationLabel)) return null;
-
-  return (
-    <>
-      <ScheduleMeta dateLabel={dateLabel} timeLabel={timeLabel} emphasis />
-      {showLocation && locationLabel && <LocationMeta>{locationLabel}</LocationMeta>}
-    </>
   );
 }
 
@@ -147,25 +151,37 @@ function renderAppointment(ctx: ActivityCardLayoutContext): ReactNode {
 
     return (
       <CardBody>
-        <AppointmentCompactBody
-          id={id}
-          title={title}
-          timeLabel={timeLabel}
-          clientName={clientLine || clientName}
-          TypeIcon={TypeIcon}
-        />
-        <FinancialFooter ctx={ctx} />
+        <CardSection zone="identity">
+          <AppointmentCompactBody
+            id={id}
+            title={title}
+            timeLabel={timeLabel}
+            clientName={clientLine || clientName}
+            TypeIcon={TypeIcon}
+          />
+        </CardSection>
+        {operationalTail(ctx)}
       </CardBody>
     );
   }
 
   return (
     <CardBody>
-      {timeLabel && <TimeAnchor>{timeLabel}</TimeAnchor>}
-      <TitleRow id={id} title={title} TypeIcon={TypeIcon} isHero={isHero} />
-      {clientName && <ClientLine>{clientName}</ClientLine>}
-      {locationLabel && <LocationMeta>{locationLabel}</LocationMeta>}
-      <FinancialFooter ctx={ctx} />
+      {timeLabel && (
+        <CardSection zone="context">
+          <TimeAnchor>{timeLabel}</TimeAnchor>
+        </CardSection>
+      )}
+      <CardSection zone="identity">
+        <TitleRow id={id} title={title} TypeIcon={TypeIcon} isHero={isHero} />
+        {clientName && <ClientLine>{clientName}</ClientLine>}
+      </CardSection>
+      {locationLabel && (
+        <CardSection zone="schedule">
+          <LocationMeta>{locationLabel}</LocationMeta>
+        </CardSection>
+      )}
+      {operationalTail(ctx)}
     </CardBody>
   );
 }
@@ -182,19 +198,21 @@ function renderJourney(ctx: ActivityCardLayoutContext): ReactNode {
 
   return (
     <CardBody>
-      {context && (
+      <CardSection zone="context">
         <ContextHeader tone="accent" icon={MetaIcons.progress}>
           {context}
         </ContextHeader>
-      )}
-      <TitleRow id={id} title={title} TypeIcon={TypeIcon} isHero={isHero} />
-      {clientName && <ClientLine>{clientName}</ClientLine>}
-      <FinancialFooter
-        ctx={ctx}
-        progressDetail={showProgress ? detail : null}
-        progressTone="journey"
-        showBar={showBar}
-      />
+      </CardSection>
+      <CardSection zone="identity">
+        <TitleRow id={id} title={title} TypeIcon={TypeIcon} isHero={isHero} />
+        {clientName && <ClientLine>{clientName}</ClientLine>}
+      </CardSection>
+      {operationalTail(ctx, {
+        progressDetail: showProgress ? detail : null,
+        progressTone: 'journey',
+        showBar,
+        progressFirst: true,
+      })}
     </CardBody>
   );
 }
@@ -206,33 +224,40 @@ function renderPackage(ctx: ActivityCardLayoutContext): ReactNode {
   } = ctx;
 
   const contextHeader = progressLabel ?? undefined;
+  const hasSchedule = usageLabel || dateLabel;
 
   return (
     <CardBody>
       {contextHeader && (
-        <ContextHeader tone="urgent" icon={MetaIcons.usage}>
-          {contextHeader}
-        </ContextHeader>
+        <CardSection zone="context">
+          <ContextHeader tone="urgent" icon={MetaIcons.usage}>
+            {contextHeader}
+          </ContextHeader>
+        </CardSection>
       )}
-      <TitleRow id={id} title={title} TypeIcon={TypeIcon} isHero={isHero} />
-      {clientName && <ClientLine>{clientName}</ClientLine>}
-      {usageLabel && (
-        <MetaLine icon={MetaIcons.usage} emphasis>
-          {usageLabel}
-        </MetaLine>
+      <CardSection zone="identity">
+        <TitleRow id={id} title={title} TypeIcon={TypeIcon} isHero={isHero} />
+        {clientName && <ClientLine>{clientName}</ClientLine>}
+      </CardSection>
+      {hasSchedule && (
+        <CardSection zone="schedule">
+          {usageLabel && (
+            <MetaLine icon={MetaIcons.usage} emphasis>
+              {usageLabel}
+            </MetaLine>
+          )}
+          {dateLabel && (
+            <MetaLine icon={MetaIcons.expiration} muted>
+              {dateLabel}
+            </MetaLine>
+          )}
+        </CardSection>
       )}
-      {dateLabel && (
-        <MetaLine icon={MetaIcons.expiration} muted>
-          {dateLabel}
-        </MetaLine>
-      )}
-      <FinancialFooter
-        ctx={ctx}
-        progressDetail={
-          showProgress && progressPercent != null && !usageLabel ? progressLabel : null
-        }
-        progressTone="usage"
-      />
+      {operationalTail(ctx, {
+        progressDetail:
+          showProgress && progressPercent != null && !usageLabel ? progressLabel : null,
+        progressTone: 'usage',
+      })}
     </CardBody>
   );
 }
@@ -248,23 +273,26 @@ function renderProject(ctx: ActivityCardLayoutContext): ReactNode {
   return (
     <CardBody>
       {context && (
-        <ContextHeader tone="urgent" icon={MetaIcons.deadline}>
-          {context}
-        </ContextHeader>
+        <CardSection zone="context">
+          <ContextHeader tone="urgent" icon={MetaIcons.deadline}>
+            {context}
+          </ContextHeader>
+        </CardSection>
       )}
-      <TitleRow id={id} title={title} TypeIcon={TypeIcon} isHero={isHero} isCompact={isTimeline} />
-      {clientName && <ClientLine>{clientName}</ClientLine>}
-      {stage && (
-        <MetaLine icon={MetaIcons.stage} emphasis>
-          {stage}
-        </MetaLine>
-      )}
-      <FinancialFooter
-        ctx={ctx}
-        progressDetail={showProgress ? progressDetail : null}
-        progressTone="project"
-        showBar={false}
-      />
+      <CardSection zone="identity">
+        <TitleRow id={id} title={title} TypeIcon={TypeIcon} isHero={isHero} isCompact={isTimeline} />
+        {clientName && <ClientLine>{clientName}</ClientLine>}
+        {stage && (
+          <MetaLine icon={MetaIcons.stage} emphasis>
+            {stage}
+          </MetaLine>
+        )}
+      </CardSection>
+      {operationalTail(ctx, {
+        progressDetail: showProgress ? progressDetail : null,
+        progressTone: 'project',
+        showBar: false,
+      })}
     </CardBody>
   );
 }
@@ -273,41 +301,57 @@ function renderRecurring(ctx: ActivityCardLayoutContext): ReactNode {
   const {
     id, title, TypeIcon, isHero,
     recurrenceLabel, nextOccurrenceLabel, clientName, usageLabel,
-    paymentStatus, paymentStatusLabel, status, statusLabel, nextActionLabel,
-    presentationType,
+    nextActionLabel, presentationType,
+    paymentStatus, paymentStatusLabel, status, statusLabel,
   } = ctx;
+
+  const hasSchedule = nextOccurrenceLabel || clientName || usageLabel;
 
   return (
     <CardBody>
       {recurrenceLabel && (
-        <ContextHeader tone="accent" icon={MetaIcons.recurrence}>
-          {recurrenceLabel}
-        </ContextHeader>
+        <CardSection zone="context">
+          <ContextHeader tone="accent" icon={MetaIcons.recurrence}>
+            {recurrenceLabel}
+          </ContextHeader>
+        </CardSection>
       )}
-      <TitleRow id={id} title={title} TypeIcon={TypeIcon} isHero={isHero} />
-      {clientName && (
-        <MetaLine icon={MetaIcons.participants}>{clientName}</MetaLine>
+      <CardSection zone="identity">
+        <TitleRow id={id} title={title} TypeIcon={TypeIcon} isHero={isHero} />
+      </CardSection>
+      {hasSchedule && (
+        <CardSection zone="schedule">
+          {nextOccurrenceLabel && (
+            <MetaLine icon={MetaIcons.nextOccurrence} emphasis>
+              המפגש הבא: <span dir="ltr">{nextOccurrenceLabel}</span>
+            </MetaLine>
+          )}
+          {clientName && (
+            <MetaLine icon={MetaIcons.participants}>{clientName}</MetaLine>
+          )}
+          {usageLabel && (
+            <MetaLine icon={MetaIcons.participants} muted>
+              {usageLabel}
+            </MetaLine>
+          )}
+        </CardSection>
       )}
-      {nextOccurrenceLabel && (
-        <MetaLine icon={MetaIcons.nextOccurrence}>
-          המפגש הבא: <span dir="ltr">{nextOccurrenceLabel}</span>
-        </MetaLine>
-      )}
-      {usageLabel && (
-        <MetaLine icon={MetaIcons.participants} muted>
-          {usageLabel}
-        </MetaLine>
-      )}
-      <FinancialStatusRow
-        paymentStatus={paymentStatus}
-        paymentStatusLabel={paymentStatusLabel}
-        status={status}
-        statusLabel={statusLabel}
-        currency="₪"
-        invertPills
-        presentationType={presentationType}
+      <OperationalFooter
+        financial={buildFinancialRow({
+          presentationType,
+          paymentStatus,
+          paymentStatusLabel,
+          status,
+          statusLabel,
+          currency: '₪',
+          invertPills: true,
+        })}
+        nextAction={
+          nextActionLabel ? (
+            <NextActionSection>{nextActionLabel}</NextActionSection>
+          ) : undefined
+        }
       />
-      {nextActionLabel && <NextActionSection>{nextActionLabel}</NextActionSection>}
     </CardBody>
   );
 }
@@ -319,13 +363,22 @@ function renderGeneric(ctx: ActivityCardLayoutContext): ReactNode {
     progressLabel, showTags, tags,
   } = ctx;
 
+  const hasSchedule =
+    dateLabel || timeLabel || (showLocation && locationLabel);
+
   return (
     <CardBody>
-      <TitleRow id={id} title={title} TypeIcon={TypeIcon} isHero={isHero} isCompact={isCompact} />
-      {clientName && <ClientLine>{clientName}</ClientLine>}
-      <ScheduleMeta dateLabel={dateLabel} timeLabel={timeLabel} />
-      {showLocation && locationLabel && <LocationMeta>{locationLabel}</LocationMeta>}
-      <FinancialFooter ctx={ctx} progressDetail={progressLabel} />
+      <CardSection zone="identity">
+        <TitleRow id={id} title={title} TypeIcon={TypeIcon} isHero={isHero} isCompact={isCompact} />
+        {clientName && <ClientLine>{clientName}</ClientLine>}
+      </CardSection>
+      {hasSchedule && (
+        <CardSection zone="schedule">
+          <ScheduleMeta dateLabel={dateLabel} timeLabel={timeLabel} />
+          {showLocation && locationLabel && <LocationMeta>{locationLabel}</LocationMeta>}
+        </CardSection>
+      )}
+      {operationalTail(ctx, { progressDetail: progressLabel })}
       {showTags && tags && <TagRow tags={tags} />}
     </CardBody>
   );

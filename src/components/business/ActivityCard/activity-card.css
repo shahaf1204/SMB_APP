@@ -1,9 +1,12 @@
 /**
- * ActivityCard v2 — premium operational card language
- * Shared skeleton across all presentation types · see docs/design-system.md §11
+ * ActivityCard v3 — premium operational card language
+ * Shared skeleton · presentation accent · see docs/design-system.md §11
  */
 
 .activity-card {
+  --card-accent: var(--color-primary);
+  --card-accent-soft: var(--color-primary-soft);
+  --card-accent-muted: color-mix(in srgb, var(--color-primary) 12%, transparent);
   position: relative;
   width: 100%;
   max-width: 100%;
@@ -52,29 +55,76 @@
   }
 }
 
+/* Presentation personality — same skeleton, different accent emphasis */
+.activity-card--presentation-event {
+  --card-accent: var(--color-primary);
+  --card-accent-soft: var(--color-primary-soft);
+  --card-accent-muted: color-mix(in srgb, var(--color-primary) 14%, transparent);
+}
+
+.activity-card--presentation-appointment {
+  --card-accent: var(--color-text-secondary);
+  --card-accent-soft: var(--color-surface-muted);
+  --card-accent-muted: color-mix(in srgb, var(--color-text-muted) 12%, transparent);
+}
+
+.activity-card--presentation-journey {
+  --card-accent: color-mix(in srgb, var(--color-primary) 88%, #6366f1);
+  --card-accent-soft: color-mix(in srgb, var(--color-primary-soft) 80%, #eef2ff);
+  --card-accent-muted: color-mix(in srgb, var(--color-primary) 10%, transparent);
+}
+
+.activity-card--presentation-package {
+  --card-accent: var(--color-success);
+  --card-accent-soft: var(--color-success-soft);
+  --card-accent-muted: color-mix(in srgb, var(--color-success) 12%, transparent);
+}
+
+.activity-card--presentation-project {
+  --card-accent: var(--color-accent);
+  --card-accent-soft: var(--color-accent-soft);
+  --card-accent-muted: color-mix(in srgb, var(--color-accent) 12%, transparent);
+}
+
+.activity-card--presentation-recurring {
+  --card-accent: color-mix(in srgb, var(--color-primary) 75%, var(--color-success));
+  --card-accent-soft: color-mix(in srgb, var(--color-primary-soft) 70%, var(--color-success-soft));
+  --card-accent-muted: color-mix(in srgb, var(--color-primary) 9%, transparent);
+}
+
+.activity-card--presentation-generic {
+  --card-accent: var(--color-text-secondary);
+  --card-accent-soft: var(--color-surface-muted);
+  --card-accent-muted: color-mix(in srgb, var(--color-border) 45%, transparent);
+}
+
 /* Semantic accent — narrow logical-side line per presentation */
 .activity-card--presentation-event .activity-card__shell {
-  border-inline-start: 2px solid color-mix(in srgb, var(--color-primary) 42%, transparent);
+  border-inline-start: 2px solid color-mix(in srgb, var(--card-accent) 48%, transparent);
 }
 
 .activity-card--presentation-appointment .activity-card__shell {
-  border-inline-start: 2px solid color-mix(in srgb, var(--color-text-muted) 35%, transparent);
+  border-inline-start: 2px solid color-mix(in srgb, var(--card-accent) 28%, transparent);
 }
 
 .activity-card--presentation-journey .activity-card__shell {
-  border-inline-start: 2px solid color-mix(in srgb, var(--color-primary) 38%, transparent);
+  border-inline-start: 2px solid color-mix(in srgb, var(--card-accent) 42%, transparent);
 }
 
 .activity-card--presentation-package .activity-card__shell {
-  border-inline-start: 2px solid color-mix(in srgb, var(--color-success) 38%, transparent);
+  border-inline-start: 2px solid color-mix(in srgb, var(--card-accent) 44%, transparent);
 }
 
 .activity-card--presentation-project .activity-card__shell {
-  border-inline-start: 2px solid color-mix(in srgb, var(--color-accent) 40%, transparent);
+  border-inline-start: 2px solid color-mix(in srgb, var(--card-accent) 46%, transparent);
 }
 
 .activity-card--presentation-recurring .activity-card__shell {
-  border-inline-start: 2px solid color-mix(in srgb, var(--color-primary) 32%, transparent);
+  border-inline-start: 2px solid color-mix(in srgb, var(--card-accent) 36%, transparent);
+}
+
+.activity-card--presentation-generic .activity-card__shell {
+  border-inline-start: 2px solid color-mix(in srgb, var(--color-border) 70%, transparent);
 }
 
 /* ── Surface ── */
@@ -108,59 +158,105 @@
   }
 }
 
-/* ── Body — shared vertical rhythm ── */
+/* ── Body — section-based rhythm ── */
 .activity-card__body {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 0;
   padding: var(--space-4);
   min-width: 0;
 }
 
 .activity-card--compact .activity-card__body {
   padding: 12px var(--space-4);
-  gap: 6px;
 }
 
 .activity-card--hero .activity-card__body {
   padding: var(--space-5) var(--space-4);
-  gap: 9px;
 }
 
 .activity-card--timeline .activity-card__body {
   padding: 12px var(--space-3);
-  gap: 6px;
 }
 
-/* ── A. Context row ── */
-.activity-card__context {
+/* Visual sections — whitespace blocks */
+.activity-card__section {
   display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.activity-card__section--context {
+  gap: 0;
+  margin-block-end: 10px;
+}
+
+.activity-card__section--identity {
+  gap: 5px;
+  margin-block-end: 10px;
+}
+
+.activity-card__section--schedule {
+  gap: 4px;
+  margin-block-end: 12px;
+}
+
+.activity-card__section--operational {
+  gap: 10px;
+  margin-block-start: 2px;
+  padding-block-start: 12px;
+}
+
+.activity-card--compact .activity-card__section--operational {
+  padding-block-start: 10px;
+  gap: 8px;
+}
+
+/* ── A. Context row — compact, meaningful pill ── */
+.activity-card__context-wrap {
+  display: flex;
+}
+
+.activity-card__context-wrap--urgent .activity-card__context {
+  color: color-mix(in srgb, var(--card-accent) 82%, var(--color-text-primary));
+}
+
+.activity-card__context-wrap--accent .activity-card__context {
+  color: color-mix(in srgb, var(--card-accent) 75%, var(--color-text-secondary));
+}
+
+.activity-card__context {
+  display: inline-flex;
   align-items: center;
   gap: 5px;
   margin: 0;
+  padding: 0.28rem 0.6rem;
+  border-radius: var(--radius-pill);
   font-size: 0.75rem;
   font-weight: 600;
   line-height: 1.35;
   letter-spacing: 0.01em;
-  color: color-mix(in srgb, var(--color-primary) 72%, var(--color-text-secondary));
+  color: color-mix(in srgb, var(--card-accent) 78%, var(--color-text-secondary));
+  background: var(--card-accent-muted);
 }
 
 .activity-card__context-icon {
   flex-shrink: 0;
-  opacity: 0.88;
+  color: color-mix(in srgb, var(--card-accent) 70%, var(--color-text-muted));
 }
 
 .activity-card__context--urgent {
-  color: color-mix(in srgb, var(--color-accent) 78%, var(--color-text-secondary));
+  background: color-mix(in srgb, var(--card-accent-soft) 55%, var(--color-surface));
 }
 
 .activity-card__context--muted {
   color: var(--color-text-muted);
   font-weight: 500;
+  background: color-mix(in srgb, var(--color-surface-muted) 60%, transparent);
 }
 
 .activity-card__context--accent {
-  color: color-mix(in srgb, var(--color-text-secondary) 88%, var(--color-primary));
+  background: color-mix(in srgb, var(--card-accent-soft) 48%, var(--color-surface));
 }
 
 /* ── B. Title row ── */
@@ -181,36 +277,19 @@
   height: 26px;
   margin-block-start: 1px;
   border-radius: 8px;
-  background: color-mix(in srgb, var(--color-surface-muted) 70%, var(--color-primary-soft));
-  color: color-mix(in srgb, var(--color-primary) 70%, var(--color-text-secondary));
+  background: color-mix(in srgb, var(--card-accent-soft) 55%, var(--color-surface-muted));
+  color: color-mix(in srgb, var(--card-accent) 72%, var(--color-text-secondary));
 }
 
-.activity-card--presentation-event .activity-card__icon {
-  background: color-mix(in srgb, var(--color-primary-soft) 48%, var(--color-surface-muted));
-  color: color-mix(in srgb, var(--color-primary) 68%, var(--color-text-secondary));
-}
-
-.activity-card--presentation-appointment .activity-card__icon {
-  background: color-mix(in srgb, var(--color-surface-muted) 85%, transparent);
-  color: var(--color-text-secondary);
-}
-
-.activity-card--presentation-journey .activity-card__icon {
-  background: color-mix(in srgb, var(--color-primary-soft) 42%, var(--color-surface-muted));
-}
-
-.activity-card--presentation-package .activity-card__icon {
-  background: color-mix(in srgb, var(--color-success-soft) 40%, var(--color-surface-muted));
-  color: color-mix(in srgb, var(--color-success) 62%, var(--color-text-secondary));
-}
-
-.activity-card--presentation-project .activity-card__icon {
-  background: color-mix(in srgb, var(--color-accent-soft) 38%, var(--color-surface-muted));
-  color: color-mix(in srgb, var(--color-accent) 58%, var(--color-text-secondary));
-}
-
-.activity-card--presentation-recurring .activity-card__icon {
-  background: color-mix(in srgb, var(--color-primary-soft) 40%, var(--color-surface-muted));
+.activity-card--presentation-event .activity-card__icon,
+.activity-card--presentation-journey .activity-card__icon,
+.activity-card--presentation-recurring .activity-card__icon,
+.activity-card--presentation-package .activity-card__icon,
+.activity-card--presentation-project .activity-card__icon,
+.activity-card--presentation-appointment .activity-card__icon,
+.activity-card--presentation-generic .activity-card__icon {
+  background: color-mix(in srgb, var(--card-accent-soft) 50%, var(--color-surface-muted));
+  color: color-mix(in srgb, var(--card-accent) 68%, var(--color-text-secondary));
 }
 
 .activity-card__title {
@@ -267,7 +346,7 @@
 }
 
 .activity-card__meta-item--emphasis .activity-card__meta-icon {
-  color: color-mix(in srgb, var(--color-text-secondary) 75%, var(--color-primary));
+  color: color-mix(in srgb, var(--card-accent) 58%, var(--color-text-secondary));
 }
 
 .activity-card__meta-item--muted .activity-card__meta-item-text,
@@ -304,36 +383,42 @@
   gap: 3px;
 }
 
-/* ── Appointment time anchor ── */
+/* ── Appointment time anchor — immediate, scannable ── */
 .activity-card__time-anchor-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  padding: 0.32rem 0.65rem;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--card-accent-muted) 90%, var(--color-surface));
+  width: fit-content;
 }
 
 .activity-card__time-anchor-row--compact {
-  align-items: flex-start;
+  padding: 0.22rem 0.5rem;
+  align-items: center;
 }
 
 .activity-card__time-anchor-icon {
   flex-shrink: 0;
-  color: color-mix(in srgb, var(--color-text-secondary) 80%, var(--color-primary));
-  margin-block-start: 2px;
+  color: color-mix(in srgb, var(--card-accent) 65%, var(--color-text-secondary));
+  margin-block-start: 0;
 }
 
 .activity-card__time-anchor {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.0625rem;
   font-weight: 700;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.022em;
   font-variant-numeric: tabular-nums;
   color: var(--color-text-primary);
-  line-height: 1.1;
+  line-height: 1.2;
 }
 
 .activity-card__time-anchor--compact {
-  font-size: 1.125rem;
-  min-width: 3rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  min-width: 0;
   flex-shrink: 0;
 }
 
@@ -351,16 +436,11 @@
   gap: 4px;
 }
 
-/* ── E. Financial + status ── */
+/* ── E. Financial + status — primary business signal ── */
 .activity-card__financial-block {
-  margin-block-start: 4px;
-  padding-block-start: 6px;
-  border-block-start: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent);
-}
-
-.activity-card--compact .activity-card__financial-block {
-  margin-block-start: 2px;
-  padding-block-start: 5px;
+  margin: 0;
+  padding: 0;
+  border: none;
 }
 
 .activity-card__financial-row {
@@ -374,7 +454,7 @@
 .activity-card__amount-stack {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   min-width: 0;
 }
 
@@ -386,7 +466,7 @@
 
 .activity-card__amount-icon {
   color: var(--color-text-muted);
-  opacity: 0.85;
+  opacity: 0.8;
 }
 
 .activity-card__amount-label {
@@ -398,23 +478,23 @@
 }
 
 .activity-card__amount {
-  font-size: 1.0625rem;
+  font-size: 1.1875rem;
   font-weight: 700;
-  letter-spacing: -0.022em;
+  letter-spacing: -0.024em;
   font-variant-numeric: tabular-nums;
   color: var(--color-text-primary);
   direction: ltr;
   unicode-bidi: isolate;
-  line-height: 1.2;
+  line-height: 1.15;
 }
 
 .activity-card--hero .activity-card__amount {
-  font-size: 1.125rem;
-  letter-spacing: -0.024em;
+  font-size: 1.25rem;
+  letter-spacing: -0.026em;
 }
 
 .activity-card--compact .activity-card__amount {
-  font-size: 1rem;
+  font-size: 1.0625rem;
 }
 
 .activity-card__pill-group {
@@ -510,9 +590,9 @@
 .activity-card__progress {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-block-start: 2px;
-  padding-block-start: 4px;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
 }
 
 .activity-card__progress-header {
@@ -523,13 +603,13 @@
 
 .activity-card__progress-icon {
   flex-shrink: 0;
-  color: var(--color-text-muted);
+  color: color-mix(in srgb, var(--card-accent) 55%, var(--color-text-muted));
 }
 
 .activity-card__progress-detail {
   font-size: 0.75rem;
   font-weight: 500;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   line-height: 1.35;
 }
 
@@ -543,7 +623,7 @@
 .activity-card__progress-fill {
   height: 100%;
   border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--color-primary) 48%, var(--color-border-strong));
+  background: color-mix(in srgb, var(--card-accent) 52%, var(--color-border-strong));
   transition: width var(--motion-standard, 200ms) var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
 }
 
@@ -558,49 +638,52 @@
   color: var(--color-text-secondary);
 }
 
-.activity-card__progress--journey .activity-card__progress-fill {
-  background: color-mix(in srgb, var(--color-primary) 55%, var(--color-border-strong));
+.activity-card__progress--journey .activity-card__progress-fill,
+.activity-card__progress--event .activity-card__progress-fill {
+  background: color-mix(in srgb, var(--card-accent) 55%, var(--color-border-strong));
 }
 
 .activity-card__progress--usage .activity-card__progress-fill {
-  background: color-mix(in srgb, var(--color-success) 45%, var(--color-border-strong));
+  background: color-mix(in srgb, var(--card-accent) 50%, var(--color-border-strong));
 }
 
-.activity-card__progress--project .activity-card__progress-fill,
-.activity-card__progress--event .activity-card__progress-fill {
-  background: color-mix(in srgb, var(--color-accent) 42%, var(--color-border-strong));
+.activity-card__progress--project .activity-card__progress-fill {
+  background: color-mix(in srgb, var(--card-accent) 48%, var(--color-border-strong));
 }
 
-/* ── Next action ── */
+/* ── Next action — actionable task, not metadata ── */
 .activity-card__next-action {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  margin-block-start: 2px;
-  padding-block-start: 6px;
+  gap: 4px;
+  margin: 0;
+  padding: 0.55rem 0.65rem;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--card-accent-muted) 85%, var(--color-surface));
 }
 
 .activity-card__next-action-label {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.02em;
-  color: color-mix(in srgb, var(--color-primary) 70%, var(--color-text-secondary));
+  color: color-mix(in srgb, var(--card-accent) 72%, var(--color-text-secondary));
   line-height: 1.25;
 }
 
 .activity-card__next-action-icon {
   flex-shrink: 0;
-  opacity: 0.9;
+  color: color-mix(in srgb, var(--card-accent) 68%, var(--color-text-muted));
 }
 
 .activity-card__next-action-text {
   margin: 0;
+  padding-inline-start: 1.35rem;
   font-size: 0.8125rem;
-  font-weight: 500;
-  color: color-mix(in srgb, var(--color-text-primary) 78%, var(--color-text-secondary));
+  font-weight: 600;
+  color: color-mix(in srgb, var(--color-text-primary) 88%, var(--color-text-secondary));
   line-height: 1.4;
 }
 
@@ -701,7 +784,7 @@
 
 .activity-card__timeline-icon {
   flex-shrink: 0;
-  color: color-mix(in srgb, var(--color-accent) 70%, var(--color-text-muted));
+  color: color-mix(in srgb, var(--card-accent) 68%, var(--color-text-muted));
 }
 
 .activity-card__timeline-anchor {
@@ -709,13 +792,9 @@
   font-weight: 600;
   line-height: 1.3;
   text-align: center;
-  color: color-mix(in srgb, var(--color-accent) 75%, var(--color-text-secondary));
+  color: color-mix(in srgb, var(--card-accent) 78%, var(--color-text-secondary));
   overflow-wrap: anywhere;
   max-width: 100%;
-}
-
-.activity-card--presentation-project.activity-card--timeline .activity-card__timeline-anchor {
-  color: color-mix(in srgb, var(--color-accent) 82%, var(--color-text-primary));
 }
 
 .activity-card__timeline-line {
@@ -723,5 +802,5 @@
   width: 2px;
   min-height: var(--space-3);
   border-radius: 1px;
-  background: color-mix(in srgb, var(--color-border) 85%, var(--color-accent) 15%);
+  background: color-mix(in srgb, var(--card-accent-muted) 90%, var(--color-border));
 }

@@ -578,37 +578,87 @@ Must work for: event prep, coaching milestones, editing pipeline, package sessio
 
 ---
 
-### ActivityCard v2
+### ActivityCard v3
 
-**Purpose:** The reference operational card for the entire product — generic list/detail preview for any Activity type.
+**Purpose:** The reference operational card for the entire product — generic list/detail preview for any Activity type. v3 is a **premium visual polish pass**: same skeleton and API as v2, refined typography, spacing, semantic accents, and presentation personalities.
 
-**Mandatory principle:** ActivityCard must communicate **operational state before** displaying secondary metadata.
+**Mandatory principle:** A business owner should understand the entire card in **under one second**.
 
 #### Shared visual anatomy
 
-All presentation types share one skeleton:
+All presentation types share one skeleton, composed as **visual sections** (whitespace blocks — no extra borders):
 
-| Section | Role |
-|---------|------|
-| **A. Context row** | Lightweight semantic label — urgency, recurrence, remaining sessions, deadline |
-| **B. Title row** | Small Lucide icon + strongest text element (activity title) |
-| **C. Client** | Relationship line — plain typography, no chip |
-| **D. Primary metadata** | Date/time, location, stage — whitespace + type, not boxes |
-| **E. Financial + status row** | Amount (tabular nums) + operational pill + payment pill |
-| **F. Progress / next action** | Meaningful label; thin bar only when useful |
-| **G. Quick actions** | Optional footer — max 3, 44px touch targets |
+| Zone | Section | Role |
+|------|---------|------|
+| **Context** | A | Compact pill — urgency, recurrence, remaining sessions, deadline |
+| **Identity** | B + C | Title row (strongest) + client line |
+| **Schedule** | D | Date/time, location, next occurrence, usage |
+| **Operational** | E + F + G | Financial → next action → progress (order configurable) |
+| **Footer** | H | Optional quick actions — max 3 |
 
-#### Visual scan order
+Implementation: `CardSection` zones (`context` · `identity` · `schedule` · `operational`).
 
-1. Contextual state  
+#### Visual scan order (default)
+
+1. Context  
 2. Activity title  
 3. Client or relationship  
 4. Date / time / deadline / next occurrence  
 5. Financial value  
-6. Operational status (+ payment when relevant)  
-7. Progress or next action  
+6. Next action  
+7. Progress (+ operational / payment pills with financial block)  
 
-Title is always the strongest text. Amount is second-strongest when present — never larger than title.
+**Title** is always the strongest text. **Amount** is second-strongest when present — never larger than title.
+
+#### Presentation personalities
+
+Same skeleton; accent emphasis differs via CSS `--card-accent` per presentation:
+
+| Type | Personality | Accent use |
+|------|-------------|------------|
+| `event` | Urgency | Primary accent · context pill · progress |
+| `appointment` | Immediate | Time anchor pill · schedule before client in compact |
+| `journey` | Long-term | Soft indigo accent · progress **before** financial |
+| `package` | Prepaid | Success accent · remaining sessions in context |
+| `project` | Deadline | Accent color · deadline context |
+| `recurring` | Repeating | Blended primary/success · next occurrence first |
+| `generic` | Neutral | Muted border · balanced fallback |
+
+Semantic color applies to: context pill, type icon container, progress fill, timeline rail, metadata icon highlights — **never** large text blocks.
+
+#### Presentation-specific scan priorities
+
+| Presentation | Priority adjustment |
+|--------------|---------------------|
+| `event` | Client before schedule |
+| `appointment` | Time before client (context zone) |
+| `journey` | Progress before financial value |
+| `package` | Remaining sessions before amount |
+| `project` | Deadline before amount; stage in identity |
+| `recurring` | Next occurrence before participants |
+| `generic` | Balanced fallback |
+
+#### Context header
+
+Compact pill with semantic icon (`MetaIcons.context`). Examples: "בעוד 5 ימים", "מפגש 3 מתוך 8", "נותרו 3 מפגשים", "פגישה בעוד שעה".
+
+Tones: `default` · `urgent` · `muted` · `accent`.
+
+#### Financial block
+
+Primary business signal — no top border; whitespace separation only.
+
+- Presentation-specific amount labels via `financialContext.ts` (e.g. מחיר הפגישה, הכנסה צפויה, מחיר החבילה)
+- Label secondary (0.6875rem muted); amount prominent (1.1875rem bold tabular)
+- Operational + payment pills aligned end — max one each
+
+#### Next action
+
+Actionable task block — soft tinted container, "השלב הבא" label + `nextActionLabel`. Not metadata.
+
+#### Semantic icons
+
+Every metadata row uses a meaningful Lucide icon via `metaIcons.ts` + `MetaItem`. Icons improve scanability; never decorate.
 
 #### Maximum information density
 
@@ -623,7 +673,7 @@ Title is always the strongest text. Amount is second-strongest when present — 
 
 - Financial typography token + `tabular-nums`  
 - Currency in readable RTL/LTR order (`dir="ltr"` on amount)  
-- Optional context only via adapter copy — not inline with unrelated metadata  
+- Context label from `amountContextLabelFor(presentationType)`  
 
 #### Status separation
 
@@ -645,18 +695,18 @@ Progress must explain **meaning**, not just percentage:
 | Project | שלב 3 מתוך 5 |
 | Event | הכנה • 65% |
 
-One thin bar, soft track, semantic accent. Hide when no useful information. Prefer `progressDetail` over generic `%` when detail exists.
+One thin bar, soft track, `--card-accent` fill. Hide when no useful information.
 
 #### Card shell
 
 - White surface · subtle border · very soft shadow  
-- 16–20px radius · 16px internal padding  
-- Optional narrow semantic accent on logical start (per presentation type)  
+- 16–20px radius · section-based internal padding  
+- Narrow semantic accent on logical start (per presentation)  
 - No gradients · not both heavy border and strong shadow  
 
 #### Icon treatment
 
-Lucide only · smaller container · soft semantic tint · supports recognition, does not dominate.
+Lucide only · smaller container · soft `--card-accent` tint · supports recognition, does not dominate.
 
 Default mapping: `event` CalendarDays · `appointment` CalendarClock · `journey` Route · `package` TicketCheck · `project` FolderKanban · `recurring` Repeat2 · `generic` Activity
 
@@ -700,6 +750,8 @@ Default mapping: `event` CalendarDays · `appointment` CalendarClock · `journey
 | Component | `src/components/business/ActivityCard/ActivityCard.tsx` |
 | Parts | `src/components/business/ActivityCard/ActivityCardParts.tsx` |
 | Layouts | `src/components/business/ActivityCard/presentationLayouts.tsx` |
+| Meta icons | `src/components/business/ActivityCard/metaIcons.ts` |
+| Financial labels | `src/components/business/ActivityCard/financialContext.ts` |
 | Types | `src/components/business/ActivityCard/types.ts` |
 | Styles | `src/components/business/ActivityCard/activity-card.css` |
 | Dev showcase | `/dev/activity-card` |
@@ -718,7 +770,7 @@ import { ActivityCard } from '@/components/business/ActivityCard';
 | `title` | `string` | Activity title (business-specific) |
 | `variant` | `'compact' \| 'standard' \| 'hero' \| 'timeline'` | Layout density |
 | `presentationType` | `'event' \| 'appointment' \| … \| 'generic'` | Visual hierarchy — default `generic` |
-| `activityTypeLabel` | `string?` | Optional — not shown by default in v2 |
+| `activityTypeLabel` | `string?` | Optional — not shown by default |
 | `activityTypeIcon` | `LucideIcon?` | Semantic type icon |
 | `clientName` | `string?` | Client line |
 | `dateLabel` | `string?` | Pre-formatted date |
@@ -771,15 +823,15 @@ The parent screen or adapter **must supply** `presentationType`. ActivityCard do
 
 **Values:** `event` · `appointment` · `journey` · `package` · `project` · `recurring` · `generic` (default)
 
-| Presentation | Visual priority (v2) |
+| Presentation | Visual priority (v3) |
 |--------------|----------------------|
-| `event` | Context → title → client → date/time/location → amount+status → preparation progress |
-| `appointment` | Time anchor → title → client/location → amount+status |
-| `journey` | Process context → title → client → session progress → next meeting → value |
-| `package` | Remaining sessions → title → client → usage+expiry → payment |
-| `project` | Deadline context → title → client → stage → next action → amount |
-| `recurring` | Recurrence → title → group → next occurrence+participants → payment+status |
-| `generic` | Title → client → date/time → amount+status |
+| `event` | Context → title → **client** → date/time/location → amount → next action → preparation |
+| `appointment` | **Time anchor** → title → client → location → amount → next action |
+| `journey` | Process context → title → client → **progress** → amount → next action |
+| `package` | Remaining sessions → title → client → usage/expiry → amount → next action |
+| `project` | Deadline context → title → client → stage → amount → next action |
+| `recurring` | Recurrence → title → **next occurrence** → participants → payment → next action |
+| `generic` | Title → client → date/time → amount → next action |
 
 **Contextual display props** (optional — supplied by adapter):
 
@@ -798,7 +850,7 @@ The parent screen or adapter **must supply** `presentationType`. ActivityCard do
 - Payment status never inferred from operational status
 - Lucide icons only; default icon per presentation if `activityTypeIcon` omitted
 - One component — `src/components/business/ActivityCard/`
-- Dev reference: `/dev/activity-card` (ActivityCard v2 showcase)
+- Dev reference: `/dev/activity-card` (ActivityCard v3 showcase)
 
 ---
 
