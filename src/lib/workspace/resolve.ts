@@ -47,6 +47,7 @@ export function buildWorkspaceConfig(params: {
   enabledOperatingModels: OperatingModel[];
   businessType?: string;
   onboardingCompleted?: boolean;
+  onboardingCompletedAt?: string;
   terminology?: Partial<WorkspaceTerminology>;
 }): BusinessWorkspaceConfig {
   const now = new Date().toISOString();
@@ -60,6 +61,7 @@ export function buildWorkspaceConfig(params: {
     primaryOperatingModel: params.primaryOperatingModel,
     enabledOperatingModels: enabled,
     onboardingCompleted: params.onboardingCompleted ?? true,
+    onboardingCompletedAt: params.onboardingCompletedAt,
     terminology: params.terminology,
     createdAt: now,
     updatedAt: now,

@@ -1,12 +1,12 @@
 import type { LucideIcon } from 'lucide-react';
 import {
+  CalendarClock,
   CalendarDays,
   FolderKanban,
-  Layers,
+  Layers3,
   Repeat2,
   Route,
-  Shapes,
-  Stethoscope,
+  TicketCheck,
 } from 'lucide-react';
 import type {
   ActivityFormFieldId,
@@ -139,7 +139,7 @@ export const OPERATING_MODEL_DEFINITIONS: Record<
   event: def(
     'event',
     'אירועים חד־פעמיים',
-    'הזמנות, הפקות, ימי צילום, סדנאות ואירועים בתאריך מוגדר.',
+    'הזמנות או עבודות שמתקיימות בתאריך מוגדר ועומדות בפני עצמן.',
     CalendarDays,
     'event',
     'date',
@@ -153,8 +153,8 @@ export const OPERATING_MODEL_DEFINITIONS: Record<
   appointment: def(
     'appointment',
     'פגישות וטיפולים',
-    'ייעוץ, טיפול, שיעורים ופגישות אישיות.',
-    Stethoscope,
+    'פגישות אישיות, טיפולים, שיעורים או ייעוץ לפי תאריך ושעה.',
+    CalendarClock,
     'appointment',
     'agenda',
     ['scheduled', 'confirmed', 'completed', 'cancelled'],
@@ -167,7 +167,7 @@ export const OPERATING_MODEL_DEFINITIONS: Record<
   journey: def(
     'journey',
     'ליווי ותהליך מתמשך',
-    'תהליך עם לקוח לאורך מספר מפגשים או שלבים.',
+    'תהליך עם לקוח לאורך מספר מפגשים, שלבים או תקופה.',
     Route,
     'journey',
     'status_and_next_action',
@@ -181,8 +181,8 @@ export const OPERATING_MODEL_DEFINITIONS: Record<
   package: def(
     'package',
     'כרטיסיות וחבילות',
-    'חבילות מפגשים, טיפולים, אימונים או שירותים בתשלום מראש.',
-    Layers,
+    'חבילות שירות או מספר מפגשים שנרכשים מראש.',
+    TicketCheck,
     'package',
     'usage_and_expiration',
     ['purchased', 'active', 'nearly_used', 'expired', 'completed'],
@@ -195,7 +195,7 @@ export const OPERATING_MODEL_DEFINITIONS: Record<
   recurring: def(
     'recurring',
     'חוגים ומפגשים קבועים',
-    'פעילות שבועית, קבוצות, מנויים ומפגשים חוזרים.',
+    'פעילות שחוזרת במחזוריות קבועה עם לקוחות או קבוצות.',
     Repeat2,
     'recurring',
     'recurrence',
@@ -209,7 +209,7 @@ export const OPERATING_MODEL_DEFINITIONS: Record<
   project: def(
     'project',
     'פרויקטים ותוצרים',
-    'עבודה בשלבים עם דדליין, אישור ומסירה.',
+    'עבודה שמורכבת משלבים, משימות, אישורים ודדליין.',
     FolderKanban,
     'project',
     'deadline_and_stage',
@@ -225,8 +225,8 @@ export const OPERATING_MODEL_DEFINITIONS: Record<
 export const HYBRID_OPERATING_MODEL: OperatingModelDefinition = def(
   'hybrid',
   'שילוב של כמה מודלים',
-  'עסק שמשלב כמה צורות עבודה.',
-  Shapes,
+  'העסק שלך עובד בכמה צורות, ואין מודל אחד שמתאר את רוב הפעילות.',
+  Layers3,
   'generic',
   'mixed',
   [],

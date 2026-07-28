@@ -298,6 +298,32 @@ Migration rules:
 
 ---
 
+## Recommended categories per model
+
+Central templates: `src/config/categoryTemplates.ts`  
+Resolver: `resolveRecommendedCategories()` in `src/lib/categories/resolveRecommendedCategories.ts`
+
+Categories merge by semantic `key`. Core fields (revenue, expense, client, customer source) are protected during onboarding.
+
+### Default metric mappings
+
+| Category key | Metric role |
+|--------------|-------------|
+| `total_amount`, `appt_price`, `package_price`, `journey_value`, `project_value`, `recurring_price` | Revenue |
+| `revenue_amount` | Revenue (core) |
+| `expense_amount` | Expense (core) |
+
+### Category priority
+
+1. Core client + model schedule fields  
+2. Business-type-specific fields  
+3. Financial fields  
+4. Notes / status  
+
+Built-in form fields (title, date, location, notes) render before categories in `EventForm`.
+
+---
+
 ## Related files
 
 | File | Role |
@@ -308,3 +334,6 @@ Migration rules:
 | `src/lib/workspace/resolve.ts` | Migration + resolution |
 | `src/hooks/useWorkspaceConfig.ts` | React hook for resolved config |
 | `src/hooks/useActivitiesWorkspace.ts` | Activities page adapter |
+| `src/config/categoryTemplates.ts` | Category recommendation templates |
+| `src/lib/categories/resolveRecommendedCategories.ts` | Category merge resolver |
+| `docs/onboarding-flow.md` | 5-step onboarding reference |

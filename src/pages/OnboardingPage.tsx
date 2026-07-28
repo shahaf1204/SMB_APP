@@ -1,235 +1,338 @@
-import { FormEvent, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { BUSINESS_TYPE_PRESETS } from '../data/businessTypePresets';
-import { OperatingModelCard } from '../components/workspace/OperatingModelCard';
-import { buildWorkspaceFromOnboarding } from '../components/workspace/OperatingModelSettings';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { OnboardingProgress } from '../components/onboarding/OnboardingProgress';
+import { OnboardingStepAdditionalModels } from '../components/onboarding/OnboardingStepAdditionalModels';
+import { OnboardingStepCategories } from '../components/onboarding/OnboardingStepCategories';
+import { OnboardingStepIdentity } from '../components/onboarding/OnboardingStepIdentity';
+import { OnboardingStepPrimaryModel } from '../components/onboarding/OnboardingStepPrimaryModel';
 import {
-  OPERATING_MODEL_ADDITIONAL_OPTIONS,
-  OPERATING_MODEL_ONBOARDING_OPTIONS,
-} from '../config/operatingModelConfig';
-import { syncWorkModelsFromWorkspace } from '../lib/workspace';
+  OnboardingStepReview,
+  resolveBusinessTypeLabel,
+} from '../components/onboarding/OnboardingStepReview';
+import { buildWorkspaceFromOnboarding } from '../components/workspace/OperatingModelSettings';
+import { ONBOARDING_BUSINESS_TYPE_PRESETS } from '../data/businessTypePresets';
+import {
+  mergeDraftWithRecommendations,
+  onboardingDraftsToCategoryDefs,
+  resolveRecommendedCategories,
+  templatesToOnboardingDrafts,
+} from '../lib/categories/resolveRecommendedCategories';
+import {
+  clearOnboardingDraft,
+  createDefaultDraft,
+  loadOnboardingDraft,
+  saveOnboardingDraft,
+} from '../lib/onboarding/draftStorage';
+import { normalizeEnabledModels, syncWorkModelsFromWorkspace } from '../lib/workspace';
 import { useAppStore } from '../store/useAppStore';
+import type { OnboardingCategoryDraft, OnboardingDraft } from '../types/onboarding';
 import type { OperatingModel } from '../types/workspace';
+import '../components/onboarding/onboarding.css';
+
+const STEP_TITLES: Record<OnboardingDraft['step'], { title: string; subtitle: string }> = {
+  1: {
+    title: 'בואו נכיר את העסק שלך',
+    subtitle:
+      'כמה פרטים קצרים יעזרו לנו להתאים את האפליקציה בדיוק לצורת העבודה שלך.',
+  },
+  2: {
+    title: 'איך רוב העבודה בעסק שלך מתנהלת?',
+    subtitle:
+      'הבחירה תתאים את הפעילויות, הדשבורד, הטפסים והמעקב לצורת העבודה שלך. תמיד אפשר לשנות אחר כך.',
+  },
+  3: {
+    title: 'האם יש עוד צורות עבודה בעסק שלך?',
+    subtitle:
+      'אפשר להוסיף מודלים נוספים עכשיו, או לדלג ולשנות זאת בהמשך בהגדרות.',
+  },
+  4: {
+    title: 'התאמנו לך קטגוריות התחלה',
+    subtitle:
+      'אלו השדות שיופיעו בפעילויות שלך. אפשר להסיר, לערוך או להוסיף כל קטגוריה לפי הצרכים של העסק.',
+  },
+  5: {
+    title: 'העסק שלך מוכן',
+    subtitle: 'סיכום קצר לפני הכניסה — תמיד אפשר לערוך בהגדרות.',
+  },
+};
+
+function enabledModels(primary: OperatingModel, additional: OperatingModel[]): OperatingModel[] {
+  return normalizeEnabledModels(primary, additional);
+}
+
+function resolvePresetId(mode: OnboardingDraft['mode'], presetId: string): string | undefined {
+  if (mode === 'custom' || presetId === '__other__') return undefined;
+  return presetId;
+}
 
 export function OnboardingPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editMode = searchParams.get('mode') === 'edit';
+
+  const user = useAppStore((s) => s.user);
   const business = useAppStore((s) => s.business);
   const createBusiness = useAppStore((s) => s.createBusiness);
+  const completeBusinessSetup = useAppStore((s) => s.completeBusinessSetup);
 
   useEffect(() => {
-    if (business?.workspace?.onboardingCompleted) {
+    if (!editMode && business?.workspace?.onboardingCompleted) {
       navigate('/dashboard', { replace: true });
     }
-  }, [business, navigate]);
+  }, [business, editMode, navigate]);
 
-  const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [name, setName] = useState('');
-  const [mode, setMode] = useState<'list' | 'custom'>('list');
-  const [presetId, setPresetId] = useState(BUSINESS_TYPE_PRESETS[0].id);
-  const [customType, setCustomType] = useState('');
-  const [primaryModel, setPrimaryModel] = useState<OperatingModel>('event');
-  const [additionalModels, setAdditionalModels] = useState<OperatingModel[]>([]);
-
-  const handleStep1 = (e: FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) return;
-    if (mode === 'custom' && !customType.trim()) return;
-    setStep(2);
-  };
-
-  const handleStep2 = (e: FormEvent) => {
-    e.preventDefault();
-    if (!primaryModel) return;
-    if (primaryModel !== 'hybrid') {
-      setAdditionalModels((prev) => prev.filter((m) => m !== primaryModel));
-    } else {
-      setAdditionalModels([]);
+  const [draft, setDraft] = useState<OnboardingDraft>(() => {
+    const saved = loadOnboardingDraft(user?.id);
+    if (saved) return saved;
+    const base = createDefaultDraft();
+    if (business && editMode) {
+      const ws = business.workspace;
+      return {
+        ...base,
+        name: business.name,
+        mode: business.isGeneric || !business.presetId ? 'custom' : 'list',
+        presetId: business.presetId ?? 'freelance',
+        customType: business.businessType,
+        primaryModel: ws?.primaryOperatingModel ?? 'event',
+        additionalModels:
+          ws?.enabledOperatingModels.filter((m) => m !== ws.primaryOperatingModel) ?? [],
+        step: 1,
+      };
     }
-    setStep(3);
+    return base;
+  });
+
+  const persist = useCallback(
+    (next: OnboardingDraft) => {
+      setDraft(next);
+      saveOnboardingDraft(next, user?.id);
+    },
+    [user?.id],
+  );
+
+  const recomputeCategories = useCallback(
+    (d: OnboardingDraft): OnboardingCategoryDraft[] => {
+      const presetId = resolvePresetId(d.mode, d.presetId);
+      const enabled = enabledModels(d.primaryModel, d.additionalModels);
+      const templates = resolveRecommendedCategories({
+        presetId,
+        businessType: presetId,
+        primaryOperatingModel: d.primaryModel,
+        enabledOperatingModels: enabled,
+      });
+      const fresh = templatesToOnboardingDrafts(templates);
+      return d.categories.length
+        ? mergeDraftWithRecommendations(d.categories, templates)
+        : fresh;
+    },
+    [],
+  );
+
+  const goStep = (step: OnboardingDraft['step'], patch: Partial<OnboardingDraft> = {}) => {
+    const next = { ...draft, ...patch, step };
+    if (step === 4 && (!next.categories.length || patch.primaryModel || patch.additionalModels || patch.presetId)) {
+      next.categories = recomputeCategories(next);
+    }
+    persist(next);
   };
 
-  const toggleAdditional = (model: OperatingModel) => {
-    if (primaryModel !== 'hybrid' && model === primaryModel) return;
-    setAdditionalModels((prev) =>
-      prev.includes(model) ? prev.filter((m) => m !== model) : [...prev, model],
-    );
-  };
+  const businessTypeLabel = resolveBusinessTypeLabel(draft.mode, draft.presetId, draft.customType);
 
-  const handleFinish = (e: FormEvent) => {
-    e.preventDefault();
-    if (primaryModel === 'hybrid' && additionalModels.length < 2) return;
+  const removedRecommendations = useMemo(
+    () => draft.categories.filter((c) => !c.enabled && c.source !== 'manual'),
+    [draft.categories],
+  );
 
-    const preset = mode === 'list' ? presetId : undefined;
+  const handleFinish = () => {
+    const presetId = resolvePresetId(draft.mode, draft.presetId);
+    const enabled = enabledModels(draft.primaryModel, draft.additionalModels);
     const workspace = buildWorkspaceFromOnboarding(
-      primaryModel,
-      primaryModel === 'hybrid' ? additionalModels : [primaryModel, ...additionalModels],
-      preset,
+      draft.primaryModel,
+      enabled,
+      presetId,
     );
-    const workModels = syncWorkModelsFromWorkspace(workspace);
 
-    if (mode === 'list') {
-      const presetDef = BUSINESS_TYPE_PRESETS.find((p) => p.id === presetId)!;
+    const workModels = syncWorkModelsFromWorkspace(workspace);
+    const categoryDefs = onboardingDraftsToCategoryDefs('pending', draft.categories);
+
+    if (editMode && business) {
+      completeBusinessSetup({
+        name: draft.name.trim(),
+        businessType: businessTypeLabel,
+        isGeneric: draft.mode === 'custom' || draft.presetId === '__other__',
+        businessTypeFromList: draft.mode === 'list' && draft.presetId !== '__other__',
+        presetId,
+        workModels,
+        workspace,
+        categoryDefs,
+        mergeCategories: true,
+      });
+      clearOnboardingDraft(user?.id);
+      navigate('/dashboard', { replace: true });
+      return;
+    }
+
+    if (draft.mode === 'list' && draft.presetId !== '__other__') {
+      const presetDef = ONBOARDING_BUSINESS_TYPE_PRESETS.find((p) => p.id === draft.presetId)!;
       createBusiness({
-        name: name.trim(),
+        name: draft.name.trim(),
         businessType: presetDef.label,
         isGeneric: false,
         businessTypeFromList: true,
         presetId: presetDef.id,
         workModels,
         workspace,
+        categoryDefs,
       });
     } else {
       createBusiness({
-        name: name.trim(),
-        businessType: customType.trim(),
+        name: draft.name.trim(),
+        businessType: draft.customType.trim(),
         isGeneric: true,
         businessTypeFromList: false,
         workModels,
         workspace,
+        categoryDefs,
       });
     }
+    clearOnboardingDraft(user?.id);
     navigate('/dashboard');
   };
 
-  const additionalOptions =
-    primaryModel === 'hybrid'
-      ? OPERATING_MODEL_ONBOARDING_OPTIONS.filter((o) => o.id !== 'hybrid')
-      : OPERATING_MODEL_ADDITIONAL_OPTIONS.filter((o) => o.id !== primaryModel);
+  const { title, subtitle } = STEP_TITLES[draft.step];
 
   return (
     <div className="page onboarding-page">
-      <h1 className="page-title">ברוכים הבאים</h1>
-      <p className="page-subtitle">
-        {step === 1 && 'בואו נגדיר את העסק — האפליקציה תתאים את עצמה אליך'}
-        {step === 2 && 'איך העסק שלך עובד ביום-יום?'}
-        {step === 3 && 'רוצה לשלב גם מודלים נוספים?'}
-      </p>
+      <OnboardingProgress step={draft.step} />
+      <h1 className="page-title">{title}</h1>
+      <p className="page-subtitle">{subtitle}</p>
 
-      <div className="onboarding-steps" aria-hidden>
-        <span className={step >= 1 ? 'active' : ''}>1. העסק</span>
-        <span className={step >= 2 ? 'active' : ''}>2. צורת עבודה</span>
-        <span className={step >= 3 ? 'active' : ''}>3. אישור</span>
-      </div>
+      {draft.step === 1 && (
+        <OnboardingStepIdentity
+          name={draft.name}
+          mode={draft.mode}
+          presetId={draft.presetId}
+          customType={draft.customType}
+          onNameChange={(name) => persist({ ...draft, name })}
+          onModeChange={(mode) => persist({ ...draft, mode })}
+          onPresetChange={(presetId) => {
+            if (presetId === '__other__') {
+              persist({ ...draft, presetId, mode: 'custom' });
+            } else {
+              persist({ ...draft, presetId, mode: 'list' });
+            }
+          }}
+          onCustomTypeChange={(customType) => persist({ ...draft, customType })}
+          onSubmit={() => goStep(2)}
+        />
+      )}
 
-      {step === 1 ? (
-        <form onSubmit={handleStep1} className="card">
-          <div className="field">
-            <label htmlFor="biz-name">שם העסק</label>
-            <input
-              id="biz-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="לדוגמה: סטודיו פילאטיס / ייעוץ עסקי"
-              required
-            />
-          </div>
+      {draft.step === 2 && (
+        <OnboardingStepPrimaryModel
+          primaryModel={draft.primaryModel}
+          onSelect={(primaryModel) => {
+            const additionalModels =
+              primaryModel !== 'hybrid'
+                ? draft.additionalModels.filter((m) => m !== primaryModel)
+                : [];
+            persist({ ...draft, primaryModel, additionalModels });
+          }}
+          onBack={() => goStep(1)}
+          onSubmit={() => goStep(3)}
+        />
+      )}
 
-          <div className="field">
-            <label>סוג העסק</label>
-            <div className="chip-row">
-              <button
-                type="button"
-                className={`chip ${mode === 'list' ? 'active' : ''}`}
-                onClick={() => setMode('list')}
-              >
-                מרשימה
-              </button>
-              <button
-                type="button"
-                className={`chip ${mode === 'custom' ? 'active' : ''}`}
-                onClick={() => setMode('custom')}
-              >
-                מותאם אישית
-              </button>
-            </div>
-          </div>
+      {draft.step === 3 && (
+        <OnboardingStepAdditionalModels
+          primaryModel={draft.primaryModel}
+          additionalModels={draft.additionalModels}
+          onToggle={(model) => {
+            if (draft.primaryModel !== 'hybrid' && model === draft.primaryModel) return;
+            const additionalModels = draft.additionalModels.includes(model)
+              ? draft.additionalModels.filter((m) => m !== model)
+              : [...draft.additionalModels, model];
+            persist({ ...draft, additionalModels });
+          }}
+          onBack={() => goStep(2)}
+          onSkip={() => goStep(4, { additionalModels: [] })}
+          onSubmit={() => goStep(4)}
+        />
+      )}
 
-          {mode === 'list' ? (
-            <div className="field">
-              <label htmlFor="preset">מה סוג העסק?</label>
-              <select id="preset" value={presetId} onChange={(e) => setPresetId(e.target.value)}>
-                {BUSINESS_TYPE_PRESETS.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ) : (
-            <div className="field">
-              <label htmlFor="custom">תיאור סוג העסק</label>
-              <input
-                id="custom"
-                value={customType}
-                onChange={(e) => setCustomType(e.target.value)}
-                placeholder="לדוגמה: מדריך כושר / יועץ עסקי"
-                required={mode === 'custom'}
-              />
-            </div>
-          )}
+      {draft.step === 4 && (
+        <OnboardingStepCategories
+          categories={draft.categories}
+          removedRecommendations={removedRecommendations}
+          onReorder={(from, to) => {
+            const enabled = draft.categories
+              .filter((c) => c.enabled)
+              .sort((a, b) => a.sortOrder - b.sortOrder);
+            const reordered = [...enabled];
+            const [item] = reordered.splice(from, 1);
+            reordered.splice(to, 0, item);
+            const orderMap = new Map(reordered.map((c, i) => [c.key, i]));
+            persist({
+              ...draft,
+              categories: draft.categories.map((c) => ({
+                ...c,
+                sortOrder: orderMap.has(c.key) ? orderMap.get(c.key)! : c.sortOrder + 1000,
+              })),
+            });
+          }}
+          onUpdate={(key, patch) =>
+            persist({
+              ...draft,
+              categories: draft.categories.map((c) =>
+                c.key === key ? { ...c, ...patch } : c,
+              ),
+            })
+          }
+          onRemove={(key) =>
+            persist({
+              ...draft,
+              categories: draft.categories.map((c) =>
+                c.key === key ? { ...c, enabled: false } : c,
+              ),
+            })
+          }
+          onRestore={(key) =>
+            persist({
+              ...draft,
+              categories: draft.categories.map((c) =>
+                c.key === key ? { ...c, enabled: true } : c,
+              ),
+            })
+          }
+          onReset={() =>
+            persist({
+              ...draft,
+              categories: recomputeCategories({ ...draft, categories: [] }),
+            })
+          }
+          onAdd={(item) =>
+            persist({
+              ...draft,
+              categories: [
+                ...draft.categories,
+                { ...item, sortOrder: draft.categories.length },
+              ],
+            })
+          }
+          onBack={() => goStep(3)}
+          onSubmit={() => goStep(5)}
+        />
+      )}
 
-          <button type="submit" className="btn btn-primary">
-            המשך ←
-          </button>
-        </form>
-      ) : step === 2 ? (
-        <form onSubmit={handleStep2} className="card">
-          <p className="field-hint" style={{ marginTop: 0 }}>
-            בחר/י את צורת העבודה העיקרית. אפשר להוסיף מודלים נוספים בשלב הבא.
-          </p>
-          <div className="work-model-grid">
-            {OPERATING_MODEL_ONBOARDING_OPTIONS.map((opt) => (
-              <OperatingModelCard
-                key={opt.id}
-                icon={opt.icon}
-                title={opt.titleHe}
-                description={opt.descriptionHe}
-                selected={primaryModel === opt.id}
-                onSelect={() => setPrimaryModel(opt.id)}
-              />
-            ))}
-          </div>
-          <div className="onboarding-actions">
-            <button type="button" className="btn btn-ghost" onClick={() => setStep(1)}>
-              → חזרה
-            </button>
-            <button type="submit" className="btn btn-primary">
-              המשך ←
-            </button>
-          </div>
-        </form>
-      ) : (
-        <form onSubmit={handleFinish} className="card">
-          <p className="field-hint" style={{ marginTop: 0 }}>
-            {primaryModel === 'hybrid'
-              ? 'בחר/י לפחות שני מודלים שמתאימים לעסק שלך.'
-              : 'אפשר לסמן מודלים נוספים — לא חובה.'}
-          </p>
-          <div className="work-model-grid">
-            {additionalOptions.map((opt) => (
-              <OperatingModelCard
-                key={opt.id}
-                icon={opt.icon}
-                title={opt.titleHe}
-                description={opt.descriptionHe}
-                selected={additionalModels.includes(opt.id)}
-                onSelect={() => toggleAdditional(opt.id)}
-              />
-            ))}
-          </div>
-          <div className="onboarding-actions">
-            <button type="button" className="btn btn-ghost" onClick={() => setStep(2)}>
-              → חזרה
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={primaryModel === 'hybrid' && additionalModels.length < 2}
-            >
-              התחל/י לעבוד
-            </button>
-          </div>
-        </form>
+      {draft.step === 5 && (
+        <OnboardingStepReview
+          name={draft.name}
+          businessTypeLabel={businessTypeLabel}
+          primaryModel={draft.primaryModel}
+          additionalModels={draft.additionalModels}
+          categories={draft.categories}
+          onBack={() => goStep(4)}
+          onFinish={handleFinish}
+        />
       )}
     </div>
   );

@@ -8,7 +8,7 @@ import {
   updateAccountDisplayName,
 } from '../lib/accountsRegistry';
 import { suggestWorkModelsFromPreset, normalizeBusiness } from '../lib/workModel';
-import { buildWorkspaceConfig, normalizeBusinessWorkspace } from '../lib/workspace';
+import { buildWorkspaceConfig, normalizeBusinessWorkspace, syncWorkModelsFromWorkspace } from '../lib/workspace';
 import { cloudSignOut } from '../lib/cloudSync';
 import { normalizeLeads } from '../lib/crm/leadNormalize';
 import { pushLeadStatusToCloud } from '../lib/crm/leadsSync';
@@ -90,8 +90,22 @@ interface AppActions {
     presetId?: string;
     workModels?: WorkConcept[];
     workspace?: BusinessWorkspaceConfig;
+    /** Onboarding-selected categories — overrides preset seeding */
+    categoryDefs?: Array<Omit<Category, 'id'>>;
     /** @deprecated */
     primaryWorkModel?: WorkConcept | 'mixed';
+  }) => void;
+  completeBusinessSetup: (params: {
+    name: string;
+    businessType: string;
+    isGeneric: boolean;
+    businessTypeFromList: boolean;
+    presetId?: string;
+    workModels?: WorkConcept[];
+    workspace: BusinessWorkspaceConfig;
+    categoryDefs: Array<Omit<Category, 'id'>>;
+    /** When true, add new categories without removing existing ones */
+    mergeCategories?: boolean;
   }) => void;
   updateWorkModels: (models: WorkConcept[]) => void;
   updateWorkspaceConfig: (params: {
@@ -453,6 +467,7 @@ export const useAppStore = create<Store>()(
         presetId,
         workModels,
         workspace: workspaceInput,
+        categoryDefs: categoryDefsInput,
         primaryWorkModel,
       }) => {
         const user = get().user;
@@ -497,10 +512,15 @@ export const useAppStore = create<Store>()(
         if (prev) {
           let categories = get().categories;
           if (categories.length === 0) {
-            let categoryDefs: Omit<Category, 'id'>[];
-            if (presetId) {
+            let categorySeed: Omit<Category, 'id'>[];
+            if (categoryDefsInput?.length) {
+              categorySeed = categoryDefsInput.map((c) => ({
+                ...c,
+                businessId: prev.id,
+              }));
+            } else if (presetId) {
               const preset = BUSINESS_TYPE_PRESETS.find((p) => p.id === presetId);
-              categoryDefs = preset
+              categorySeed = preset
                 ? buildCategoriesFromPreset(prev.id, preset).map((c) => ({
                     ...c,
                     businessId: prev.id,
@@ -510,12 +530,12 @@ export const useAppStore = create<Store>()(
                     businessId: prev.id,
                   }));
             } else {
-              categoryDefs = buildGenericCategories(prev.id).map((c) => ({
+              categorySeed = buildGenericCategories(prev.id).map((c) => ({
                 ...c,
                 businessId: prev.id,
               }));
             }
-            categories = categoryDefs.map((c) => ({ ...c, id: createId() }));
+            categories = categorySeed.map((c) => ({ ...c, id: createId() }));
           }
           set({
             business: applyBusinessPatch(prev),
@@ -564,7 +584,12 @@ export const useAppStore = create<Store>()(
         });
 
         let categoryDefs: Omit<Category, 'id'>[];
-        if (presetId) {
+        if (categoryDefsInput?.length) {
+          categoryDefs = categoryDefsInput.map((c) => ({
+            ...c,
+            businessId: business.id,
+          }));
+        } else if (presetId) {
           const preset = BUSINESS_TYPE_PRESETS.find((p) => p.id === presetId);
           categoryDefs = preset
             ? buildCategoriesFromPreset(business.id, preset).map((c) => ({
@@ -599,6 +624,61 @@ export const useAppStore = create<Store>()(
           tasks: [],
           dismissedAutoTasks: [],
         });
+        get().ensureCustomerSourceCategory();
+      },
+
+      completeBusinessSetup: ({
+        name,
+        businessType,
+        isGeneric,
+        businessTypeFromList,
+        presetId,
+        workModels,
+        workspace,
+        categoryDefs,
+        mergeCategories,
+      }) => {
+        const business = get().business;
+        if (!business) return;
+
+        const applyBusinessPatch = normalizeBusinessWorkspace({
+          ...business,
+          name: name.trim(),
+          businessType,
+          isGeneric,
+          businessTypeFromList,
+          ...(presetId ? { presetId } : {}),
+          workModels: workModels ?? syncWorkModelsFromWorkspace(workspace),
+          workspace: {
+            ...workspace,
+            updatedAt: new Date().toISOString(),
+          },
+        })!;
+
+        let categories = get().categories;
+
+        if (categoryDefs.length > 0) {
+          const mapped = categoryDefs.map((c) => ({
+            ...c,
+            businessId: business.id,
+          }));
+
+          if (mergeCategories && categories.length > 0) {
+            const existingNames = new Set(categories.map((c) => c.name));
+            const toAdd = mapped
+              .filter((c) => !existingNames.has(c.name))
+              .map((c) => ({ ...c, id: createId() }));
+            categories = sortCategories([...categories, ...toAdd]);
+          } else if (!mergeCategories || categories.length === 0) {
+            categories = mapped.map((c) => ({ ...c, id: createId() }));
+          }
+        }
+
+        set({
+          business: applyBusinessPatch,
+          categories: normalizeCategorySortOrders(categories),
+        });
+        get().ensureCustomerSourceCategory();
       },
 
       updateWorkModels: (models) => {

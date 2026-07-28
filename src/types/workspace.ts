@@ -24,6 +24,8 @@ export interface BusinessWorkspaceConfig {
   primaryOperatingModel: OperatingModel;
   enabledOperatingModels: OperatingModel[];
   onboardingCompleted: boolean;
+  /** ISO timestamp when onboarding was completed */
+  onboardingCompletedAt?: string;
   terminology?: Partial<WorkspaceTerminology>;
   defaultWorkflowTemplateId?: string;
   createdAt: string;

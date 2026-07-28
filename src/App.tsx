@@ -57,6 +57,7 @@ import { LeadsPage } from './pages/LeadsPage';
 import { MorePage } from './pages/MorePage';
 
 import { OnboardingPage } from './pages/OnboardingPage';
+import { OnboardingShowcasePage } from './pages/OnboardingShowcasePage';
 
 import { AssistantPage } from './pages/AssistantPage';
 
@@ -68,6 +69,7 @@ import { SettingsAutomationPage } from './pages/SettingsAutomationPage';
 
 import { SettingsBusinessPage } from './pages/SettingsBusinessPage';
 import { SettingsOperatingModelPage } from './pages/SettingsOperatingModelPage';
+import { SettingsAdaptationPage } from './pages/SettingsAdaptationPage';
 import { MonthlyExpensesPage } from './pages/MonthlyExpensesPage';
 
 import { SettingsDataPage } from './pages/SettingsDataPage';
@@ -159,6 +161,8 @@ export default function App() {
 
           <Route path="/settings/business" element={<SettingsBusinessPage />} />
 
+          <Route path="/settings/adaptation" element={<SettingsAdaptationPage />} />
+
           <Route path="/settings/operating-model" element={<SettingsOperatingModelPage />} />
 
           <Route path="/settings/monthly-expenses" element={<MonthlyExpensesPage />} />
@@ -206,6 +210,8 @@ export default function App() {
           <Route path="/dev/design-system" element={<DesignSystemPage />} />
 
           <Route path="/dev/activity-card" element={<ActivityCardShowcasePage />} />
+
+          <Route path="/dev/onboarding" element={<OnboardingShowcasePage />} />
 
           </Route>
 

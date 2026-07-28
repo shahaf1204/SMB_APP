@@ -1178,7 +1178,7 @@ These are **independent**. A photographer may use `appointment` for consultation
 
 Stored on `Business.workspace` (`BusinessWorkspaceConfig`), persisted via Zustand → localStorage → optional Supabase snapshot.
 
-Key fields: `primaryOperatingModel`, `enabledOperatingModels`, `onboardingCompleted`, `terminology`, `defaultWorkflowTemplateId`, timestamps.
+Key fields: `primaryOperatingModel`, `enabledOperatingModels`, `onboardingCompleted`, `onboardingCompletedAt`, `terminology`, `defaultWorkflowTemplateId`, timestamps.
 
 Legacy `workModels` / `primaryWorkModel` are **synced from workspace** for backward compatibility — do not diverge them manually.
 
@@ -1207,11 +1207,11 @@ Each model defines:
 
 | Screen | Hook / source | What adapts |
 |--------|---------------|-------------|
-| Onboarding | `OperatingModelCard`, 2-step model selection | Primary + optional additional models |
-| Settings | `/settings/operating-model` | Edit primary, enabled models, terminology |
+| Onboarding | 5-step flow — see `docs/onboarding-flow.md` | Identity, models, categories, review |
+| Settings | `/settings/adaptation`, `/settings/operating-model` | Re-run setup, edit models |
 | Activities | `useActivitiesWorkspace()` | Terminology, grouping mode, filter tab ids, card presentation default |
-| Dashboard | `useWorkspaceConfig()` (future) | Metrics, quick actions |
-| Create | `activityFormSchema.ts` (future) | Visible form fields per model |
+| Dashboard | `useWorkspaceDashboardConfig()` | Hero title, metrics, quick actions |
+| Create | `useActivityFormSchema()` | Visible form fields per model |
 
 Do **not** expose developer terms in Hebrew UI (`presentationType`, `operatingModel`, `config`, `schema`). Use: צורת עבודה, סוג פעילות, תהליך, כרטיסייה, פרויקט, מפגש קבוע.
 
@@ -1225,14 +1225,39 @@ Do **not** expose developer terms in Hebrew UI (`presentationType`, `operatingMo
 
 Full model reference: **`docs/operating-models.md`**.
 
-### Onboarding UI
+### Onboarding UI (5 steps)
 
-- Mobile-first, calm, premium — reusable `OperatingModelCard` with Lucide icons.
-- Step 1 (existing): business name + type.
-- Step 2: primary operating model (Hebrew cards).
-- Step 3: optional additional models + confirm.
-- No childish illustrations; primary selected state; one main CTA per step.
+Full reference: **`docs/onboarding-flow.md`**
+
+| Step | Content |
+|------|---------|
+| 1 | Business name + type (Hebrew preset list + "אחר") |
+| 2 | Primary operating model — expandable `OperatingModelSelectCard` |
+| 3 | Optional additional models — primary locked at top |
+| 4 | Recommended categories — edit, reorder, add, remove |
+| 5 | Review summary + adapted app preview |
+
+**Anatomy:**
+
+- Progress: subtle `N מתוך 5` dots
+- Model cards: Lucide icon, title, description, examples, inline preview on select
+- Category rows: drag handle, name, type, source badge, protected state
+- Form preview: 3–5 sample rows (visual only — no mock store data)
+- One primary CTA per step; back navigation preserves draft
+
+**Category source badges:**
+
+| Badge | Meaning |
+|-------|---------|
+| שדה בסיסי | Required for app functionality — cannot delete |
+| מומלץ לעסק שלך | From business type template |
+| מתאים לצורת העבודה | From operating model template |
+| נוסף ידנית | User-created during onboarding |
+
+**Draft persistence:** `localStorage` per user — refresh-safe until finish.
+
+**Design:** mobile-first, RTL-safe, 44px touch targets, 16–20px radii, calm semantic tints — no enterprise density.
 
 ---
 
-*Last updated: workspace configuration layer — operating models, onboarding, settings, centralized config map.*
+*Last updated: 5-step onboarding, category recommendation engine, workspace hooks.*

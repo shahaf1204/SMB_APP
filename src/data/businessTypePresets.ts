@@ -17,10 +17,11 @@ const baseFinancial = [
   { name: 'סכום הוצאה', valueType: 'number' as const, metricRole: 'expense' as const },
 ];
 
+/** Industry presets — used for category recommendations and onboarding step 1 */
 export const BUSINESS_TYPE_PRESETS: BusinessTypePreset[] = [
   {
     id: 'birthday',
-    label: 'מפעיל/ת ימי הולדת',
+    label: 'מפעיל/ת אירועים',
     categories: [
       { name: 'שם לקוח', valueType: 'text', metricRole: 'neutral' },
       { name: 'מספר ילדים', valueType: 'number', metricRole: 'neutral' },
@@ -30,7 +31,7 @@ export const BUSINESS_TYPE_PRESETS: BusinessTypePreset[] = [
   },
   {
     id: 'photographer',
-    label: 'צלם/ה',
+    label: 'צלם/ת',
     categories: [
       { name: 'שם לקוח', valueType: 'text', metricRole: 'neutral' },
       { name: 'סוג צילום', valueType: 'text', metricRole: 'neutral' },
@@ -38,6 +39,80 @@ export const BUSINESS_TYPE_PRESETS: BusinessTypePreset[] = [
       ...baseFinancial,
     ],
   },
+  {
+    id: 'therapist',
+    label: 'מטפל/ת',
+    categories: [
+      { name: 'שם מטופל', valueType: 'text', metricRole: 'neutral' },
+      { name: 'משך טיפול (דקות)', valueType: 'duration', metricRole: 'neutral' },
+      ...baseFinancial,
+    ],
+  },
+  {
+    id: 'coach',
+    label: 'מאמן/ת',
+    categories: [
+      { name: 'שם מתאמן', valueType: 'text', metricRole: 'neutral' },
+      { name: 'מספר מפגשים', valueType: 'number', metricRole: 'neutral' },
+      ...baseFinancial,
+    ],
+  },
+  {
+    id: 'consultant',
+    label: 'יועץ/ת',
+    categories: [
+      { name: 'שם לקוח', valueType: 'text', metricRole: 'neutral' },
+      { name: 'נושא ייעוץ', valueType: 'text', metricRole: 'neutral' },
+      ...baseFinancial,
+    ],
+  },
+  {
+    id: 'tutor',
+    label: 'מורה או מדריך/ה',
+    categories: [
+      { name: 'שם תלמיד', valueType: 'text', metricRole: 'neutral' },
+      { name: 'מקצוע', valueType: 'text', metricRole: 'neutral' },
+      { name: 'שעות לימוד', valueType: 'duration', metricRole: 'neutral' },
+      ...baseFinancial,
+    ],
+  },
+  {
+    id: 'beauty',
+    label: 'קוסמטיקה וטיפוח',
+    categories: [
+      { name: 'שם לקוח', valueType: 'text', metricRole: 'neutral' },
+      { name: 'סוג טיפול', valueType: 'text', metricRole: 'neutral' },
+      ...baseFinancial,
+    ],
+  },
+  {
+    id: 'studio',
+    label: 'סטודיו או חוגים',
+    categories: [
+      { name: 'שם לקוח', valueType: 'text', metricRole: 'neutral' },
+      { name: 'שם החוג', valueType: 'text', metricRole: 'neutral' },
+      ...baseFinancial,
+    ],
+  },
+  {
+    id: 'design',
+    label: 'עיצוב והפקה',
+    categories: [
+      { name: 'שם לקוח', valueType: 'text', metricRole: 'neutral' },
+      { name: 'תיאור שירות', valueType: 'text', metricRole: 'neutral' },
+      ...baseFinancial,
+    ],
+  },
+  {
+    id: 'freelance',
+    label: 'שירות מקצועי',
+    categories: [
+      { name: 'שם לקוח', valueType: 'text', metricRole: 'neutral' },
+      { name: 'תיאור שירות', valueType: 'text', metricRole: 'neutral' },
+      ...baseFinancial,
+    ],
+  },
+  // Legacy preset ids kept for migrated users
   {
     id: 'confectioner',
     label: 'קונדיטור/ית',
@@ -57,53 +132,12 @@ export const BUSINESS_TYPE_PRESETS: BusinessTypePreset[] = [
       ...baseFinancial,
     ],
   },
-  {
-    id: 'therapist',
-    label: 'מטפל/ת',
-    categories: [
-      { name: 'שם מטופל', valueType: 'text', metricRole: 'neutral' },
-      { name: 'משך טיפול (דקות)', valueType: 'duration', metricRole: 'neutral' },
-      ...baseFinancial,
-    ],
-  },
-  {
-    id: 'coach',
-    label: 'מאמן/ת אישי/ת',
-    categories: [
-      { name: 'שם מתאמן', valueType: 'text', metricRole: 'neutral' },
-      { name: 'מספר מפגשים', valueType: 'number', metricRole: 'neutral' },
-      ...baseFinancial,
-    ],
-  },
-  {
-    id: 'tutor',
-    label: 'מורה פרטי/ת',
-    categories: [
-      { name: 'שם תלמיד', valueType: 'text', metricRole: 'neutral' },
-      { name: 'מקצוע', valueType: 'text', metricRole: 'neutral' },
-      { name: 'שעות לימוד', valueType: 'duration', metricRole: 'neutral' },
-      ...baseFinancial,
-    ],
-  },
-  {
-    id: 'consultant',
-    label: 'יועץ/ת',
-    categories: [
-      { name: 'שם לקוח', valueType: 'text', metricRole: 'neutral' },
-      { name: 'נושא ייעוץ', valueType: 'text', metricRole: 'neutral' },
-      ...baseFinancial,
-    ],
-  },
-  {
-    id: 'freelance',
-    label: 'עצמאי/ת כללי',
-    categories: [
-      { name: 'שם לקוח', valueType: 'text', metricRole: 'neutral' },
-      { name: 'תיאור שירות', valueType: 'text', metricRole: 'neutral' },
-      ...baseFinancial,
-    ],
-  },
 ];
+
+/** Presets shown in onboarding step 1 (excludes legacy-only entries) */
+export const ONBOARDING_BUSINESS_TYPE_PRESETS = BUSINESS_TYPE_PRESETS.filter(
+  (p) => !['confectioner', 'balloons'].includes(p.id),
+);
 
 const sourceCategory = {
   name: CUSTOMER_SOURCE_CATEGORY_NAME,
@@ -129,5 +163,9 @@ export function buildCategoriesFromPreset(
 }
 
 export function buildGenericCategories(businessId: string): Omit<Category, 'id'>[] {
-  return buildCategoriesFromPreset(businessId, BUSINESS_TYPE_PRESETS[8]);
+  return buildCategoriesFromPreset(businessId, BUSINESS_TYPE_PRESETS.find((p) => p.id === 'freelance')!);
+}
+
+export function presetIdFromLabel(label: string): string | undefined {
+  return BUSINESS_TYPE_PRESETS.find((p) => p.label === label)?.id;
 }

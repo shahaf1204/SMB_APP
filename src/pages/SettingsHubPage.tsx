@@ -1,9 +1,15 @@
-import { Briefcase, ChevronLeft, Database, Layers, Plug, User, Zap } from 'lucide-react';
+import { Briefcase, ChevronLeft, Database, Layers, Plug, Sparkles, User, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
 import { useAppStore } from '../store/useAppStore';
 
 const SETTINGS_SECTIONS = [
+  {
+    to: '/settings/adaptation',
+    label: 'התאמת העסק',
+    desc: 'סוג עסק, צורת עבודה, קטגוריות ומונחים',
+    icon: Sparkles,
+  },
   {
     to: '/settings/operating-model',
     label: 'צורת העבודה של העסק',
