@@ -265,3 +265,25 @@ export function getOperatingModelDefinition(
 export function operatingModelTitleHe(model: OperatingModel): string {
   return getOperatingModelDefinition(model).titleHe;
 }
+
+/** Dashboard featured-activity section title per primary operating model */
+export const DASHBOARD_FEATURED_SECTION_HE: Record<OperatingModel, string> = {
+  event: 'האירוע הבא',
+  appointment: 'הפגישה הבאה',
+  journey: 'התהליך הבא',
+  package: 'כרטיסייה שדורשת טיפול',
+  project: 'הדדליין הקרוב',
+  recurring: 'המפגש הבא',
+  hybrid: 'הפעילות הבאה',
+};
+
+/** Primary create route for empty-state CTA per operating model */
+export const OPERATING_MODEL_CREATE_ROUTE: Record<OperatingModel, string> = {
+  event: '/create/event',
+  appointment: '/create/event',
+  journey: '/create/project',
+  package: '/create/pack',
+  recurring: '/create/group',
+  project: '/create/project',
+  hybrid: '/create',
+};

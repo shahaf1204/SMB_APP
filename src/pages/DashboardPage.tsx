@@ -138,7 +138,13 @@ export function DashboardPage() {
 
         {calendarExport && <CalendarExportBanner outcome={calendarExport} />}
 
-        <NextEventCard event={nextEvent} clientName={clientName} amount={nextAmount} />
+        <NextEventCard
+          event={nextEvent}
+          clientName={clientName}
+          amount={nextAmount}
+          business={business}
+          invoices={invoices}
+        />
 
         <hr className="dash-v2-divider" aria-hidden />
 

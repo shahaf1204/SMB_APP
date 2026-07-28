@@ -130,7 +130,20 @@
   box-shadow: var(--ds-shadow-xs);
 }
 
-/* ── Next event (focal) ── */
+/* ── Featured ActivityCard (Dashboard) ── */
+.dash-v2-featured-activity .dash-v2-section-head {
+  margin-bottom: var(--ds-space-2);
+}
+
+.dash-v2-featured-activity__card {
+  width: 100%;
+}
+
+.dash-v2-featured-activity__card.activity-card--interactive .activity-card__surface {
+  cursor: pointer;
+}
+
+/* ── Next event (focal) — legacy card; empty state retained ── */
 .dash-v2-next-event {
   display: block;
   position: relative;
