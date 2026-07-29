@@ -5,17 +5,22 @@ import { EventForm, type EventFormValues } from '../components/EventForm';
 import { buildEventValuesFromInputs, eventFormToEventPayload } from '../lib/eventForm';
 import { confirmEventSaveDespiteWarnings, getEventSaveWarnings } from '../lib/eventWarnings';
 import { afterEventSaved } from '../lib/postEventSave';
+import { useGuardCreateRoute } from '../hooks/useGuardCreateRoute';
+import { getEnabledCreationModels } from '../lib/workspace/creationModels';
 import { useAppStore } from '../store/useAppStore';
 
 export function AddEventPage() {
   const navigate = useNavigate();
-  const user = useAppStore((s) => s.user)!;
+  useGuardCreateRoute();
   const business = useAppStore((s) => s.business)!;
+  const user = useAppStore((s) => s.user)!;
   const categories = useAppStore((s) => s.categories);
   const events = useAppStore((s) => s.events);
   const eventTemplates = useAppStore((s) => s.eventTemplates);
   const addEvent = useAppStore((s) => s.addEvent);
   const ensureCustomerSourceCategory = useAppStore((s) => s.ensureCustomerSourceCategory);
+  const createModels = getEnabledCreationModels(business);
+  const backTo = createModels.length > 1 ? '/create' : '/activities';
 
   useEffect(() => {
     ensureCustomerSourceCategory();
@@ -51,7 +56,7 @@ export function AddEventPage() {
   return (
     <div className="app-shell">
       <div className="page">
-        <Link to="/create" className="page-back">
+        <Link to={backTo} className="page-back">
           ← חזרה
         </Link>
         <h1 className="page-title">אירוע חדש</h1>

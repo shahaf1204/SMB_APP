@@ -3,10 +3,16 @@ import { Banknote, Calendar, StickyNote, User } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
 import { FormSection } from '../components/ui/FormSection';
+import { useGuardCreateRoute } from '../hooks/useGuardCreateRoute';
+import { getEnabledCreationModels } from '../lib/workspace/creationModels';
 import { useAppStore } from '../store/useAppStore';
 
 export function CreateProjectPage() {
   const navigate = useNavigate();
+  useGuardCreateRoute();
+  const business = useAppStore((s) => s.business)!;
+  const createModels = getEnabledCreationModels(business);
+  const backTo = createModels.length > 1 ? '/create' : '/activities';
   const createEngagement = useAppStore((s) => s.createEngagement);
   const addMilestone = useAppStore((s) => s.addMilestone);
 
@@ -47,7 +53,7 @@ export function CreateProjectPage() {
   return (
     <div className="app-shell">
       <div className="page">
-        <Link to="/create" className="page-back">← חזרה</Link>
+        <Link to={backTo} className="page-back">← חזרה</Link>
         <h1 className="page-title">ליווי / פרויקט חדש</h1>
         <p className="page-subtitle">אבני דרך — אפשר להוסיף עוד אחר כך</p>
 

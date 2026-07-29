@@ -462,7 +462,7 @@
 /* ── Quick actions ── */
 .dash-v2-actions {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: var(--ds-space-2);
 }
 
@@ -539,6 +539,11 @@
 .dash-v2-action--neutral .dash-v2-action-icon {
   background: var(--ds-color-bg-muted);
   color: var(--ds-color-text-secondary);
+}
+
+.dash-v2-action--expense .dash-v2-action-icon {
+  background: var(--ds-danger-50, #fef2f2);
+  color: var(--ds-color-danger, #dc2626);
 }
 
 .dash-v2-action-label {

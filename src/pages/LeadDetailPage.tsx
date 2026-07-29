@@ -4,6 +4,7 @@ import { BottomNav } from '../components/BottomNav';
 import { LeadContactActions } from '../components/LeadContactActions';
 import { CRM_SOURCE_LABELS, LEAD_STATUS_LABELS } from '../lib/crm/constants';
 import { formatDate } from '../lib/finance';
+import { isModelEnabled } from '../lib/workspace/creationModels';
 import { useAppStore } from '../store/useAppStore';
 import type { LeadStatus } from '../types/models';
 
@@ -19,6 +20,7 @@ const STATUS_OPTIONS: LeadStatus[] = [
 export function LeadDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const business = useAppStore((s) => s.business);
   const lead = useAppStore((s) => s.leads.find((l) => l.id === id));
   const setLeadStatus = useAppStore((s) => s.setLeadStatus);
   const updateLead = useAppStore((s) => s.updateLead);
@@ -180,18 +182,26 @@ export function LeadDetailPage() {
             <button type="button" className="btn btn-ghost" onClick={handleTask}>
               יצירת משימה
             </button>
-            <button type="button" className="btn btn-ghost" onClick={convertToEvent}>
-              המרה לאירוע
-            </button>
-            <button type="button" className="btn btn-ghost" onClick={convertToPack}>
-              המרה לכרטיסייה
-            </button>
-            <button type="button" className="btn btn-ghost" onClick={convertToProject}>
-              המרה לליווי
-            </button>
-            <button type="button" className="btn btn-ghost" onClick={convertToGroup}>
-              המרה לחוג
-            </button>
+            {(isModelEnabled(business, 'event') || isModelEnabled(business, 'appointment')) && (
+              <button type="button" className="btn btn-ghost" onClick={convertToEvent}>
+                המרה לאירוע
+              </button>
+            )}
+            {isModelEnabled(business, 'package') && (
+              <button type="button" className="btn btn-ghost" onClick={convertToPack}>
+                המרה לכרטיסייה
+              </button>
+            )}
+            {(isModelEnabled(business, 'project') || isModelEnabled(business, 'journey')) && (
+              <button type="button" className="btn btn-ghost" onClick={convertToProject}>
+                המרה לליווי
+              </button>
+            )}
+            {isModelEnabled(business, 'recurring') && (
+              <button type="button" className="btn btn-ghost" onClick={convertToGroup}>
+                המרה לחוג
+              </button>
+            )}
           </div>
         </section>
       </div>

@@ -3,10 +3,16 @@ import { Banknote, Calendar, User } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
 import { FormSection } from '../components/ui/FormSection';
+import { useGuardCreateRoute } from '../hooks/useGuardCreateRoute';
+import { getEnabledCreationModels } from '../lib/workspace/creationModels';
 import { useAppStore } from '../store/useAppStore';
 
 export function CreatePackPage() {
   const navigate = useNavigate();
+  useGuardCreateRoute();
+  const business = useAppStore((s) => s.business)!;
+  const createModels = getEnabledCreationModels(business);
+  const backTo = createModels.length > 1 ? '/create' : '/activities';
   const createEngagement = useAppStore((s) => s.createEngagement);
   const createInvoice = useAppStore((s) => s.createInvoice);
 
@@ -52,7 +58,7 @@ export function CreatePackPage() {
   return (
     <div className="app-shell">
       <div className="page">
-        <Link to="/create" className="page-back">
+        <Link to={backTo} className="page-back">
           ← חזרה
         </Link>
         <h1 className="page-title">כרטיסייה חדשה</h1>

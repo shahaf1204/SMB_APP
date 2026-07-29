@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { FileText, Plug } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { FileText, Plug, Receipt } from 'lucide-react';
 import { BottomNav } from '../components/BottomNav';
+import { BusinessExpensesPanel } from '../components/finance/BusinessExpensesPanel';
 import { EmptyState } from '../components/ui/EmptyState';
 import { PillTabs } from '../components/ui/PillTabs';
 import { getCatalogEntry } from '../integrations/catalog';
@@ -15,6 +16,13 @@ import {
 import { getActiveFinanceConnection } from '../lib/integrations/client';
 import { useAppStore } from '../store/useAppStore';
 import type { Invoice } from '../types/models';
+
+type FinanceAreaTab = 'invoices' | 'expenses';
+
+const AREA_TABS: Array<{ id: FinanceAreaTab; label: string }> = [
+  { id: 'invoices', label: 'חשבוניות' },
+  { id: 'expenses', label: 'הוצאות עסקיות' },
+];
 
 const FILTER_TABS: Array<{ id: InvoiceFilterTab; label: string }> = [
   { id: 'all', label: 'הכל' },
@@ -39,6 +47,10 @@ export function InvoicesPage() {
   const business = useAppStore((s) => s.business)!;
   const invoices = useAppStore((s) => s.invoices);
   const connections = useAppStore((s) => s.integrationConnections);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const areaTab: FinanceAreaTab =
+    searchParams.get('tab') === 'expenses' ? 'expenses' : 'invoices';
+  const openExpenseForm = searchParams.get('new') === '1';
   const [filter, setFilter] = useState<InvoiceFilterTab>('all');
 
   const financeConnected = !!getActiveFinanceConnection(connections, business.id);
@@ -49,11 +61,44 @@ export function InvoicesPage() {
     [invoices, filter],
   );
 
+  const setAreaTab = (tab: FinanceAreaTab) => {
+    if (tab === 'expenses') {
+      setSearchParams({ tab: 'expenses' });
+    } else {
+      setSearchParams({});
+    }
+  };
+
+  if (areaTab === 'expenses') {
+    return (
+      <div className="app-shell">
+        <div className="page">
+          <div className="page-top-row">
+            <div>
+              <h1 className="page-title">כספים</h1>
+              <p className="page-subtitle page-subtitle--inline">הוצאות, הכנסות וחשבוניות</p>
+            </div>
+          </div>
+
+          <PillTabs tabs={AREA_TABS} active={areaTab} onChange={setAreaTab} ariaLabel="אזור כספים" />
+
+          <BusinessExpensesPanel openFormOnMount={openExpenseForm} />
+
+          <Link to="/invoices/reports" className="text-link-muted">
+            דוחות ויצוא ←
+          </Link>
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
+
   if (!financeConnected) {
     return (
       <div className="app-shell">
         <div className="page">
-          <h1 className="page-title">חשבוניות</h1>
+          <h1 className="page-title">כספים</h1>
+          <PillTabs tabs={AREA_TABS} active={areaTab} onChange={setAreaTab} ariaLabel="אזור כספים" />
           <EmptyState
             icon={Plug}
             title="חברו ספק חשבוניות"
@@ -72,9 +117,7 @@ export function InvoicesPage() {
                     <Link to={`/invoices/${inv.id}`} className="card invoice-slim-row">
                       <div className="invoice-slim-main">
                         <strong>{inv.clientName}</strong>
-                        <span className="invoice-slim-date">
-                          {formatCurrency(inv.amount)}
-                        </span>
+                        <span className="invoice-slim-date">{formatCurrency(inv.amount)}</span>
                       </div>
                     </Link>
                   </li>
@@ -82,6 +125,14 @@ export function InvoicesPage() {
               </ul>
             </>
           )}
+          <Link
+            to="/invoices?tab=expenses"
+            className="card finance-expenses-link"
+            style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+          >
+            <Receipt size={18} aria-hidden />
+            <span>הוצאות עסקיות</span>
+          </Link>
         </div>
         <BottomNav />
       </div>
@@ -93,13 +144,15 @@ export function InvoicesPage() {
       <div className="page">
         <div className="page-top-row">
           <div>
-            <h1 className="page-title">חשבוניות</h1>
+            <h1 className="page-title">כספים</h1>
             <p className="page-subtitle page-subtitle--inline">הפקה, מעקב תשלומים ודוחות</p>
           </div>
           <Link to="/invoices/new" className="btn btn-primary btn-sm">
-            + חדשה
+            + חשבונית
           </Link>
         </div>
+
+        <PillTabs tabs={AREA_TABS} active={areaTab} onChange={setAreaTab} ariaLabel="אזור כספים" />
 
         <div className="kpi-row kpi-row--4">
           <div className="kpi-card kpi-card--revenue">
@@ -137,7 +190,10 @@ export function InvoicesPage() {
               const prov = providerLabel(inv);
               return (
                 <li key={inv.id}>
-                  <Link to={`/invoices/${inv.id}`} className="card invoice-slim-row invoice-slim-row--rich">
+                  <Link
+                    to={`/invoices/${inv.id}`}
+                    className="card invoice-slim-row invoice-slim-row--rich"
+                  >
                     <div className="invoice-slim-main">
                       <strong className="invoice-slim-client">{inv.clientName}</strong>
                       <span className="invoice-slim-date">

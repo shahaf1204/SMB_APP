@@ -4,10 +4,16 @@ import { Link, useNavigate } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
 import { FormSection } from '../components/ui/FormSection';
 import { WEEKDAY_LABELS } from '../lib/engagements';
+import { useGuardCreateRoute } from '../hooks/useGuardCreateRoute';
+import { getEnabledCreationModels } from '../lib/workspace/creationModels';
 import { useAppStore } from '../store/useAppStore';
 
 export function CreateGroupPage() {
   const navigate = useNavigate();
+  useGuardCreateRoute();
+  const business = useAppStore((s) => s.business)!;
+  const createModels = getEnabledCreationModels(business);
+  const backTo = createModels.length > 1 ? '/create' : '/activities';
   const createEngagement = useAppStore((s) => s.createEngagement);
   const addGroupMember = useAppStore((s) => s.addGroupMember);
 
@@ -47,7 +53,7 @@ export function CreateGroupPage() {
   return (
     <div className="app-shell">
       <div className="page">
-        <Link to="/create" className="page-back">← חזרה</Link>
+        <Link to={backTo} className="page-back">← חזרה</Link>
         <h1 className="page-title">חוג / קבוצה חדשה</h1>
         <p className="page-subtitle">יום קבוע · תשלום לכל שיעור</p>
 

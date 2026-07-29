@@ -7,9 +7,10 @@ import {
   Ticket,
   Users,
 } from 'lucide-react';
-import { MonthlyExpensesBar } from '../components/MonthlyExpensesBar';
 import { ThisWeekEventsShowcase } from '../components/activities/ThisWeekEventsShowcase';
-import { BottomNav } from '../components/BottomNav';import { CollapsibleSection } from '../components/ui/CollapsibleSection';
+import { CreateActivityButton, CreateActivityEmptyAction } from '../components/create/CreateActivityButton';
+import { BottomNav } from '../components/BottomNav';
+import { CollapsibleSection } from '../components/ui/CollapsibleSection';
 import { EmptyState } from '../components/ui/EmptyState';
 import { PillTabs } from '../components/ui/PillTabs';
 import { formatCurrency, formatDate } from '../lib/finance';
@@ -289,9 +290,7 @@ export function EngagementsPage() {
             <Link to="/sources" className="btn btn-ghost btn-sm">
               מקורות
             </Link>
-            <Link to="/create" className="btn btn-primary btn-sm">
-              + חדש
-            </Link>
+            <CreateActivityButton label="+ חדש" />
           </div>
         </div>
 
@@ -304,16 +303,14 @@ export function EngagementsPage() {
           />
         )}
 
-        <MonthlyExpensesBar />
-
         {totalVisible === 0 ? (
           <EmptyState
             icon={Layers}
             title="אין פעילויות עדיין"
             message={activityEmptyMessage(business)}
-            actionLabel="+ פעילות חדשה"
-            actionTo="/create"
-          />
+          >
+            <CreateActivityEmptyAction />
+          </EmptyState>
         ) : (
           <div
             className="activity-sections"

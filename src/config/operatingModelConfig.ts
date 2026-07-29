@@ -83,7 +83,7 @@ export const QUICK_ACTION_LABELS_HE: Record<WorkspaceQuickActionId, string> = {
   new_appointment: 'פגישה חדשה',
   new_journey: 'תהליך חדש',
   new_package: 'כרטיסייה חדשה',
-  new_recurring: 'מפגש קבוע חדש',
+  new_recurring: 'פעילות קבועה חדשה',
   new_project: 'פרויקט חדש',
   new_activity: 'פעילות חדשה',
   client: 'לקוח',

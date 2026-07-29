@@ -1,0 +1,73 @@
+.create-model-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.create-model-card {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: var(--radius-md, 12px);
+  background: var(--color-surface, #fff);
+  text-align: right;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.create-model-card:hover,
+.create-model-card:focus-visible {
+  border-color: var(--color-primary, #6366f1);
+  background: var(--color-surface-muted, #f9fafb);
+  outline: none;
+}
+
+.create-model-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius-sm, 8px);
+  background: var(--color-primary-subtle, #eef2ff);
+  color: var(--color-primary, #6366f1);
+}
+
+.create-model-card__text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.create-model-card__label {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-text, #111827);
+}
+
+.create-model-card__badge {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-muted, #6b7280);
+}
+
+.create-model-settings-link {
+  display: block;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border, #e5e7eb);
+  font-size: 0.8125rem;
+  color: var(--color-text-muted, #6b7280);
+  text-align: center;
+  text-decoration: none;
+}
+
+.create-model-settings-link:hover {
+  color: var(--color-primary, #6366f1);
+}

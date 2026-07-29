@@ -33,16 +33,32 @@ export type MonthlyExpenseCategoryId =
   | 'professional'
   | 'other';
 
+export type ExpenseScope = 'general_business' | 'activity_specific';
+export type ExpenseFrequency = 'one_time' | 'monthly_recurring';
+
 export interface MonthlyExpense {
   id: string;
   businessId: string;
-  /** Calendar month YYYY-MM */
-  month: string;
+  /** Calendar month YYYY-MM — set for one-time entries; omitted for recurring templates */
+  month?: string;
   category: MonthlyExpenseCategoryId;
   amount: number;
   notes: string;
   createdAt: string;
   updatedAt: string;
+  /** Display name; legacy rows derive from category */
+  name?: string;
+  scope?: ExpenseScope;
+  frequency?: ExpenseFrequency;
+  /** ISO date for one-time expenses */
+  expenseDate?: string;
+  /** Day of month (1–28) for recurring templates */
+  recurrenceDay?: number;
+  recurrenceEndDate?: string;
+  supplier?: string;
+  eventId?: string;
+  /** Recurring templates only — inactive templates are excluded from lists */
+  isActive?: boolean;
 }
 
 export type LeadStatus =

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Mail, Phone } from 'lucide-react';
 import { BottomNav } from '../components/BottomNav';
+import { CreateActivityButton } from '../components/create/CreateActivityButton';
 import { Avatar } from '../components/ui/Avatar';
 import { PillTabs } from '../components/ui/PillTabs';
 import { buildCustomerSummaries, findCustomerByParamKey } from '../lib/customers';
@@ -152,7 +153,12 @@ export function CustomerDetailPage() {
           </div>
         </div>
 
-        <PillTabs tabs={TABS} active={tab} onChange={setTab} ariaLabel="טאבי לקוח" />
+        <div className="page-top-row" style={{ marginBottom: '0.75rem' }}>
+          <PillTabs tabs={TABS} active={tab} onChange={setTab} ariaLabel="טאבי לקוח" />
+          {tab === 'activities' && (
+            <CreateActivityButton label="הוספת פעילות" className="btn btn-primary btn-sm" />
+          )}
+        </div>
 
         <div className="client-tab-panel">
           {tab === 'activities' && (

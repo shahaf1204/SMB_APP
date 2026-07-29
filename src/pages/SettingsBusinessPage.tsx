@@ -49,9 +49,9 @@ export function SettingsBusinessPage() {
             <span>ניהול קטגוריות</span>
           </Link>
           {includesMonthlyExpenses(resolveExpenseTrackingMode(business)) && (
-            <Link to="/settings/monthly-expenses" className="settings-link-row">
+            <Link to="/invoices?tab=expenses" className="settings-link-row">
               <span>💸</span>
-              <span>הוצאות חודשיות</span>
+              <span>הוצאות עסקיות</span>
             </Link>
           )}
         </nav>

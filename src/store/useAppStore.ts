@@ -32,6 +32,7 @@ import {
 } from '../lib/historicalImport';
 import { createId } from '../lib/ids';
 import { createEventValuesForEvent } from '../lib/events';
+import { migrateMonthlyExpenses, normalizeMonthlyExpense } from '../lib/monthlyExpenses';
 import type {
   AppState,
   Business,
@@ -119,7 +120,24 @@ interface AppActions {
   ) => void;
   updateMonthlyExpense: (
     id: string,
-    patch: Partial<Pick<MonthlyExpense, 'month' | 'category' | 'amount' | 'notes'>>,
+    patch: Partial<
+      Pick<
+        MonthlyExpense,
+        | 'month'
+        | 'category'
+        | 'amount'
+        | 'notes'
+        | 'name'
+        | 'scope'
+        | 'frequency'
+        | 'expenseDate'
+        | 'recurrenceDay'
+        | 'recurrenceEndDate'
+        | 'supplier'
+        | 'eventId'
+        | 'isActive'
+      >
+    >,
   ) => void;
   deleteMonthlyExpense: (id: string) => void;
   ensureCustomerSourceCategory: () => void;
@@ -737,16 +755,25 @@ export const useAppStore = create<Store>()(
         const business = get().business;
         if (!business) return;
         const now = new Date().toISOString();
-        const expense: MonthlyExpense = {
+        const expense: MonthlyExpense = normalizeMonthlyExpense({
           id: createId(),
           businessId: business.id,
           month: partial.month,
           category: partial.category,
           amount: partial.amount,
           notes: partial.notes ?? '',
+          name: partial.name,
+          scope: partial.scope,
+          frequency: partial.frequency,
+          expenseDate: partial.expenseDate,
+          recurrenceDay: partial.recurrenceDay,
+          recurrenceEndDate: partial.recurrenceEndDate,
+          supplier: partial.supplier,
+          eventId: partial.eventId,
+          isActive: partial.isActive,
           createdAt: now,
           updatedAt: now,
-        };
+        });
         set({ monthlyExpenses: [expense, ...get().monthlyExpenses] });
       },
 
@@ -1612,7 +1639,7 @@ export const useAppStore = create<Store>()(
           externalFormConnections: state.externalFormConnections ?? [],
           externalFormSubmissions: state.externalFormSubmissions ?? [],
           formNotifications: state.formNotifications ?? [],
-          monthlyExpenses: state.monthlyExpenses ?? [],
+          monthlyExpenses: migrateMonthlyExpenses(state.monthlyExpenses ?? []),
         });
       },
 
@@ -1707,7 +1734,9 @@ export const useAppStore = create<Store>()(
               ? p.externalFormSubmissions
               : [],
             formNotifications: Array.isArray(p.formNotifications) ? p.formNotifications : [],
-            monthlyExpenses: Array.isArray(p.monthlyExpenses) ? p.monthlyExpenses : [],
+            monthlyExpenses: migrateMonthlyExpenses(
+              Array.isArray(p.monthlyExpenses) ? p.monthlyExpenses : [],
+            ),
             business: p.business
               ? normalizeBusinessWorkspace({
                   ...p.business,
