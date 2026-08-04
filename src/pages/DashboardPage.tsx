@@ -64,6 +64,7 @@ export function DashboardPage() {
   const categories = useAppStore((s) => s.categories);
   const eventValues = useAppStore((s) => s.eventValues);
   const invoices = useAppStore((s) => s.invoices ?? []);
+  const engagements = useAppStore((s) => s.engagements ?? []);
   const engagementSessions = useAppStore((s) => s.engagementSessions ?? []);
   const ensureCustomerSourceCategory = useAppStore((s) => s.ensureCustomerSourceCategory);
 
@@ -80,12 +81,13 @@ export function DashboardPage() {
         eventValues,
         invoices,
         engagementSessions,
+        engagements,
         'thisMonth',
         undefined,
         monthlyExpenses,
         expenseMode,
       ),
-    [events, eventValues, invoices, engagementSessions, monthlyExpenses, expenseMode],
+    [events, eventValues, invoices, engagementSessions, engagements, monthlyExpenses, expenseMode],
   );
 
   const prevTotals = useMemo(
@@ -95,12 +97,13 @@ export function DashboardPage() {
         eventValues,
         invoices,
         engagementSessions,
+        engagements,
         'lastMonth',
         undefined,
         monthlyExpenses,
         expenseMode,
       ),
-    [events, eventValues, invoices, engagementSessions, monthlyExpenses, expenseMode],
+    [events, eventValues, invoices, engagementSessions, engagements, monthlyExpenses, expenseMode],
   );
 
   const forecast = useMemo(

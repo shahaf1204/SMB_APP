@@ -52,6 +52,7 @@ export function buildAssistantContext(state: Pick<
   | 'tasks'
   | 'dismissedAutoTasks'
   | 'engagementSessions'
+  | 'engagements'
   | 'monthlyExpenses'
 >): AssistantContextSnapshot | null {
   const business = state.business;
@@ -60,12 +61,14 @@ export function buildAssistantContext(state: Pick<
   const expenseMode = resolveExpenseTrackingMode(business);
   const monthlyExpenses = state.monthlyExpenses ?? [];
   const sessions = state.engagementSessions ?? [];
+  const engagements = state.engagements ?? [];
 
   const totalsThisMonth = calculateUnifiedTotals(
     state.events,
     state.eventValues,
     state.invoices,
     sessions,
+    engagements,
     'thisMonth',
     undefined,
     monthlyExpenses,
@@ -76,6 +79,7 @@ export function buildAssistantContext(state: Pick<
     state.eventValues,
     state.invoices,
     sessions,
+    engagements,
     'allTime',
     undefined,
     monthlyExpenses,

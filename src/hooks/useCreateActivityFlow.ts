@@ -19,7 +19,7 @@ export function useCreateActivityFlow() {
   const navigateToModel = useCallback(
     (model: EnabledCreationModel) => {
       setSheetOpen(false);
-      navigate(model.route);
+      navigate(model.route, { state: { operatingModel: model.id } });
     },
     [navigate],
   );

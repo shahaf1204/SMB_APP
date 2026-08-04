@@ -115,6 +115,7 @@ export function onboardingDraftsToCategoryDefs(
       valueType: d.valueType,
       metricRole: d.metricRole,
       isActive: true,
+      templateKey: d.key,
     })),
   );
 }

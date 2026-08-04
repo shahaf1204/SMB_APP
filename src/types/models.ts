@@ -138,6 +138,10 @@ export interface Engagement {
   lessonTime?: string;
   members?: GroupMember[];
   pricePerStudent?: number;
+  /** Canonical revenue total when no milestones (project/journey) */
+  totalValue?: number;
+  /** Linked Event for dashboard financial reporting */
+  eventId?: string;
 }
 
 export interface Milestone {
@@ -313,6 +317,8 @@ export interface Category {
   isActive: boolean;
   /** User-defined display order (lower = first). */
   sortOrder: number;
+  /** Stable template key from onboarding — used for metric backfill */
+  templateKey?: string;
 }
 
 export interface Event {

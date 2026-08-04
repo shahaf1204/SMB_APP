@@ -20,6 +20,8 @@ import {
   packProgress,
 } from '../lib/engagements';
 import { getClientName, getEventRevenueTotal } from '../lib/events';
+import { engagementRevenueAmount } from '../lib/finance/engagementFinancialSync';
+import type { Engagement, Event, Milestone } from '../types/models';
 import { externalFormEventBadge } from '../lib/externalForms/badges';
 import { getUnreadAutoActivityIds } from '../lib/externalForms/formActivityNotification';
 import {
@@ -31,7 +33,6 @@ import {
   usesEventActivities,
 } from '../lib/workModel';
 import { useActivitiesWorkspace } from '../hooks/useActivitiesWorkspace';
-import type { Engagement, Event } from '../types/models';
 import { useAppStore } from '../store/useAppStore';
 interface ActivityItem {
   id: string;
@@ -64,7 +65,11 @@ function weekEndIso(): string {
   return d.toISOString().slice(0, 10);
 }
 
-function engagementItem(e: Engagement): ActivityItem {
+function engagementItem(
+  e: Engagement,
+  milestones: Milestone[],
+  eventValues: ReturnType<typeof useAppStore.getState>['eventValues'],
+): ActivityItem {
   const { remaining } = packProgress(e);
   const memberCount = e.members?.length ?? 0;
   const nextDate =
@@ -80,7 +85,10 @@ function engagementItem(e: Engagement): ActivityItem {
     valueLabel = `${memberCount} משתתפים`;
   } else {
     dateLabel = e.startDate ? formatDate(e.startDate) : '—';
-    valueLabel = e.status === 'active' ? 'פעיל' : 'הסתיים';
+    const amount =
+      (e.eventId ? getEventRevenueTotal(e.eventId, eventValues) : 0) ||
+      engagementRevenueAmount(e, milestones);
+    valueLabel = amount > 0 ? formatCurrency(amount) : e.status === 'active' ? 'פעיל' : 'הסתיים';
   }
 
   return {
@@ -165,6 +173,7 @@ export function EngagementsPage() {
   const categories = useAppStore((s) => s.categories);
   const eventValues = useAppStore((s) => s.eventValues);
   const engagements = useAppStore((s) => s.engagements ?? []);
+  const milestones = useAppStore((s) => s.milestones ?? []);
   const formNotifications = useAppStore((s) => s.formNotifications);
 
   const activitiesWorkspace = useActivitiesWorkspace();
@@ -226,7 +235,7 @@ export function EngagementsPage() {
 
     for (const e of engagements) {
       if (!allowedKinds.has(e.kind)) continue;
-      const item = engagementItem(e);
+      const item = engagementItem(e, milestones, eventValues);
       if (item.isPast) pastEngagements.push(item);
       else activeEngagements.push(item);
     }
@@ -239,7 +248,7 @@ export function EngagementsPage() {
     pastEngagements.sort((a, b) => b.sortDate.localeCompare(a.sortDate));
 
     return { thisWeekEvents, laterEvents, pastEvents, activeEngagements, pastEngagements };
-  }, [events, categories, eventValues, engagements, todayIso, weekEnd, allowedKinds]);
+  }, [events, categories, eventValues, engagements, milestones, todayIso, weekEnd, allowedKinds]);
 
   const applyFilter = (items: ActivityItem[]) => {
     if (filter === 'all') return items;

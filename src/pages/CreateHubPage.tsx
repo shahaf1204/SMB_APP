@@ -50,6 +50,7 @@ export function CreateHubPage() {
               <Link
                 key={model.id}
                 to={model.route}
+                state={{ operatingModel: model.id }}
                 className={`card create-hub-card ${model.isPrimary ? 'create-hub-card-primary' : ''}`}
               >
                 <span className="create-hub-icon-wrap" aria-hidden>

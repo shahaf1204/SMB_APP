@@ -33,6 +33,10 @@ import {
 import { createId } from '../lib/ids';
 import { createEventValuesForEvent } from '../lib/events';
 import { migrateMonthlyExpenses, normalizeMonthlyExpense } from '../lib/monthlyExpenses';
+import { backfillCategoryMetricRoles } from '../lib/finance/revenueCategory';
+import { migrateEngagementFinancials } from '../lib/finance/migrateEngagementFinancials';
+import { syncEngagementFinancialEvent } from '../lib/finance/engagementFinancialSync';
+import type { OperatingModel } from '../types/workspace';
 import type {
   AppState,
   Business,
@@ -53,7 +57,7 @@ import type {
   WorkConcept,
   Task,
 } from '../types/models';
-import type { BusinessWorkspaceConfig, OperatingModel } from '../types/workspace';
+import type { BusinessWorkspaceConfig } from '../types/workspace';
 import type { IntegrationConnection, IntegrationLog } from '../types/integrations';
 import { applyWebhookPaymentUpdate } from '../lib/integrations/service';
 import { normalizeIntegrationConnection } from '../types/integrations';
@@ -177,6 +181,7 @@ interface AppActions {
   }) => string;
   createEngagement: (
     engagement: Omit<Engagement, 'id' | 'businessId' | 'userId' | 'createdAt' | 'status' | 'usedSessions'>,
+    options?: { operatingModel?: OperatingModel },
   ) => string;
   updateEngagement: (id: string, patch: Partial<Omit<Engagement, 'id' | 'businessId' | 'userId'>>) => void;
   completeEngagement: (id: string) => void;
@@ -1059,7 +1064,7 @@ export const useAppStore = create<Store>()(
         return invoice.id;
       },
 
-      createEngagement: (partial) => {
+      createEngagement: (partial, options) => {
         const business = get().business;
         const user = get().user;
         if (!business || !user) return '';
@@ -1075,12 +1080,50 @@ export const useAppStore = create<Store>()(
           notes: partial.notes ?? '',
         };
         set({ engagements: [engagement, ...(get().engagements ?? [])] });
+
+        const synced = syncEngagementFinancialEvent(
+          engagement,
+          get().milestones ?? [],
+          get().events,
+          get().eventValues,
+          get().categories,
+          business,
+          user.id,
+          options?.operatingModel,
+        );
+        set({
+          engagements: (get().engagements ?? []).map((e) =>
+            e.id === engagement.id ? synced.engagement : e,
+          ),
+          events: synced.events,
+          eventValues: synced.eventValues,
+        });
         return engagement.id;
       },
 
       updateEngagement: (id, patch) => {
         set({
           engagements: (get().engagements ?? []).map((e) => (e.id === id ? { ...e, ...patch } : e)),
+        });
+        const business = get().business;
+        const user = get().user;
+        const engagement = (get().engagements ?? []).find((e) => e.id === id);
+        if (!business || !user || !engagement) return;
+        const synced = syncEngagementFinancialEvent(
+          engagement,
+          get().milestones ?? [],
+          get().events,
+          get().eventValues,
+          get().categories,
+          business,
+          user.id,
+        );
+        set({
+          engagements: (get().engagements ?? []).map((e) =>
+            e.id === id ? synced.engagement : e,
+          ),
+          events: synced.events,
+          eventValues: synced.eventValues,
         });
       },
 
@@ -1090,6 +1133,7 @@ export const useAppStore = create<Store>()(
 
       addMilestone: (engagementId, partial) => {
         const business = get().business;
+        const user = get().user;
         if (!business) return '';
         const sortOrder = (get().milestones ?? []).filter((m) => m.engagementId === engagementId).length;
         const milestone: Milestone = {
@@ -1102,12 +1146,54 @@ export const useAppStore = create<Store>()(
           notes: partial.notes ?? '',
         };
         set({ milestones: [...(get().milestones ?? []), milestone] });
+
+        const engagement = (get().engagements ?? []).find((e) => e.id === engagementId);
+        if (engagement && user) {
+          const synced = syncEngagementFinancialEvent(
+            engagement,
+            get().milestones ?? [],
+            get().events,
+            get().eventValues,
+            get().categories,
+            business,
+            user.id,
+          );
+          set({
+            engagements: (get().engagements ?? []).map((e) =>
+              e.id === engagementId ? synced.engagement : e,
+            ),
+            events: synced.events,
+            eventValues: synced.eventValues,
+          });
+        }
         return milestone.id;
       },
 
       updateMilestone: (id, patch) => {
         set({
           milestones: (get().milestones ?? []).map((m) => (m.id === id ? { ...m, ...patch } : m)),
+        });
+        const milestone = (get().milestones ?? []).find((m) => m.id === id);
+        const business = get().business;
+        const user = get().user;
+        if (!milestone || !business || !user) return;
+        const engagement = (get().engagements ?? []).find((e) => e.id === milestone.engagementId);
+        if (!engagement) return;
+        const synced = syncEngagementFinancialEvent(
+          engagement,
+          get().milestones ?? [],
+          get().events,
+          get().eventValues,
+          get().categories,
+          business,
+          user.id,
+        );
+        set({
+          engagements: (get().engagements ?? []).map((e) =>
+            e.id === engagement.id ? synced.engagement : e,
+          ),
+          events: synced.events,
+          eventValues: synced.eventValues,
         });
       },
 
@@ -1706,6 +1792,30 @@ export const useAppStore = create<Store>()(
       merge: (persisted, current) => {
         try {
           const p = normalizeEngagementState((persisted ?? {}) as Partial<AppState>);
+          const categories = backfillCategoryMetricRoles(
+            normalizeCategorySortOrders(
+              Array.isArray(p.categories) ? (p.categories as Category[]) : [],
+            ),
+          );
+          const business = p.business
+            ? normalizeBusinessWorkspace({
+                ...p.business,
+                expenseTrackingMode: p.business.expenseTrackingMode ?? 'both',
+              })
+            : current.business;
+          const engagements = Array.isArray(p.engagements) ? p.engagements : [];
+          const milestones = Array.isArray(p.milestones) ? p.milestones : [];
+          const events = Array.isArray(p.events) ? p.events : [];
+          const eventValues = Array.isArray(p.eventValues) ? p.eventValues : [];
+          const financialMigration = migrateEngagementFinancials(
+            engagements,
+            milestones,
+            events,
+            eventValues,
+            categories,
+            business,
+          );
+
           return {
             ...current,
             ...p,
@@ -1719,11 +1829,11 @@ export const useAppStore = create<Store>()(
             dismissedAutoTasks: Array.isArray(p.dismissedAutoTasks)
               ? p.dismissedAutoTasks
               : [],
-            events: Array.isArray(p.events) ? p.events : [],
-            eventValues: Array.isArray(p.eventValues) ? p.eventValues : [],
-            categories: normalizeCategorySortOrders(
-              Array.isArray(p.categories) ? (p.categories as Category[]) : [],
-            ),
+            events: financialMigration.events,
+            eventValues: financialMigration.eventValues,
+            engagements: financialMigration.engagements,
+            milestones,
+            categories,
             integrationConnections: migrateIntegrationConnections(p.integrationConnections),
             integrationLogs: Array.isArray(p.integrationLogs) ? p.integrationLogs : [],
             paymentTransactions: Array.isArray(p.paymentTransactions) ? p.paymentTransactions : [],
@@ -1737,12 +1847,7 @@ export const useAppStore = create<Store>()(
             monthlyExpenses: migrateMonthlyExpenses(
               Array.isArray(p.monthlyExpenses) ? p.monthlyExpenses : [],
             ),
-            business: p.business
-              ? normalizeBusinessWorkspace({
-                  ...p.business,
-                  expenseTrackingMode: p.business.expenseTrackingMode ?? 'both',
-                })
-              : current.business,
+            business,
           };
         } catch {
           return current;

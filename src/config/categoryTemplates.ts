@@ -119,10 +119,16 @@ export const BUSINESS_TYPE_CATEGORY_TEMPLATES: Record<string, CategoryTemplate[]
   ],
   photographer: [
     tpl('photo_type', 'סוג צילום', 'text', 'neutral', 'business_type', { sortPriority: 25 }),
+    tpl('shoot_date', 'תאריך צילום', 'date', 'neutral', 'business_type', { sortPriority: 28 }),
     tpl('shoot_location', 'לוקיישן', 'text', 'neutral', 'business_type', { sortPriority: 55 }),
-    tpl('delivery_time', 'זמן אספקה', 'text', 'neutral', 'business_type', { sortPriority: 140 }),
-    tpl('gallery_link', 'קישור לגלריה', 'text', 'neutral', 'business_type', { sortPriority: 150 }),
+    tpl('delivery_deadline', 'דדליין למסירה', 'date', 'neutral', 'business_type', { sortPriority: 58 }),
+    tpl('project_stage_photo', 'שלב הפרויקט', 'text', 'neutral', 'business_type', { sortPriority: 62 }),
     tpl('editing_status', 'סטטוס עריכה', 'text', 'neutral', 'business_type', { sortPriority: 160 }),
+    tpl('approval_status', 'סטטוס אישור', 'text', 'neutral', 'business_type', { sortPriority: 165 }),
+    tpl('gallery_link', 'קישור לגלריה', 'text', 'neutral', 'business_type', { sortPriority: 150 }),
+    tpl('delivery_time', 'זמן אספקה', 'text', 'neutral', 'business_type', { sortPriority: 140 }),
+    tpl('photo_deposit', 'מקדמה', 'number', 'revenue', 'business_type', { sortPriority: 105 }),
+    tpl('photo_balance', 'יתרה לתשלום', 'number', 'revenue', 'business_type', { sortPriority: 108 }),
   ],
   therapist: [
     tpl('treatment_type', 'סוג טיפול', 'text', 'neutral', 'business_type', { sortPriority: 25 }),

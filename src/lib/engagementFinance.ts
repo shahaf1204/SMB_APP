@@ -35,11 +35,21 @@ export function dateStringInPeriod(dateStr: string, filter: PeriodFilter, now = 
 export function engagementRevenueInPeriod(
   invoices: Invoice[],
   sessions: EngagementSession[],
+  engagements: Engagement[],
   filter: PeriodFilter,
 ): number {
+  const syncedEngagementIds = new Set(
+    engagements.filter((e) => e.eventId).map((e) => e.id),
+  );
+
   let total = 0;
   for (const inv of invoices) {
     if (!inv.engagementId && !inv.milestoneId) continue;
+    if (inv.engagementId && syncedEngagementIds.has(inv.engagementId)) continue;
+    if (inv.milestoneId) {
+      const linked = engagements.find((e) => e.id === inv.engagementId);
+      if (linked?.eventId) continue;
+    }
     if (dateStringInPeriod(inv.issuedAt, filter)) {
       total += inv.amount;
     }
@@ -57,6 +67,7 @@ export function calculateUnifiedTotals(
   eventValues: EventValue[],
   invoices: Invoice[],
   sessions: EngagementSession[],
+  engagements: Engagement[],
   filter: PeriodFilter,
   scopedEventIds?: Set<string>,
   monthlyExpenses: MonthlyExpense[] = [],
@@ -65,7 +76,12 @@ export function calculateUnifiedTotals(
   const eventTotals = scopedEventIds
     ? calculateTotalsByEventIds(scopedEventIds, eventValues)
     : calculateTotals(events, eventValues, filter);
-  const engagementRevenue = engagementRevenueInPeriod(invoices, sessions, filter);
+  const engagementRevenue = engagementRevenueInPeriod(
+    invoices,
+    sessions,
+    engagements,
+    filter,
+  );
   const revenue = eventTotals.revenue + engagementRevenue;
   const monthlyTotal = sumMonthlyExpensesInPeriod(monthlyExpenses, filter);
   const merged = mergeFinancialTotals(
@@ -105,6 +121,7 @@ export function getPackDashboardStats(
     revenueInPeriod: engagementRevenueInPeriod(
       invoices.filter((i) => packs.some((p) => p.id === i.engagementId)),
       [],
+      packs,
       period,
     ),
     lowRemaining: packs.filter((p) => {

@@ -4,6 +4,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
 import { FormSection } from '../components/ui/FormSection';
 import { useGuardCreateRoute } from '../hooks/useGuardCreateRoute';
+import { formCopyText, getBusinessAwareFormCopy } from '../config/businessFormCopy';
+import { getOperatingModelFinancialField } from '../lib/finance/operatingModelFinancialField';
 import { getEnabledCreationModels } from '../lib/workspace/creationModels';
 import { useAppStore } from '../store/useAppStore';
 
@@ -15,6 +17,11 @@ export function CreatePackPage() {
   const backTo = createModels.length > 1 ? '/create' : '/activities';
   const createEngagement = useAppStore((s) => s.createEngagement);
   const createInvoice = useAppStore((s) => s.createInvoice);
+
+  const businessType = business.presetId ?? business.workspace?.businessType;
+  const copyParams = { businessType, operatingModel: 'package' as const };
+  const titleCopy = getBusinessAwareFormCopy({ ...copyParams, fieldKey: 'title' });
+  const revenueField = getOperatingModelFinancialField('package');
 
   const [clientName, setClientName] = useState('');
   const [title, setTitle] = useState('');
@@ -29,18 +36,21 @@ export function CreatePackPage() {
     e.preventDefault();
     if (!clientName.trim() || !totalSessions || !packAmount) return;
 
-    const id = createEngagement({
-      kind: 'session_pack',
-      title: title.trim() || `כרטיסייה — ${clientName.trim()}`,
-      clientName: clientName.trim(),
-      clientEmail: clientEmail.trim() || undefined,
-      clientPhone: clientPhone.trim() || undefined,
-      startDate: new Date().toISOString().slice(0, 10),
-      packExpiresAt: expiresAt || undefined,
-      totalSessions: Number(totalSessions),
-      packAmount: Number(packAmount),
-      notes: '',
-    });
+    const id = createEngagement(
+      {
+        kind: 'session_pack',
+        title: title.trim() || `כרטיסייה — ${clientName.trim()}`,
+        clientName: clientName.trim(),
+        clientEmail: clientEmail.trim() || undefined,
+        clientPhone: clientPhone.trim() || undefined,
+        startDate: new Date().toISOString().slice(0, 10),
+        packExpiresAt: expiresAt || undefined,
+        totalSessions: Number(totalSessions),
+        packAmount: Number(packAmount),
+        notes: '',
+      },
+      { operatingModel: 'package' },
+    );
 
     if (id && issueInvoice && Number(packAmount) > 0) {
       createInvoice({
@@ -61,7 +71,9 @@ export function CreatePackPage() {
         <Link to={backTo} className="page-back">
           ← חזרה
         </Link>
-        <h1 className="page-title">כרטיסייה חדשה</h1>
+        <h1 className="page-title">
+          {formCopyText({ ...copyParams, fieldKey: 'pageTitle' }, 'label', 'כרטיסייה חדשה')}
+        </h1>
         <p className="page-subtitle">תשלום מראש + מונה כניסות</p>
 
         <form onSubmit={handleSubmit} className="form-stack">
@@ -83,7 +95,12 @@ export function CreatePackPage() {
           <FormSection title="פרטי פעילות" icon={Calendar}>
             <div className="field">
               <label htmlFor="pack-title">שם הכרטיסייה</label>
-              <input id="pack-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="10 שיעורי פילאטיס" />
+              <input
+                id="pack-title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder={titleCopy.placeholder ?? 'למשל: חבילת 10 מפגשים'}
+              />
             </div>
             <div className="field">
               <label htmlFor="pack-sessions">מספר כניסות *</label>
@@ -97,7 +114,7 @@ export function CreatePackPage() {
 
           <FormSection title="תשלום" icon={Banknote}>
             <div className="field">
-              <label htmlFor="pack-amount">סכום ששולם מראש *</label>
+              <label htmlFor="pack-amount">{revenueField.label} *</label>
               <input id="pack-amount" type="number" min={0} value={packAmount} onChange={(e) => setPackAmount(e.target.value)} required />
             </div>
             <label className="remember-row" style={{ margin: 0 }}>
