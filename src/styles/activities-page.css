@@ -1,0 +1,240 @@
+.activities-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.activities-page-header__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.activities-page-header__subtitle {
+  display: block;
+  margin-top: 0.25rem;
+  line-height: 1.45;
+}
+
+.activities-page-header__count {
+  white-space: nowrap;
+}
+
+.activities-page-header__cta {
+  flex-shrink: 0;
+  min-height: 2.75rem;
+}
+
+.activities-search {
+  margin-bottom: 0.75rem;
+}
+
+.activities-search .ds-input-wrap {
+  width: 100%;
+}
+
+.activities-search .ds-input {
+  min-height: 2.75rem;
+}
+
+.activities-filter-chips {
+  margin-bottom: 1rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.activities-filter-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.activities-filter-chips .pill-tabs {
+  flex-wrap: nowrap;
+  width: max-content;
+  min-width: 100%;
+}
+
+.activities-page-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding-bottom: calc(var(--bottom-nav-height, 4.5rem) + env(safe-area-inset-bottom, 0px) + 0.5rem);
+}
+
+.activities-featured {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.activities-featured__label {
+  font-size: var(--text-xs, 0.75rem);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.01em;
+}
+
+.activities-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.activities-section + .activities-section {
+  padding-top: 0.25rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.activities-section__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  text-align: inherit;
+  font: inherit;
+  color: inherit;
+}
+
+.activities-section__header--toggle {
+  cursor: pointer;
+}
+
+.activities-section__heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.activities-section__title {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.activities-section__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.375rem;
+  height: 1.375rem;
+  padding: 0 0.375rem;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.activities-section__context {
+  margin-top: 0.125rem;
+}
+
+.activities-section__chevron {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  transition: transform 0.2s ease;
+}
+
+.activities-section__chevron.open {
+  transform: rotate(180deg);
+}
+
+.activities-section__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.activities-card-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.activities-search-empty {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
+/* Skeleton */
+.activities-page-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.activities-page-skeleton__line,
+.activities-page-skeleton__search,
+.activities-page-skeleton__hero,
+.activities-page-skeleton__card,
+.activities-page-skeleton__chips {
+  border-radius: var(--radius-md);
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-muted) 25%,
+    var(--color-border) 50%,
+    var(--color-surface-muted) 75%
+  );
+  background-size: 200% 100%;
+  animation: activities-skeleton-shimmer 1.2s ease-in-out infinite;
+}
+
+.activities-page-skeleton__line--title {
+  height: 1.75rem;
+  width: 55%;
+}
+
+.activities-page-skeleton__line--subtitle {
+  height: 1rem;
+  width: 75%;
+  margin-top: 0.375rem;
+}
+
+.activities-page-skeleton__search {
+  height: 2.75rem;
+}
+
+.activities-page-skeleton__chips {
+  height: 2.25rem;
+}
+
+.activities-page-skeleton__hero {
+  height: 9rem;
+  border-radius: var(--radius-card);
+}
+
+.activities-page-skeleton__card {
+  height: 5.5rem;
+  border-radius: var(--radius-card);
+}
+
+@keyframes activities-skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (max-width: 430px) {
+  .activities-page-header {
+    flex-wrap: wrap;
+  }
+
+  .activities-page-header__cta {
+    width: 100%;
+  }
+}

@@ -256,15 +256,48 @@ One business type may use multiple operating models. Example: a photographer may
 ### Recommended filters
 
 - all — הכל
-- by_type — לפי סוג
+- by_type — לפי סוג (presentation chips for each enabled model)
+- needs_attention — דורש טיפול
 
-### Quick actions
+### Activities page — default groups
 
-- new_activity, client, invoice, task
+| Group | Hebrew |
+|-------|--------|
+| needs_attention | דורש טיפול |
+| today_and_week | היום והשבוע |
+| in_progress | פעילות בתהליך |
+| paused | ממתין / מושהה |
+| completed | הושלם |
 
-### Activity form fields
+### Featured activity
 
-`title`, `client`, `date`, `amount`, `notes` (minimal shared set)
+Highest-priority record across all enabled models: attention first, then nearest upcoming.
+
+### Create CTA
+
+`new_activity` — פעילות חדשה
+
+---
+
+## Activities page defaults (all models)
+
+Central resolver: `src/lib/activities/groupingConfig.ts` · grouping: `groupActivities.ts` · featured: `selectFeaturedActivity.ts`
+
+Each model defines default **section groups**, **filter chips**, **featured selection**, and **create CTA** terminology.
+
+| Model | Default groups (summary) | Featured rule | Create CTA |
+|-------|-------------------------|---------------|------------|
+| `event` | דורש טיפול · השבוע · קרובים · הושלמו | Nearest upcoming or needs attention | אירוע חדש |
+| `appointment` | דורש טיפול · היום · השבוע · עתידיות · הושלמו | Next appointment today or nearest | פגישה חדשה |
+| `journey` | דורש טיפול · הפגישה הבאה · פעילים · הושלמו | Nearest next action / meeting | תהליך חדש |
+| `package` | כמעט הסתיימו · עומדות לפוג · פעילות · הסתיימו | Low sessions or nearest expiration | כרטיסייה חדשה |
+| `recurring` | היום · השבוע · פעילות · מושהות · הסתיימו | Next occurrence | פעילות קבועה חדשה |
+| `project` | דורש טיפול · דדליינים · בביצוע · לקראת מסירה · הושלמו | Overdue or nearest deadline | פרויקט חדש |
+| `hybrid` | דורש טיפול · היום והשבוע · בתהליך · ממתין · הושלם | Cross-model priority | פעילות חדשה |
+
+Filter chips per model are defined in `getActivitiesFilterChips()`. Hybrid filters by presentation type for enabled models only.
+
+Attention flags use real data only (`resolveActivityAttention`) — overdue invoices, low pack sessions, expiring packs, overdue project deadlines. No fake warning states.
 
 ---
 
@@ -334,6 +367,8 @@ Built-in form fields (title, date, location, notes) render before categories in 
 | `src/lib/workspace/resolve.ts` | Migration + resolution |
 | `src/hooks/useWorkspaceConfig.ts` | React hook for resolved config |
 | `src/hooks/useActivitiesWorkspace.ts` | Activities page adapter |
+| `src/lib/activities/` | Activities grouping, attention, search, ActivityCard mapping |
+| `src/pages/EngagementsPage.tsx` | Production Activities page |
 | `src/config/categoryTemplates.ts` | Category recommendation templates |
 | `src/lib/categories/resolveRecommendedCategories.ts` | Category merge resolver |
 | `docs/onboarding-flow.md` | 5-step onboarding reference |

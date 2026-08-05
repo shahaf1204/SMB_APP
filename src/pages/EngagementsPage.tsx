@@ -1,63 +1,32 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import {
-  Calendar,
-  ClipboardList,
-  Layers,
-  Ticket,
-  Users,
-} from 'lucide-react';
-import { ThisWeekEventsShowcase } from '../components/activities/ThisWeekEventsShowcase';
-import { CreateActivityButton, CreateActivityEmptyAction } from '../components/create/CreateActivityButton';
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ActivitiesPageHeader } from '../components/activities/ActivitiesPageHeader';
+import { ActivitiesPageSkeleton } from '../components/activities/ActivitiesPageSkeleton';
+import { ActivitiesSearchField } from '../components/activities/ActivitiesSearchField';
+import { ActivitiesSection } from '../components/activities/ActivitiesSection';
+import { CreateActivityEmptyAction } from '../components/create/CreateActivityButton';
+import { ActivityCard } from '../components/business/ActivityCard';
 import { BottomNav } from '../components/BottomNav';
-import { CollapsibleSection } from '../components/ui/CollapsibleSection';
-import { EmptyState } from '../components/ui/EmptyState';
+import { EmptyState } from '../components/ds/EmptyState';
 import { PillTabs } from '../components/ui/PillTabs';
-import { formatCurrency, formatDate } from '../lib/finance';
+import { useStoreHydration } from '../hooks/useStoreHydration';
 import {
-  ENGAGEMENT_KIND_LABEL,
-  nextWeekdayDate,
-  packProgress,
-} from '../lib/engagements';
-import { getClientName, getEventRevenueTotal } from '../lib/events';
-import { engagementRevenueAmount } from '../lib/finance/engagementFinancialSync';
-import type { Engagement, Event, Milestone } from '../types/models';
-import { externalFormEventBadge } from '../lib/externalForms/badges';
-import { getUnreadAutoActivityIds } from '../lib/externalForms/formActivityNotification';
-import {
-  activityEmptyMessage,
-  allowedActivityFilters,
-  buildActivityFilterTabs,
-  type ActivityFilter,
-  usesEngagementActivities,
-  usesEventActivities,
-} from '../lib/workModel';
-import { useActivitiesWorkspace } from '../hooks/useActivitiesWorkspace';
+  applyAttentionFlags,
+  buildActivityRecords,
+  filterActivitiesByChip,
+  getActivitiesEmptyIcon,
+  getActivitiesFilterChips,
+  getActivitiesGroupingConfig,
+  getActivitiesPageCopy,
+  getActivitiesPrimaryCtaLabel,
+  groupActivities,
+  mapActivityRecordToCard,
+  searchActivityRecords,
+  selectFeaturedActivity,
+  type ActivityFilterId,
+} from '../lib/activities';
 import { useAppStore } from '../store/useAppStore';
-interface ActivityItem {
-  id: string;
-  kind: ActivityFilter;
-  client: string;
-  title: string;
-  location?: string;
-  dateLabel: string;
-  valueLabel: string;
-  typeLabel: string;
-  formBadge?: string;
-  href: string;
-  icon: typeof Calendar;
-  sortDate: string;
-  isEvent: boolean;
-  isPast: boolean;
-  event?: Event;
-}
-
-const KIND_ICON: Record<Exclude<ActivityFilter, 'all'>, typeof Calendar> = {
-  event: Calendar,
-  session_pack: Ticket,
-  recurring_group: Users,
-  project: ClipboardList,
-};
+import '../styles/activities-page.css';
 
 function weekEndIso(): string {
   const d = new Date();
@@ -65,305 +34,183 @@ function weekEndIso(): string {
   return d.toISOString().slice(0, 10);
 }
 
-function engagementItem(
-  e: Engagement,
-  milestones: Milestone[],
-  eventValues: ReturnType<typeof useAppStore.getState>['eventValues'],
-): ActivityItem {
-  const { remaining } = packProgress(e);
-  const memberCount = e.members?.length ?? 0;
-  const nextDate =
-    e.kind === 'recurring_group' && e.weekday != null ? nextWeekdayDate(e.weekday) : null;
-
-  let dateLabel = '';
-  let valueLabel = '';
-  if (e.kind === 'session_pack') {
-    dateLabel = e.packExpiresAt ? formatDate(e.packExpiresAt) : 'ללא תוקף';
-    valueLabel = `${remaining} מפגשים`;
-  } else if (e.kind === 'recurring_group') {
-    dateLabel = nextDate ? formatDate(nextDate) : '—';
-    valueLabel = `${memberCount} משתתפים`;
-  } else {
-    dateLabel = e.startDate ? formatDate(e.startDate) : '—';
-    const amount =
-      (e.eventId ? getEventRevenueTotal(e.eventId, eventValues) : 0) ||
-      engagementRevenueAmount(e, milestones);
-    valueLabel = amount > 0 ? formatCurrency(amount) : e.status === 'active' ? 'פעיל' : 'הסתיים';
-  }
-
-  return {
-    id: e.id,
-    kind: e.kind,
-    client: e.clientName || e.title,
-    title: e.title,
-    dateLabel,
-    valueLabel,
-    typeLabel: ENGAGEMENT_KIND_LABEL[e.kind],
-    href: `/engagements/${e.id}`,
-    icon: KIND_ICON[e.kind],
-    sortDate: nextDate ?? e.startDate ?? e.createdAt.slice(0, 10),
-    isEvent: false,
-    isPast: e.status !== 'active',
-  };
-}
-
-function ActivityCard({
-  item,
-  highlight,
-  isNewAuto,
-}: {
-  item: ActivityItem;
-  highlight?: boolean;
-  isNewAuto?: boolean;
-}) {
-  const Icon = item.icon;
-  return (
-    <Link
-      to={item.href}
-      className={`card activity-card-v2 ${highlight ? 'activity-card-v2--highlight' : ''} ${isNewAuto ? 'activity-card-v2--new-auto' : ''} ${item.isPast ? 'activity-card-v2--muted' : ''}`}
-    >
-      <div className="activity-card-v2-body">
-        <div className="activity-card-v2-top">
-          <span className="activity-card-v2-icon" aria-hidden>
-            <Icon size={16} strokeWidth={2} />
-          </span>
-          <strong>{item.client}</strong>
-          {isNewAuto && <span className="activity-new-badge">חדש</span>}
-        </div>
-        <p className="activity-card-v2-meta">
-          {item.dateLabel} · {item.valueLabel}
-          {item.formBadge && (
-            <span className="form-source-chip">{item.formBadge}</span>
-          )}
-        </p>
-      </div>
-      <span className="activity-card-v2-type">{item.typeLabel}</span>
-    </Link>
-  );
-}
-
-function ActivityList({
-  items,
-  highlight,
-  newAutoIds,
-}: {
-  items: ActivityItem[];
-  highlight?: boolean;
-  newAutoIds?: Set<string>;
-}) {
-  if (items.length === 0) return null;
-  return (
-    <ul className="activity-list">
-      {items.map((item) => (
-        <li key={item.id}>
-          <ActivityCard
-            item={item}
-            highlight={highlight}
-            isNewAuto={newAutoIds?.has(item.event?.id ?? item.id.replace(/^ev-/, ''))}
-          />
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 export function EngagementsPage() {
+  const hydrated = useStoreHydration();
+  const navigate = useNavigate();
+
   const business = useAppStore((s) => s.business);
   const events = useAppStore((s) => s.events);
   const categories = useAppStore((s) => s.categories);
   const eventValues = useAppStore((s) => s.eventValues);
   const engagements = useAppStore((s) => s.engagements ?? []);
   const milestones = useAppStore((s) => s.milestones ?? []);
-  const formNotifications = useAppStore((s) => s.formNotifications);
+  const sessions = useAppStore((s) => s.engagementSessions ?? []);
+  const invoices = useAppStore((s) => s.invoices);
 
-  const activitiesWorkspace = useActivitiesWorkspace();
+  const todayIso = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const weekEnd = useMemo(() => weekEndIso(), []);
 
-  const newAutoEventIds = useMemo(
-    () => getUnreadAutoActivityIds(formNotifications),
-    [formNotifications],
+  const groupingConfig = useMemo(() => getActivitiesGroupingConfig(business), [business]);
+  const pageCopy = useMemo(() => getActivitiesPageCopy(business), [business]);
+  const filterChips = useMemo(() => getActivitiesFilterChips(business), [business]);
+  const primaryCta = useMemo(() => getActivitiesPrimaryCtaLabel(business), [business]);
+  const emptyIcon = useMemo(() => getActivitiesEmptyIcon(business), [business]);
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState<ActivityFilterId>('all');
+
+  const allRecords = useMemo(
+    () =>
+      buildActivityRecords({
+        business,
+        events,
+        engagements,
+        categories,
+        eventValues,
+        milestones,
+        sessions,
+        invoices,
+        todayIso,
+      }),
+    [business, events, engagements, categories, eventValues, milestones, sessions, invoices, todayIso],
   );
 
-  const allowedKinds = useMemo(() => allowedActivityFilters(business), [business]);
-  const filterTabs = useMemo(() => buildActivityFilterTabs(business), [business]);
-  const showEventSections = usesEventActivities(business);
-  const showEngagementSections = usesEngagementActivities(business);
+  const withAttention = useMemo(
+    () =>
+      applyAttentionFlags(allRecords, { todayIso, weekEndIso: weekEnd }, invoices),
+    [allRecords, todayIso, weekEnd, invoices],
+  );
 
-  const [filter, setFilter] = useState<ActivityFilter>('all');
-  const todayIso = new Date().toISOString().slice(0, 10);
-  const weekEnd = weekEndIso();
+  const searched = useMemo(
+    () => searchActivityRecords(withAttention, searchQuery),
+    [withAttention, searchQuery],
+  );
 
-  useEffect(() => {
-    if (filter !== 'all' && !allowedKinds.has(filter)) {
-      setFilter('all');
-    }
-  }, [filter, allowedKinds]);
+  const filtered = useMemo(
+    () => filterActivitiesByChip(searched, activeFilter, todayIso, weekEnd),
+    [searched, activeFilter, todayIso, weekEnd],
+  );
 
-  const sections = useMemo(() => {
-    const thisWeekEvents: ActivityItem[] = [];
-    const laterEvents: ActivityItem[] = [];
-    const pastEvents: ActivityItem[] = [];
-    const activeEngagements: ActivityItem[] = [];
-    const pastEngagements: ActivityItem[] = [];
+  const featured = useMemo(
+    () => selectFeaturedActivity(filtered, todayIso),
+    [filtered, todayIso],
+  );
 
-    if (allowedKinds.has('event')) {
-      for (const ev of events) {
-        const client = getClientName(ev.id, categories, eventValues);
-        const amount = getEventRevenueTotal(ev.id, eventValues);
-        const item: ActivityItem = {
-          id: `ev-${ev.id}`,
-          kind: 'event',
-          client: client ?? 'לקוח',
-          title: ev.title,
-          location: ev.location.trim() || undefined,
-          dateLabel: formatDate(ev.eventDate),
-          valueLabel: amount > 0 ? formatCurrency(amount) : '—',
-          typeLabel: 'אירוע',
-          formBadge: externalFormEventBadge(ev) ?? undefined,
-          href: `/events/${ev.id}/edit`,
-          icon: Calendar,
-          sortDate: ev.eventDate,
-          isEvent: true,
-          isPast: ev.eventDate < todayIso,
-          event: ev,
-        };
+  const listRecords = useMemo(
+    () => (featured ? filtered.filter((r) => r.id !== featured.id) : filtered),
+    [filtered, featured],
+  );
 
-        if (ev.eventDate < todayIso) pastEvents.push(item);
-        else if (ev.eventDate <= weekEnd) thisWeekEvents.push(item);
-        else laterEvents.push(item);
-      }
-    }
+  const grouped = useMemo(
+    () =>
+      groupActivities(listRecords, groupingConfig.groups, {
+        todayIso,
+        weekEndIso: weekEnd,
+        primaryModel: groupingConfig.primaryModel,
+      }),
+    [listRecords, groupingConfig, todayIso, weekEnd],
+  );
 
-    for (const e of engagements) {
-      if (!allowedKinds.has(e.kind)) continue;
-      const item = engagementItem(e, milestones, eventValues);
-      if (item.isPast) pastEngagements.push(item);
-      else activeEngagements.push(item);
-    }
+  const visibleCount = filtered.length;
+  const hasSearchOrFilter = searchQuery.trim().length > 0 || activeFilter !== 'all';
+  const showEmptyWorkspace = hydrated && allRecords.length === 0;
+  const showNoResults = hydrated && allRecords.length > 0 && visibleCount === 0 && hasSearchOrFilter;
+  const showContent = hydrated && visibleCount > 0;
 
-    const byDate = (a: ActivityItem, b: ActivityItem) => a.sortDate.localeCompare(b.sortDate);
-    thisWeekEvents.sort(byDate);
-    laterEvents.sort(byDate);
-    pastEvents.sort((a, b) => b.sortDate.localeCompare(a.sortDate));
-    activeEngagements.sort(byDate);
-    pastEngagements.sort((a, b) => b.sortDate.localeCompare(a.sortDate));
-
-    return { thisWeekEvents, laterEvents, pastEvents, activeEngagements, pastEngagements };
-  }, [events, categories, eventValues, engagements, milestones, todayIso, weekEnd, allowedKinds]);
-
-  const applyFilter = (items: ActivityItem[]) => {
-    if (filter === 'all') return items;
-    return items.filter((i) => i.kind === filter);
-  };
-
-  const thisWeek = applyFilter(sections.thisWeekEvents);
-  const later = applyFilter(sections.laterEvents);
-  const pastEvents = applyFilter(sections.pastEvents);
-  const activeEng = applyFilter(sections.activeEngagements);
-  const pastEng = applyFilter(sections.pastEngagements);
-  const past = [...pastEvents, ...pastEng].sort((a, b) => b.sortDate.localeCompare(a.sortDate));
-
-  const showWeekShowcase =
-    showEventSections &&
-    thisWeek.length > 0 &&
-    (filter === 'all' || filter === 'event');
-
-  const weekShowcaseItems = thisWeek.map((item) => ({
-    id: item.id,
-    href: item.href,
-    sortDate: item.sortDate,
-    client: item.client,
-    title: item.title,
-    location: item.location,
-    dateLabel: item.dateLabel,
-    valueLabel: item.valueLabel,
-    formBadge: item.formBadge,
-    event: item.event,
-  }));
-
-  const totalVisible =
-    thisWeek.length + later.length + activeEng.length + past.length;
+  const featuredCard = featured
+    ? mapActivityRecordToCard(featured, 'hero', navigate)
+    : null;
 
   return (
     <div className="app-shell">
       <div className="page">
-        <div className="page-top-row">
-          <div>
-            <h1 className="page-title">{activitiesWorkspace.terminology.activityPlural}</h1>
-            <p className="page-subtitle page-subtitle--inline">
-              {activitiesWorkspace.primaryOperatingModel === 'hybrid'
-                ? 'אירועים, ליוויים ופרויקטים'
-                : `ניהול ${activitiesWorkspace.terminology.activityPlural.toLowerCase()}`}
-            </p>
-          </div>
-          <div className="wizard-btn-row">
-            <Link to="/sources" className="btn btn-ghost btn-sm">
-              מקורות
-            </Link>
-            <CreateActivityButton label="+ חדש" />
-          </div>
-        </div>
-
-        {filterTabs.length > 0 && (
-          <PillTabs
-            tabs={filterTabs}
-            active={filter}
-            onChange={setFilter}
-            ariaLabel="סינון פעילויות"
-          />
-        )}
-
-        {totalVisible === 0 ? (
-          <EmptyState
-            icon={Layers}
-            title="אין פעילויות עדיין"
-            message={activityEmptyMessage(business)}
-          >
-            <CreateActivityEmptyAction />
-          </EmptyState>
+        {!hydrated ? (
+          <ActivitiesPageSkeleton />
         ) : (
-          <div
-            className="activity-sections"
-            data-workspace-model={activitiesWorkspace.primaryOperatingModel}
-            data-workspace-grouping={activitiesWorkspace.groupingMode}
-            data-card-presentation={activitiesWorkspace.defaultCardPresentation}
-            data-workspace-filters={activitiesWorkspace.filterTabs.map((t) => t.id).join(',')}
-          >
-            {showWeekShowcase && (
-              <ThisWeekEventsShowcase
-                items={weekShowcaseItems}
-                todayIso={todayIso}
-                newAutoEventIds={newAutoEventIds}
-              />
+          <>
+            <ActivitiesPageHeader
+              title={pageCopy.title}
+              subtitle={pageCopy.subtitle}
+              count={allRecords.length > 0 ? visibleCount : undefined}
+              ctaLabel={primaryCta}
+            />
+
+            {allRecords.length > 0 && (
+              <>
+                <ActivitiesSearchField value={searchQuery} onChange={setSearchQuery} />
+
+                {filterChips.length > 1 && (
+                  <div className="activities-filter-chips">
+                    <PillTabs
+                      tabs={filterChips}
+                      active={activeFilter}
+                      onChange={setActiveFilter}
+                      ariaLabel="סינון פעילויות"
+                    />
+                  </div>
+                )}
+              </>
             )}
 
-            {showEngagementSections && activeEng.length > 0 && (
-              <CollapsibleSection
-                title="ליוויים פעילים"
-                count={activeEng.length}
+            {showEmptyWorkspace && (
+              <EmptyState
+                icon={emptyIcon}
+                title={pageCopy.emptyTitle}
+                description={pageCopy.emptyDescription}
               >
-                <ActivityList items={activeEng} newAutoIds={newAutoEventIds} />
-              </CollapsibleSection>
+                <CreateActivityEmptyAction label={pageCopy.emptyCta} />
+              </EmptyState>
             )}
 
-            {showEventSections && later.length > 0 && (
-              <CollapsibleSection
-                title="אירועים עתידיים"
-                count={later.length}
-              >
-                <ActivityList items={later} newAutoIds={newAutoEventIds} />
-              </CollapsibleSection>
+            {showNoResults && (
+              <p className="activities-search-empty" role="status">
+                לא נמצאו פעילויות התואמות לחיפוש או לסינון
+              </p>
             )}
 
-            {past.length > 0 && (
-              <CollapsibleSection
-                title="עבר"
-                count={past.length}
-                variant="muted"
+            {showContent && (
+              <div
+                className="activities-page-content"
+                data-workspace-model={groupingConfig.primaryModel}
               >
-                <ActivityList items={past.slice(0, 20)} newAutoIds={newAutoEventIds} />
-              </CollapsibleSection>
+                {featuredCard && (
+                  <section className="activities-featured" aria-label="פעילות מומלצת">
+                    <span className="activities-featured__label">
+                      {featured?.needsAttention ? 'דורש טיפול' : 'הבא בתור'}
+                    </span>
+                    <ActivityCard {...featuredCard} />
+                  </section>
+                )}
+
+                {groupingConfig.groups.map((group) => {
+                  const items = grouped.get(group.id) ?? [];
+                  if (items.length === 0) return null;
+
+                  return (
+                    <ActivitiesSection
+                      key={group.id}
+                      title={group.title}
+                      count={items.length}
+                      context={group.context}
+                      collapsible={group.collapsible}
+                      defaultCollapsed={group.defaultCollapsed}
+                    >
+                      <ul className="activities-card-list">
+                        {items.map((record) => {
+                          const card = mapActivityRecordToCard(record, 'standard', navigate);
+                          return (
+                            <li key={record.id}>
+                              <ActivityCard {...card} />
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </ActivitiesSection>
+                  );
+                })}
+              </div>
             )}
-          </div>
+          </>
         )}
       </div>
       <BottomNav />

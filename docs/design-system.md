@@ -957,6 +957,35 @@ Every main screen follows this order:
 | Clients | לקוחות | 142 לקוחות פעילים |
 | Finance | כספים | סיכום החודש |
 
+### Activities page anatomy
+
+The production Activities page (`/activities`) is **configuration-driven** — it reads `BusinessWorkspaceConfig` and never hardcodes a single business type.
+
+**Implementation:** `src/pages/EngagementsPage.tsx` · resolvers in `src/lib/activities/`
+
+| Zone | Component | Behavior |
+|------|-----------|----------|
+| Header | `ActivitiesPageHeader` | Title, subtitle, activity count, primary create CTA from workspace terminology |
+| Search | `ActivitiesSearchField` | Full-width DS search field — title, client, location, stage, status, tags |
+| Filters | `PillTabs` | Adaptive chips from `getActivitiesFilterChips()` — only enabled models in hybrid |
+| Featured | `ActivityCard variant="hero"` | One highest-priority activity — excluded from section lists |
+| Sections | `ActivitiesSection` | Groups from `getActivitiesGroupingConfig()` — empty sections hidden |
+| Cards | `ActivityCard variant="standard"` | Mapped via `mapActivityRecordToCard()` — single adapter, no duplicated markup |
+| Empty | `EmptyState` | Model-aware copy from `getActivitiesPageCopy()` |
+| Loading | `ActivitiesPageSkeleton` | Shown until store hydration completes — no empty flash |
+
+**Grouping rule:** One centralized resolver (`getActivitiesGroupingConfig` + `groupActivities`) adapts section titles and assignment to `primaryOperatingModel`. Do not scatter grouping logic in JSX.
+
+**Featured activity rule:** `selectFeaturedActivity()` — needs attention first, then nearest upcoming, then first active. Hero card is removed from grouped lists.
+
+**Filter chips:** Model-specific presets; hybrid adds presentation-type chips only for `enabledOperatingModels`. Chips filter before grouping.
+
+**Empty states:** Title, description, and CTA adapt per primary model (event, appointment, journey, package, project, recurring, hybrid).
+
+**Create flow:** Restricted to enabled models via `CreateActivityButton` / `useCreateActivityFlow` — one model navigates directly; multiple opens bottom sheet.
+
+**Monthly expenses:** Not shown on Activities — financial records belong on Finance/Invoices.
+
 ---
 
 ## 14. RTL and Hebrew Rules
