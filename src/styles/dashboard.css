@@ -666,7 +666,7 @@
 
 /* ── Package workspace dashboard ── */
 .page-dashboard--package {
-  gap: 1rem;
+  gap: 2rem;
 }
 
 .dash-v2-package-section-count {

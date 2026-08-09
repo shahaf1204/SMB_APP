@@ -150,14 +150,14 @@ One business type may use multiple operating models. Example: a photographer may
 
 Revenue KPIs (הכנסות · הוצאות · רווח) appear **only** in סיכום חודשי on the package dashboard.
 
-### Dashboard quick glance (מבט מהיר על הכרטיסיות)
+### Dashboard package status (מצב הכרטיסיות)
 
-Operational KPIs only — each metric appears once:
+Operational KPIs only — each metric appears once. Priority row first (near completion · expiring); secondary row below (active · sessions this month):
 
-- active_packages — כרטיסיות פעילות
-- sessions_used_this_month — מפגשים שבוצעו החודש
-- packages_near_completion — כרטיסיות קרובות לסיום (count)
-- packages_expiring_soon — כרטיסיות עומדות לפוג
+- packages_near_completion — כרטיסיות קרובות לסיום (priority; emphasized when &gt; 0)
+- packages_expiring_soon — כרטיסיות עומדות לפוג (priority; emphasized when &gt; 0)
+- active_packages — כרטיסיות פעילות (secondary)
+- sessions_used_this_month — מפגשים החודש (secondary)
 
 Do **not** show מפגשים שנותרו on the dashboard (misleading aggregate).
 

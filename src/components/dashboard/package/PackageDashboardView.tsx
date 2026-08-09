@@ -32,7 +32,7 @@ interface PackageDashboardViewProps {
 
 /**
  * Package-primary dashboard hierarchy:
- * 1 Hero → 2 Quick actions → 3 Financial → 4 Package glance → 5 Attention → 6 Chart
+ * 1 Hero → 2 Quick actions → 3 Financial → 4 Package status → 5 Attention → 6 Chart
  */
 export function PackageDashboardView({ calendarExport }: PackageDashboardViewProps) {
   const business = useAppStore((s) => s.business);
@@ -119,8 +119,6 @@ export function PackageDashboardView({ calendarExport }: PackageDashboardViewPro
 
       <PackageDashboardQuickActions />
 
-      <hr className="dash-v2-divider" aria-hidden />
-
       <KpiCards
         revenue={totals.revenue}
         expense={totals.expense}
@@ -130,13 +128,9 @@ export function PackageDashboardView({ calendarExport }: PackageDashboardViewPro
         hideExpected
       />
 
-      <hr className="dash-v2-divider" aria-hidden />
-
       <PackageQuickGlanceKpis stats={glanceStats} />
 
       <PackageAttentionSections />
-
-      <hr className="dash-v2-divider" aria-hidden />
 
       <PackageSessionsChart engagements={engagements} sessions={engagementSessions} />
     </>

@@ -997,11 +997,13 @@ When `primaryOperatingModel === 'package'`, the dashboard renders `PackageDashbo
 | 1 | Hero | `PackageDashboardHero` | Contextual summary |
 | 2 | Quick actions | `PackageDashboardQuickActions` | רישום מפגש · כרטיסייה חדשה · לקוח · חשבונית |
 | 3 | **סיכום חודשי** | `KpiCards` + `profit` | הכנסות · הוצאות · רווח **only here** |
-| 4 | **מבט מהיר על הכרטיסיות** | `PackageQuickGlanceKpis` | כרטיסיות פעילות · מפגשים שבוצעו · קרובות לסיום · עומדות לפוג |
+| 4 | **מצב הכרטיסיות** | `PackageQuickGlanceKpis` | כרטיסיות פעילות · מפגשים החודש · קרובות לסיום · עומדות לפוג |
 | 5 | Attention | `PackageAttentionSections` | Max 3 preview rows per section + הצג הכל |
 | 6 | Chart | `PackageSessionsChart` | מפגשים שבוצעו (monthly bar) |
 
-**Duplication rule:** Revenue, expense, and profit never appear outside סיכום חודשי. Package counts never appear outside מבט מהיר (except as detailed rows in attention previews). Do not show מפגשים שנותרו — misleading across mixed package sizes.
+**Duplication rule:** Revenue, expense, and profit never appear outside סיכום חודשי. Package counts never appear outside מצב הכרטיסיות (except as detailed rows in attention previews). Do not show מפגשים שנותרו — misleading across mixed package sizes.
+
+**Visual priority:** Priority row (קרובות לסיום · עומדות לפוג) uses larger cards with emphasis when count &gt; 0; idle (0) cards recede. Secondary row (כרטיסיות פעילות · מפגשים החודש) stays compact.
 
 **Dashboard max record rule:** Attention sections show max **3 preview rows**; full browsing on Activities page.
 
