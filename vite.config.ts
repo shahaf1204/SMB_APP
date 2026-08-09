@@ -1,4 +1,4 @@
-/// <reference types="node" />
+/// <reference types="vitest/config" />
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -56,4 +56,8 @@ function sheetCsvDevProxy(): Plugin {
 
 export default defineConfig({
   plugins: [react(), sheetCsvDevProxy()],
+  test: {
+    environment: 'node',
+    include: ['src/**/*.test.ts'],
+  },
 });

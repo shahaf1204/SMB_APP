@@ -996,10 +996,11 @@ When `primaryOperatingModel === 'package'`, the dashboard renders `PackageDashbo
 |---|---------|-----------|---------|
 | 1 | Hero | `PackageDashboardHero` | Contextual summary |
 | 2 | Quick actions | `PackageDashboardQuickActions` | רישום מפגש · כרטיסייה חדשה · לקוח · חשבונית |
-| 3 | **סיכום חודשי** | `KpiCards` + `profit` | הכנסות · הוצאות · רווח **only here** |
-| 4 | **מצב הכרטיסיות** | `PackageQuickGlanceKpis` | כרטיסיות פעילות · מפגשים החודש · קרובות לסיום · עומדות לפוג |
-| 5 | Attention | `PackageAttentionSections` | Max 3 preview rows per section + הצג הכל |
-| 6 | Chart | `PackageSessionsChart` | מפגשים שבוצעו (monthly bar) |
+| 3 | **Business Coach** | `PackageBusinessCoachPanel` | Max 3 actionable insights — interpretation, not KPIs |
+| 4 | **סיכום חודשי** | `KpiCards` + `profit` | הכנסות · הוצאות · רווח **only here** |
+| 5 | **מצב הכרטיסיות** | `PackageQuickGlanceKpis` | כרטיסיות פעילות · מפגשים החודש · קרובות לסיום · עומדות לפוג |
+| 6 | Attention | `PackageAttentionSections` | Max 3 preview rows per section + הצג הכל |
+| 7 | Chart | `PackageSessionsChart` | מפגשים שבוצעו (monthly bar) |
 
 **Duplication rule:** Revenue, expense, and profit never appear outside סיכום חודשי. Package counts never appear outside מצב הכרטיסיות (except as detailed rows in attention previews). Do not show מפגשים שנותרו — misleading across mixed package sizes.
 
@@ -1010,6 +1011,32 @@ When `primaryOperatingModel === 'package'`, the dashboard renders `PackageDashbo
 **Package Activities page:** Client-first `PackageClientRow` / `PackageSummaryRow` — not ActivityCard lists.
 
 **Thresholds:** `BusinessWorkspaceConfig.packageSettings` — `lowSessionsThreshold` (default 3), `expiringDaysThreshold` (default 14).
+
+### Business Coach
+
+Rule-based assistant — **not AI**. Surfaces interpretation and next actions from real data.
+
+| Component | Role |
+|-----------|------|
+| `BusinessCoachPanel` | Section wrapper — max 3 insights, hidden when empty |
+| `InsightCard` | Icon + title + description + optional CTA |
+| `PackageBusinessCoachPanel` | Package workspace wiring only |
+
+**Heading:** מה דורש את תשומת הלב שלך  
+**Subtitle:** המלצות ועדכונים לפי מה שקורה בעסק
+
+**Insight types (internal):** `warning` · `opportunity` · `reminder` · `success` · `info`  
+**Priority order:** critical → high → medium → low → positive
+
+**Insight vs KPI:** KPIs count; insights explain why it matters and suggest action. Never duplicate a KPI number without added value. No fake or placeholder insights.
+
+**Icons:** Lucide only — `TriangleAlert`, `Lightbulb`, `Clock3`, `CircleCheck`, `Info`
+
+**Anatomy (`InsightCard`):** small icon · short title · one description line · optional text CTA (no giant banners).
+
+**Production:** Package workspace dashboard only. Other models: stubs return `[]`, UI unchanged.
+
+See `docs/business-coach.md` for rule engine, aggregation, deduplication, and future AI merge point.
 
 ---
 

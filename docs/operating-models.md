@@ -161,6 +161,24 @@ Operational KPIs only — each metric appears once. Priority row first (near com
 
 Do **not** show מפגשים שנותרו on the dashboard (misleading aggregate).
 
+### Business Coach (Package only)
+
+Rule-based assistant panel — **מה דורש את תשומת הלב שלך**. Placed after Quick Actions, before סיכום חודשי. Hidden when no meaningful insights. Max **3** insights sorted by priority.
+
+Insights add interpretation; they do not duplicate KPI counts.
+
+| Rule | Trigger | Type |
+|------|---------|------|
+| Near completion | Active pack, remaining ≤ threshold | opportunity |
+| Expiring soon | Active pack, expiry within threshold, not expired | reminder |
+| Expired unused | Expired pack with remaining sessions | warning |
+
+CTAs link to `/activities?filter=low_remaining`, `/activities?filter=expiring_soon`, or `/engagements/{id}`.
+
+Positive insights (sessions or sales growth) appear only when month-over-month data supports a real comparison.
+
+See `docs/business-coach.md` for architecture and future AI extension point.
+
 ### Dashboard attention previews
 
 Max 3 rows each, with **הצג הכל** → filtered Activities page:

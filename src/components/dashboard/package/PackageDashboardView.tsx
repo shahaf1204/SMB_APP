@@ -9,6 +9,7 @@ import {
   PackageDashboardEmptyHint,
 } from './PackageAttentionSections';
 import { PackageQuickGlanceKpis } from './PackageQuickGlanceKpis';
+import { PackageBusinessCoachPanel } from './PackageBusinessCoachPanel';
 import { PackageSessionsChart } from './PackageSessionsChart';
 import { calculateUnifiedTotals } from '../../../lib/engagementFinance';
 import { resolveExpenseTrackingMode } from '../../../lib/monthlyExpenses';
@@ -17,6 +18,7 @@ import { countNearlyDepleted } from '../../../lib/package/packagePreview';
 import { resolvePackageDashboardConfig } from '../../../lib/package/resolvePackageDashboardConfig';
 import { useAppStore } from '../../../store/useAppStore';
 import '../../../styles/package-workspace.css';
+import '../../../styles/business-coach.css';
 
 function formatTrendPct(current: number, previous: number): { delta: string; sub: string } {
   if (previous === 0 && current === 0) return { delta: '—', sub: 'לעומת חודש שעבר' };
@@ -32,7 +34,7 @@ interface PackageDashboardViewProps {
 
 /**
  * Package-primary dashboard hierarchy:
- * 1 Hero → 2 Quick actions → 3 Financial → 4 Package status → 5 Attention → 6 Chart
+ * 1 Hero → 2 Quick actions → 3 Coach → 4 Financial → 5 Package status → 6 Attention → 7 Chart
  */
 export function PackageDashboardView({ calendarExport }: PackageDashboardViewProps) {
   const business = useAppStore((s) => s.business);
@@ -118,6 +120,8 @@ export function PackageDashboardView({ calendarExport }: PackageDashboardViewPro
       <PackageDashboardEmptyHint />
 
       <PackageDashboardQuickActions />
+
+      <PackageBusinessCoachPanel />
 
       <KpiCards
         revenue={totals.revenue}
