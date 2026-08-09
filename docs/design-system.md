@@ -986,6 +986,25 @@ The production Activities page (`/activities`) is **configuration-driven** — i
 
 **Monthly expenses:** Not shown on Activities — financial records belong on Finance/Invoices.
 
+### Package workspace dashboard
+
+When `primaryOperatingModel === 'package'`, the dashboard renders `PackageDashboardView` instead of the default event-centric layout. All package logic lives under `src/lib/package/` and `src/components/dashboard/package/`.
+
+| Zone | Component | Behavior |
+|------|-----------|----------|
+| Hero | `PackageDashboardHero` | Usage/expiry context — not event calendar copy |
+| Sections | `PackageDashboardSections` | כרטיסיות קרובות לסיום · עומדות לפוג · פעילות · הסתיימו — empty sections hidden |
+| Quick actions | `PackageDashboardQuickActions` | Primary: **רישום מפגש** → existing detail flow via `?action=log-session` |
+| Revenue KPIs | `KpiCards hideExpected` | הכנסות + הוצאות החודש |
+| Operational KPIs | `PackageOperationalKpis` | כרטיסיות פעילות · מפגשים שנותרו · מפגשים שבוצעו החודש · כרטיסיות שעומדות לפוג |
+| Chart | `PackageSessionsChart` | Bar chart — monthly sessions used; optional packages sold overlay |
+
+**Thresholds:** `BusinessWorkspaceConfig.packageSettings` — `lowSessionsThreshold` (default 3), `expiringDaysThreshold` (default 14).
+
+**Package ActivityCard:** Utilization summary (`נותרו X מתוך Y`), thin progress bar, expiration emphasis. Primary quick action: **רישום מפגש** → `/engagements/:id?action=log-session`.
+
+**Attention rule:** Real data only — overdue payment, expired, low remaining, expiring soon. No generic "דורש טיפול" section.
+
 ---
 
 ## 14. RTL and Hebrew Rules

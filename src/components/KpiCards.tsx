@@ -17,6 +17,7 @@ interface KpiCardsProps {
   expense: number;
   expectedRevenue: number;
   insights: KpiInsights;
+  hideExpected?: boolean;
 }
 
 const KPI_CONFIG = [
@@ -40,8 +41,9 @@ const KPI_CONFIG = [
   },
 ];
 
-export function KpiCards({ revenue, expense, expectedRevenue, insights }: KpiCardsProps) {
+export function KpiCards({ revenue, expense, expectedRevenue, insights, hideExpected }: KpiCardsProps) {
   const values = { revenue, expense, expected: expectedRevenue };
+  const cards = hideExpected ? KPI_CONFIG.filter((c) => c.key !== 'expected') : KPI_CONFIG;
 
   return (
     <section className="dash-v2-section dash-v2-section--tight" aria-label="סיכום כספי">
@@ -49,7 +51,7 @@ export function KpiCards({ revenue, expense, expectedRevenue, insights }: KpiCar
         <h2 className="dash-v2-section-title">סיכום חודשי</h2>
       </div>
       <div className="dash-v2-kpi-grid">
-        {KPI_CONFIG.map(({ key, label, icon: Icon, variant }) => {
+        {cards.map(({ key, label, icon: Icon, variant }) => {
           const insight = insights[key];
 
           return (

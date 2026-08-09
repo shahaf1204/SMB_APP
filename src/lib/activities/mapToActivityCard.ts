@@ -1,7 +1,8 @@
 import type { ActivityCardProps, ActivityCardVariant } from '../../components/business/ActivityCard';
-import { ENGAGEMENT_KIND_LABEL } from '../engagements';
+import { ENGAGEMENT_KIND_LABEL, packProgress } from '../engagements';
 import { getOperatingModelDefinition } from '../../config/operatingModelConfig';
 import { formatDate } from '../finance';
+import { logSessionRoute } from '../package/resolvePackageDashboardConfig';
 import type { ActivityRecord } from './types';
 import type { NavigateFunction } from 'react-router-dom';
 
@@ -24,6 +25,20 @@ export function mapActivityRecordToCard(
   const onOpen = () => navigate(record.href);
 
   const quickActions = [];
+
+  if (
+    record.presentationType === 'package' &&
+    record.engagement?.status === 'active'
+  ) {
+    const { remaining } = packProgress(record.engagement);
+    if (remaining > 0) {
+      quickActions.push({
+        type: 'open' as const,
+        label: 'רישום מפגש',
+        onClick: () => navigate(logSessionRoute(record.engagement!.id)),
+      });
+    }
+  }
 
   if (record.phone?.trim()) {
     quickActions.push({

@@ -145,7 +145,32 @@ One business type may use multiple operating models. Example: a photographer may
 
 - active_packages — כרטיסיות פעילות
 - remaining_sessions — מפגשים שנותרו
-- expiring_soon — פג תוקף בקרוב
+- sessions_used_this_month — מפגשים שבוצעו החודש
+- packages_expiring_soon — כרטיסיות שעומדות לפוג
+
+Revenue KPIs (הכנסות + הוצאות החודש) remain on the package dashboard alongside operational metrics.
+
+### Dashboard sections (package-primary only)
+
+1. כרטיסיות קרובות לסיום — remaining ≤ `lowSessionsThreshold` (default 3)
+2. עומדות לפוג — expiration within `expiringDaysThreshold` (default 14 days)
+3. כרטיסיות פעילות
+4. הסתיימו
+
+Empty sections are hidden. No generic "דורש טיפול" block — attention is shown on cards when backed by real data.
+
+### Dashboard chart
+
+Monthly **מפגשים שבוצעו** bar chart (6 months). Optional overlay: **כרטיסיות שנמכרו** when creation history exists.
+
+### Package ActivityCard
+
+- Utilization: `נותרו X מתוך Y` + progress bar
+- Primary quick action: **רישום מפגש** → existing detail flow via `?action=log-session`
+
+### Configurable thresholds
+
+`BusinessWorkspaceConfig.packageSettings`: `lowSessionsThreshold`, `expiringDaysThreshold`
 
 ### Recommended filters
 

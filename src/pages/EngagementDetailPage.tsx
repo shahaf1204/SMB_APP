@@ -1,5 +1,5 @@
-import { FormEvent, useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
 import { formatCurrency } from '../lib/finance';
 import {
@@ -23,6 +23,8 @@ const MS_STATUS: Record<MilestoneStatus, string> = {
 export function EngagementDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const packLogRef = useRef<HTMLElement>(null);
   const allEngagements = useAppStore((s) => s.engagements ?? []);
   const allMilestones = useAppStore((s) => s.milestones ?? []);
   const allSessions = useAppStore((s) => s.engagementSessions ?? []);
@@ -60,6 +62,13 @@ export function EngagementDetailPage() {
   const [newParent, setNewParent] = useState('');
   const [attended, setAttended] = useState<Set<string>>(new Set());
   const [sessionNotes, setSessionNotes] = useState('');
+
+  useEffect(() => {
+    if (searchParams.get('action') !== 'log-session') return;
+    if (!engagement || engagement.kind !== 'session_pack') return;
+    packLogRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setSearchParams({}, { replace: true });
+  }, [engagement, searchParams, setSearchParams]);
 
   if (!engagement) {
     return (
@@ -181,7 +190,11 @@ export function EngagementDetailPage() {
         </div>
 
         {engagement.kind === 'session_pack' && pack && (
-          <section className="card engagement-hero">
+          <section
+            ref={packLogRef}
+            id="pack-log-session"
+            className="card engagement-hero"
+          >
             <div className="pack-meter-wrap">
               <div
                 className="pack-meter-fill"
@@ -197,7 +210,7 @@ export function EngagementDetailPage() {
             {pack.remaining > 0 ? (
               <>
                 <button type="button" className="btn btn-primary" onClick={handleLogPackVisit}>
-                  ✓ רשמתי כניסה
+                  + רישום מפגש
                 </button>
                 <div className="field" style={{ marginTop: '0.5rem', marginBottom: 0 }}>
                   <input

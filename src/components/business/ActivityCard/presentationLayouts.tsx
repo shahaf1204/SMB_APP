@@ -220,18 +220,20 @@ function renderJourney(ctx: ActivityCardLayoutContext): ReactNode {
 function renderPackage(ctx: ActivityCardLayoutContext): ReactNode {
   const {
     id, title, TypeIcon, isHero,
-    usageLabel, progressLabel, clientName, dateLabel, showProgress, progressPercent,
+    usageLabel, progressDetail, progressPercent, clientName, deadlineLabel,
+    showProgress, contextualLabel,
   } = ctx;
 
-  const contextHeader = progressLabel ?? undefined;
-  const hasSchedule = usageLabel || dateLabel;
+  const utilizationSummary = usageLabel ?? progressDetail;
+  const showUtilizationBar =
+    showProgress && progressPercent != null && progressPercent >= 0;
 
   return (
     <CardBody>
-      {contextHeader && (
+      {contextualLabel && (
         <CardSection zone="context">
           <ContextHeader tone="urgent" icon={MetaIcons.usage}>
-            {contextHeader}
+            {contextualLabel}
           </ContextHeader>
         </CardSection>
       )}
@@ -239,24 +241,24 @@ function renderPackage(ctx: ActivityCardLayoutContext): ReactNode {
         <TitleRow id={id} title={title} TypeIcon={TypeIcon} isHero={isHero} />
         {clientName && <ClientLine>{clientName}</ClientLine>}
       </CardSection>
-      {hasSchedule && (
+      {(utilizationSummary || deadlineLabel) && (
         <CardSection zone="schedule">
-          {usageLabel && (
+          {utilizationSummary && (
             <MetaLine icon={MetaIcons.usage} emphasis>
-              {usageLabel}
+              {utilizationSummary}
             </MetaLine>
           )}
-          {dateLabel && (
+          {deadlineLabel && (
             <MetaLine icon={MetaIcons.expiration} muted>
-              {dateLabel}
+              {deadlineLabel}
             </MetaLine>
           )}
         </CardSection>
       )}
       {operationalTail(ctx, {
-        progressDetail:
-          showProgress && progressPercent != null && !usageLabel ? progressLabel : null,
+        progressDetail: showUtilizationBar ? (progressDetail ?? utilizationSummary) : null,
         progressTone: 'usage',
+        showBar: showUtilizationBar,
       })}
     </CardBody>
   );

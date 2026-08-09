@@ -142,8 +142,8 @@ function buildEngagementRecord(
     const { used, total, remaining } = packProgress(engagement);
     if (total > 0) {
       progressPercent = Math.round((used / total) * 100);
-      usageLabel = `${remaining} מפגשים נותרו`;
-      progressDetail = `${used} מתוך ${total} מפגשים`;
+      usageLabel = `נותרו ${remaining} מתוך ${total}`;
+      progressDetail = `${used} מתוך ${total} נוצלו`;
     }
     if (engagement.packExpiresAt) {
       deadlineLabel = `תוקף ${formatDate(engagement.packExpiresAt)}`;

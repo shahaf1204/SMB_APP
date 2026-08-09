@@ -28,8 +28,18 @@ export interface BusinessWorkspaceConfig {
   onboardingCompletedAt?: string;
   terminology?: Partial<WorkspaceTerminology>;
   defaultWorkflowTemplateId?: string;
+  /** Optional overrides for package-primary workspaces */
+  packageSettings?: PackageWorkspaceSettings;
   createdAt: string;
   updatedAt: string;
+}
+
+/** Configurable thresholds for package workspace dashboards and alerts */
+export interface PackageWorkspaceSettings {
+  /** Remaining sessions at or below this count trigger "low" alerts (default 3) */
+  lowSessionsThreshold?: number;
+  /** Days until expiration to flag "expiring soon" (default 14) */
+  expiringDaysThreshold?: number;
 }
 
 export type ActivitiesGroupingMode =
