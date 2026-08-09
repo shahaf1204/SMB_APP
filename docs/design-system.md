@@ -988,31 +988,24 @@ The production Activities page (`/activities`) is **configuration-driven** — i
 
 ### Package workspace dashboard
 
-When `primaryOperatingModel === 'package'`, the dashboard renders `PackageDashboardView` instead of the default event-centric layout. All package logic lives under `src/lib/package/` and `src/components/package/`.
+When `primaryOperatingModel === 'package'`, the dashboard renders `PackageDashboardView`. Each metric appears **once** — no duplication between sections.
 
-**Dashboard max record rule:** No operational section shows more than **3 preview rows**. Full browsing belongs on the Activities page.
+**Visual hierarchy (top → bottom):**
 
-| Zone | Component | Behavior |
-|------|-----------|----------|
-| Hero | `PackageDashboardHero` | Usage/expiry context — not event calendar copy |
-| Previews | `PackageDashboardPreviewSection` + `PackagePreviewRow` | Max 3 rows · **הצג הכל** → `/activities?filter=…` |
-| Summary | `PackageActivitySummary` | Compact metrics — no individual package cards |
-| Quick actions | `PackageDashboardQuickActions` | רישום מפגש · כרטיסייה חדשה · לקוח · חשבונית |
-| Revenue KPIs | `KpiCards hideExpected` + profit line | הכנסות · הוצאות · רווח |
-| Operational KPIs | `PackageOperationalKpis` | 4 package metrics |
-| Chart | `PackageSessionsChart` | Bar chart — monthly sessions used |
+| # | Section | Component | Metrics |
+|---|---------|-----------|---------|
+| 1 | Hero | `PackageDashboardHero` | Contextual summary |
+| 2 | Quick actions | `PackageDashboardQuickActions` | רישום מפגש · כרטיסייה חדשה · לקוח · חשבונית |
+| 3 | **סיכום חודשי** | `KpiCards` + `profit` | הכנסות · הוצאות · רווח **only here** |
+| 4 | **מבט מהיר על הכרטיסיות** | `PackageQuickGlanceKpis` | כרטיסיות פעילות · מפגשים שבוצעו · קרובות לסיום · עומדות לפוג |
+| 5 | Attention | `PackageAttentionSections` | Max 3 preview rows per section + הצג הכל |
+| 6 | Chart | `PackageSessionsChart` | מפגשים שבוצעו (monthly bar) |
 
-**Package Activities page exception:** The generic `ActivityCard` is **not** used for the package client list. Use domain-specific components:
+**Duplication rule:** Revenue, expense, and profit never appear outside סיכום חודשי. Package counts never appear outside מבט מהיר (except as detailed rows in attention previews). Do not show מפגשים שנותרו — misleading across mixed package sizes.
 
-- `PackageClientRow` — client-first collapsible group (~70–100px collapsed)
-- `PackageSummaryRow` — single package line + expanded details
-- `PackageActivitiesPage` — full page at `/activities` when package-primary
+**Dashboard max record rule:** Attention sections show max **3 preview rows**; full browsing on Activities page.
 
-**Progressive disclosure:** Collapsed row shows client + usage; expanded shows purchase date, expiration, payment, session history, **+ רישום מפגש**.
-
-**Usage display:** Always `נותרו X מתוך Y` with thin progress bar — real values only.
-
-**Register session:** Lucide `Plus` + Hebrew label — never pencil/edit for session registration.
+**Package Activities page:** Client-first `PackageClientRow` / `PackageSummaryRow` — not ActivityCard lists.
 
 **Thresholds:** `BusinessWorkspaceConfig.packageSettings` — `lowSessionsThreshold` (default 3), `expiringDaysThreshold` (default 14).
 

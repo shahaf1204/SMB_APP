@@ -720,6 +720,14 @@
   color: #f59e0b;
 }
 
+.dash-v2-kpi--near .dash-v2-kpi-icon {
+  color: #f59e0b;
+}
+
+.dash-v2-kpi--profit .dash-v2-kpi-icon {
+  color: #10b981;
+}
+
 .activity-card--presentation-package .activity-card__surface {
   border-inline-start: 3px solid rgba(99, 102, 241, 0.35);
 }

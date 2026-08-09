@@ -4,19 +4,22 @@ import type { CalendarExportOutcome } from '../../../lib/calendarExport';
 import { KpiCards, type KpiInsights } from '../../KpiCards';
 import { PackageDashboardHero } from './PackageDashboardHero';
 import { PackageDashboardQuickActions } from './PackageDashboardQuickActions';
-import { PackageDashboardSections } from './PackageDashboardSections';
-import { PackageOperationalKpis } from './PackageOperationalKpis';
+import {
+  PackageAttentionSections,
+  PackageDashboardEmptyHint,
+} from './PackageAttentionSections';
+import { PackageQuickGlanceKpis } from './PackageQuickGlanceKpis';
 import { PackageSessionsChart } from './PackageSessionsChart';
 import { calculateUnifiedTotals } from '../../../lib/engagementFinance';
-import { formatCurrency } from '../../../lib/finance';
 import { resolveExpenseTrackingMode } from '../../../lib/monthlyExpenses';
 import { computePackageOperationalStats } from '../../../lib/package/packageDashboardStats';
+import { countNearlyDepleted } from '../../../lib/package/packagePreview';
 import { resolvePackageDashboardConfig } from '../../../lib/package/resolvePackageDashboardConfig';
 import { useAppStore } from '../../../store/useAppStore';
 import '../../../styles/package-workspace.css';
 
 function formatTrendPct(current: number, previous: number): { delta: string; sub: string } {
-  if (previous === 0 && current === 0) return { delta: '—', sub: 'ללא שינוי' };
+  if (previous === 0 && current === 0) return { delta: '—', sub: 'לעומת חודש שעבר' };
   if (previous === 0) return { delta: 'חדש', sub: 'לעומת חודש שעבר' };
   const pct = Math.round(((current - previous) / previous) * 100);
   const sign = pct > 0 ? '+' : '';
@@ -27,7 +30,10 @@ interface PackageDashboardViewProps {
   calendarExport?: CalendarExportOutcome;
 }
 
-/** Package-primary workspace dashboard — usage and expiration focused. */
+/**
+ * Package-primary dashboard hierarchy:
+ * 1 Hero → 2 Quick actions → 3 Financial → 4 Package glance → 5 Attention → 6 Chart
+ */
 export function PackageDashboardView({ calendarExport }: PackageDashboardViewProps) {
   const business = useAppStore((s) => s.business);
   const events = useAppStore((s) => s.events);
@@ -77,7 +83,8 @@ export function PackageDashboardView({ calendarExport }: PackageDashboardViewPro
     () => ({
       revenue: formatTrendPct(totals.revenue, prevTotals.revenue),
       expense: formatTrendPct(totals.expense, prevTotals.expense),
-      expected: { delta: undefined, sub: 'הכנסות החודש' },
+      profit: formatTrendPct(totals.profit, prevTotals.profit),
+      expected: { delta: undefined, sub: '' },
     }),
     [totals, prevTotals],
   );
@@ -87,15 +94,28 @@ export function PackageDashboardView({ calendarExport }: PackageDashboardViewPro
     [engagements, engagementSessions, config, todayIso],
   );
 
+  const nearlyDepletedCount = useMemo(
+    () => countNearlyDepleted(engagements, config),
+    [engagements, config],
+  );
+
+  const glanceStats = useMemo(
+    () => ({
+      activePackages: operationalStats.activePackages,
+      sessionsUsedThisMonth: operationalStats.sessionsUsedThisMonth,
+      nearlyDepletedCount,
+      packagesExpiringSoon: operationalStats.packagesExpiringSoon,
+    }),
+    [operationalStats, nearlyDepletedCount],
+  );
+
   return (
     <>
       <PackageDashboardHero />
 
       {calendarExport && <CalendarExportBanner outcome={calendarExport} />}
 
-      <PackageDashboardSections />
-
-      <hr className="dash-v2-divider" aria-hidden />
+      <PackageDashboardEmptyHint />
 
       <PackageDashboardQuickActions />
 
@@ -105,20 +125,16 @@ export function PackageDashboardView({ calendarExport }: PackageDashboardViewPro
         revenue={totals.revenue}
         expense={totals.expense}
         expectedRevenue={0}
+        profit={totals.profit}
         insights={kpiInsights}
         hideExpected
       />
 
-      {(totals.revenue > 0 || totals.expense > 0) && (
-        <p className="pkg-dashboard-profit" aria-label="רווח החודש">
-          <span>רווח החודש</span>
-          <strong>{formatCurrency(totals.profit)}</strong>
-        </p>
-      )}
-
       <hr className="dash-v2-divider" aria-hidden />
 
-      <PackageOperationalKpis stats={operationalStats} />
+      <PackageQuickGlanceKpis stats={glanceStats} />
+
+      <PackageAttentionSections />
 
       <hr className="dash-v2-divider" aria-hidden />
 

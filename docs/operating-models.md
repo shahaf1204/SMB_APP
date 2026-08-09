@@ -148,17 +148,27 @@ One business type may use multiple operating models. Example: a photographer may
 - sessions_used_this_month — מפגשים שבוצעו החודש
 - packages_expiring_soon — כרטיסיות שעומדות לפוג
 
-Revenue KPIs (הכנסות + הוצאות החודש) remain on the package dashboard alongside operational metrics.
+Revenue KPIs (הכנסות · הוצאות · רווח) appear **only** in סיכום חודשי on the package dashboard.
 
-### Dashboard sections (package-primary only)
+### Dashboard quick glance (מבט מהיר על הכרטיסיות)
 
-Preview sections only — **max 3 rows each**, with **הצג הכל** linking to filtered Activities page:
+Operational KPIs only — each metric appears once:
+
+- active_packages — כרטיסיות פעילות
+- sessions_used_this_month — מפגשים שבוצעו החודש
+- packages_near_completion — כרטיסיות קרובות לסיום (count)
+- packages_expiring_soon — כרטיסיות עומדות לפוג
+
+Do **not** show מפגשים שנותרו on the dashboard (misleading aggregate).
+
+### Dashboard attention previews
+
+Max 3 rows each, with **הצג הכל** → filtered Activities page:
 
 1. **כרטיסיות קרובות לסיום** → `/activities?filter=low_remaining`
 2. **עומדות לפוג** → `/activities?filter=expiring_soon`
-3. **סיכום פעילות** — compact metrics (not a card list)
 
-No full active-package list on the dashboard.
+Hidden when no matching packages.
 
 ### Dashboard chart
 
