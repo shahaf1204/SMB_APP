@@ -466,6 +466,10 @@
   gap: var(--ds-space-2);
 }
 
+.dash-v2-actions--package {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .dash-v2-action {
   display: flex;
   flex-direction: column;

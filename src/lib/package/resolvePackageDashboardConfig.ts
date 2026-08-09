@@ -28,9 +28,11 @@ export function resolvePackageDashboardConfig(
   };
 }
 
-/** Deep link to the existing pack session registration flow on engagement detail. */
-export function logSessionRoute(engagementId: string): string {
-  return `/engagements/${engagementId}?action=log-session`;
+/** Deep link to pack session registration — always scoped to a specific package (engagement). */
+export function logSessionRoute(engagementId: string, clientKey?: string): string {
+  const params = new URLSearchParams({ action: 'log-session' });
+  if (clientKey) params.set('client', clientKey);
+  return `/engagements/${engagementId}?${params.toString()}`;
 }
 
 export function isPackagePrimaryWorkspace(business: Business | null): boolean {

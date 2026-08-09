@@ -995,12 +995,12 @@ When `primaryOperatingModel === 'package'`, the dashboard renders `PackageDashbo
 | # | Section | Component | Metrics |
 |---|---------|-----------|---------|
 | 1 | Hero | `PackageDashboardHero` | Contextual summary |
-| 2 | Quick actions | `PackageDashboardQuickActions` | רישום מפגש · כרטיסייה חדשה · לקוח · חשבונית |
-| 3 | **Business Coach** | `PackageBusinessCoachPanel` | Max 3 actionable insights — interpretation, not KPIs |
+| 2 | **מצב הכרטיסיות** | `PackageQuickGlanceKpis` | כרטיסיות פעילות · מפגשים החודש · קרובות לסיום · עומדות לפוג |
+| 3 | Quick actions | `PackageDashboardQuickActions` | כרטיסייה חדשה · לקוח · חשבונית (no generic רישום מפגש) |
 | 4 | **סיכום חודשי** | `KpiCards` + `profit` | הכנסות · הוצאות · רווח **only here** |
-| 5 | **מצב הכרטיסיות** | `PackageQuickGlanceKpis` | כרטיסיות פעילות · מפגשים החודש · קרובות לסיום · עומדות לפוג |
-| 6 | Attention | `PackageAttentionSections` | Max 3 preview rows per section + הצג הכל |
-| 7 | Chart | `PackageSessionsChart` | מפגשים שבוצעו (monthly bar) |
+| 5 | **Business Coach** | `PackageBusinessCoachPanel` | Max 3 actionable insights — when meaningful data exists |
+| 6 | Chart | `PackageSessionsChart` | מפגשים שבוצעו (monthly bar) |
+| 7 | Attention | `PackageAttentionSections` | Max 3 preview rows per section + הצג הכל |
 
 **Duplication rule:** Revenue, expense, and profit never appear outside סיכום חודשי. Package counts never appear outside מצב הכרטיסיות (except as detailed rows in attention previews). Do not show מפגשים שנותרו — misleading across mixed package sizes.
 

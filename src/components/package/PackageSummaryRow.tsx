@@ -1,16 +1,16 @@
 import { useNavigate } from 'react-router-dom';
-import { Plus } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../lib/finance';
-import { logSessionRoute } from '../../lib/package/resolvePackageDashboardConfig';
+import { canLogPackageSession } from '../../lib/package/packageClientList';
 import type { PackageListItem } from '../../lib/package/packageClientList';
 import { isInvoiceOverdue } from '../../lib/invoices';
 import type { Invoice } from '../../types/models';
+import { PackageLogSessionButton } from './PackageLogSessionButton';
 
 interface PackageSummaryRowProps {
   item: PackageListItem;
   invoices: Invoice[];
+  clientKey: string;
   compact?: boolean;
-  onRegisterSession?: () => void;
 }
 
 function resolvePaymentLabel(item: PackageListItem, invoices: Invoice[]): string | null {
@@ -26,34 +26,42 @@ function resolvePaymentLabel(item: PackageListItem, invoices: Invoice[]): string
 export function PackageSummaryRow({
   item,
   invoices,
+  clientKey,
   compact = false,
-  onRegisterSession,
 }: PackageSummaryRowProps) {
   const navigate = useNavigate();
   const paymentLabel = resolvePaymentLabel(item, invoices);
-  const canRegister =
-    item.engagement.status === 'active' && item.remaining > 0;
+  const canRegister = canLogPackageSession(item);
 
   if (compact) {
     return (
       <div className="pkg-summary-row pkg-summary-row--compact">
-        <div className="pkg-summary-row__head">
-          <span className="pkg-summary-row__bullet" aria-hidden>•</span>
-          <span className="pkg-summary-row__title">{item.engagement.title}</span>
-          {item.status !== 'active' && (
-            <span className={`pkg-status-pill pkg-status-pill--${item.status}`}>
-              {item.statusLabel}
-            </span>
+        <div className="pkg-summary-row__compact-body">
+          <div className="pkg-summary-row__head">
+            <span className="pkg-summary-row__bullet" aria-hidden>•</span>
+            <span className="pkg-summary-row__title">{item.engagement.title}</span>
+            {item.status !== 'active' && (
+              <span className={`pkg-status-pill pkg-status-pill--${item.status}`}>
+                {item.statusLabel}
+              </span>
+            )}
+          </div>
+          <span className="pkg-summary-row__usage">{item.usageLabel}</span>
+          {item.progressPercent != null && (
+            <div className="pkg-progress" aria-hidden>
+              <div
+                className="pkg-progress__fill"
+                style={{ width: `${item.progressPercent}%` }}
+              />
+            </div>
           )}
         </div>
-        <span className="pkg-summary-row__usage">{item.usageLabel}</span>
-        {item.progressPercent != null && (
-          <div className="pkg-progress" aria-hidden>
-            <div
-              className="pkg-progress__fill"
-              style={{ width: `${item.progressPercent}%` }}
-            />
-          </div>
+        {canRegister && (
+          <PackageLogSessionButton
+            packageId={item.engagement.id}
+            clientKey={clientKey}
+            compact
+          />
         )}
       </div>
     );
@@ -131,17 +139,10 @@ export function PackageSummaryRow({
 
       <div className="pkg-summary-row__actions">
         {canRegister && (
-          <button
-            type="button"
-            className="ds-btn ds-btn--primary ds-btn--sm pkg-register-btn"
-            onClick={() => {
-              onRegisterSession?.();
-              navigate(logSessionRoute(item.engagement.id));
-            }}
-          >
-            <Plus size={16} strokeWidth={2} aria-hidden />
-            רישום מפגש
-          </button>
+          <PackageLogSessionButton
+            packageId={item.engagement.id}
+            clientKey={clientKey}
+          />
         )}
         <button
           type="button"

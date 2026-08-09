@@ -32,6 +32,11 @@ export interface PackageListItem {
   paymentOverdue: boolean;
 }
 
+/** Whether session registration is allowed for this package row. */
+export function canLogPackageSession(item: PackageListItem): boolean {
+  return item.engagement.status === 'active' && item.remaining > 0;
+}
+
 export interface PackageClientGroup {
   clientKey: string;
   clientName: string;
