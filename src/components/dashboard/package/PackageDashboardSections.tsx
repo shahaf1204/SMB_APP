@@ -1,35 +1,59 @@
 import { useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ActivityCard } from '../../business/ActivityCard';
-import {
-  groupPackageDashboardSections,
-  PACKAGE_DASHBOARD_SECTIONS,
-} from '../../../lib/package/packageDashboardStats';
-import { mapPackageEngagementToActivityCard } from '../../../lib/package/mapPackageActivityCard';
-import { resolvePackageDashboardConfig } from '../../../lib/package/resolvePackageDashboardConfig';
+import { Package } from 'lucide-react';
 import { useAppStore } from '../../../store/useAppStore';
+import {
+  countExpiringSoon,
+  countNearlyDepleted,
+  getExpiringSoonPreviews,
+  getNearlyDepletedPreviews,
+} from '../../../lib/package/packagePreview';
+import { packagesSoldThisMonth } from '../../../lib/package/packageClientList';
+import { computePackageOperationalStats } from '../../../lib/package/packageDashboardStats';
+import { resolvePackageDashboardConfig } from '../../../lib/package/resolvePackageDashboardConfig';
+import { PackageActivitySummary } from '../../package/PackageActivitySummary';
+import { PackageDashboardPreviewSection } from '../../package/PackagePreviewRow';
 
+/** Dashboard preview sections only — max 3 rows per section, no full card lists */
 export function PackageDashboardSections() {
-  const navigate = useNavigate();
   const business = useAppStore((s) => s.business);
   const engagements = useAppStore((s) => s.engagements ?? []);
-  const eventValues = useAppStore((s) => s.eventValues);
-  const milestones = useAppStore((s) => s.milestones ?? []);
-  const invoices = useAppStore((s) => s.invoices ?? []);
+  const sessions = useAppStore((s) => s.engagementSessions ?? []);
 
   const todayIso = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const config = useMemo(() => resolvePackageDashboardConfig(business), [business]);
 
-  const grouped = useMemo(
-    () => groupPackageDashboardSections(engagements, config, todayIso),
+  const nearlyDepleted = useMemo(
+    () => getNearlyDepletedPreviews(engagements, config),
+    [engagements, config],
+  );
+  const expiringSoon = useMemo(
+    () => getExpiringSoonPreviews(engagements, config, todayIso),
     [engagements, config, todayIso],
   );
 
-  const hasAny = PACKAGE_DASHBOARD_SECTIONS.some(
-    (section) => (grouped.get(section.id)?.length ?? 0) > 0,
+  const nearlyCount = useMemo(
+    () => countNearlyDepleted(engagements, config),
+    [engagements, config],
+  );
+  const expiringCount = useMemo(
+    () => countExpiringSoon(engagements, config, todayIso),
+    [engagements, config, todayIso],
   );
 
-  if (!hasAny) {
+  const stats = useMemo(
+    () => computePackageOperationalStats(engagements, sessions, config, todayIso),
+    [engagements, sessions, config, todayIso],
+  );
+
+  const soldThisMonth = useMemo(
+    () => packagesSoldThisMonth(engagements),
+    [engagements],
+  );
+
+  const hasPreviews = nearlyDepleted.length > 0 || expiringSoon.length > 0;
+  const hasAnyPackages = engagements.some((e) => e.kind === 'session_pack');
+
+  if (!hasAnyPackages) {
     return (
       <section className="dash-v2-section dash-v2-section--tight" aria-label="כרטיסיות">
         <div className="dash-v2-section-head dash-v2-section-head--compact">
@@ -42,42 +66,34 @@ export function PackageDashboardSections() {
 
   return (
     <>
-      {PACKAGE_DASHBOARD_SECTIONS.map((section) => {
-        const items = grouped.get(section.id) ?? [];
-        if (items.length === 0) return null;
+      <PackageDashboardPreviewSection
+        title="כרטיסיות קרובות לסיום"
+        items={nearlyDepleted}
+        totalCount={nearlyCount}
+        viewAllHref="/activities?filter=low_remaining"
+      />
 
-        return (
-          <section
-            key={section.id}
-            className="dash-v2-section dash-v2-section--tight dash-v2-package-section"
-            aria-label={section.title}
-          >
-            <div className="dash-v2-section-head dash-v2-section-head--compact">
-              <h2 className="dash-v2-section-title">
-                {section.title}
-                <span className="dash-v2-package-section-count">{items.length}</span>
-              </h2>
-            </div>
-            <ul className="dash-v2-package-card-list">
-              {items.map((engagement) => {
-                const card = mapPackageEngagementToActivityCard(engagement, {
-                  navigate,
-                  eventValues,
-                  milestones,
-                  invoices,
-                  config,
-                  todayIso,
-                });
-                return (
-                  <li key={engagement.id}>
-                    <ActivityCard {...card} />
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        );
-      })}
+      <PackageDashboardPreviewSection
+        title="עומדות לפוג"
+        items={expiringSoon}
+        totalCount={expiringCount}
+        viewAllHref="/activities?filter=expiring_soon"
+        showUsage={false}
+      />
+
+      {!hasPreviews && (
+        <section className="dash-v2-section dash-v2-section--tight pkg-preview-section" aria-label="כרטיסיות">
+          <div className="dash-v2-section-head dash-v2-section-head--compact">
+            <h2 className="dash-v2-section-title">כרטיסיות</h2>
+          </div>
+          <p className="dash-v2-package-empty pkg-preview-all-clear">
+            <Package size={18} strokeWidth={1.75} aria-hidden />
+            אין כרטיסיות שדורשות טיפול מיידי — הכל במסלול.
+          </p>
+        </section>
+      )}
+
+      <PackageActivitySummary stats={stats} packagesSoldThisMonth={soldThisMonth} />
     </>
   );
 }

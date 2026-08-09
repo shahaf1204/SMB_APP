@@ -152,21 +152,33 @@ Revenue KPIs (הכנסות + הוצאות החודש) remain on the package dash
 
 ### Dashboard sections (package-primary only)
 
-1. כרטיסיות קרובות לסיום — remaining ≤ `lowSessionsThreshold` (default 3)
-2. עומדות לפוג — expiration within `expiringDaysThreshold` (default 14 days)
-3. כרטיסיות פעילות
-4. הסתיימו
+Preview sections only — **max 3 rows each**, with **הצג הכל** linking to filtered Activities page:
 
-Empty sections are hidden. No generic "דורש טיפול" block — attention is shown on cards when backed by real data.
+1. **כרטיסיות קרובות לסיום** → `/activities?filter=low_remaining`
+2. **עומדות לפוג** → `/activities?filter=expiring_soon`
+3. **סיכום פעילות** — compact metrics (not a card list)
+
+No full active-package list on the dashboard.
 
 ### Dashboard chart
 
 Monthly **מפגשים שבוצעו** bar chart (6 months). Optional overlay: **כרטיסיות שנמכרו** when creation history exists.
 
-### Package ActivityCard
+### Package Activities page (package-primary only)
+
+- **Title:** ניהול כרטיסיות
+- **Subtitle:** כל הלקוחות והכרטיסיות הפעילות במקום אחד
+- **Layout:** Client-first `PackageClientRow` groups — multiple packages under one client
+- **Default sort:** attention → nearest expiration → lowest remaining → client name
+- **Filters:** הכל · פעילות · קרובות לסיום · עומדות לפוג · הסתיימו
+- **Search:** client name, package name, phone, email
+- **Primary action:** + רישום מפגש (expanded details) — not pencil icon
+- **Session history:** shown in expanded view when real data exists
+
+### Package ActivityCard (hero/detail contexts)
 
 - Utilization: `נותרו X מתוך Y` + progress bar
-- Primary quick action: **רישום מפגש** → existing detail flow via `?action=log-session`
+- Primary quick action: **רישום מפגש** → `?action=log-session`
 
 ### Configurable thresholds
 
@@ -175,8 +187,8 @@ Monthly **מפגשים שבוצעו** bar chart (6 months). Optional overlay: **
 ### Recommended filters
 
 - active — פעיל
-- low_remaining — מעט מפגשים נותרו
-- expiring_soon — פג תוקף בקרוב
+- low_remaining — קרובות לסיום
+- expiring_soon — עומדות לפוג
 - completed — הושלם
 
 ### Quick actions

@@ -8,10 +8,12 @@ import { PackageDashboardSections } from './PackageDashboardSections';
 import { PackageOperationalKpis } from './PackageOperationalKpis';
 import { PackageSessionsChart } from './PackageSessionsChart';
 import { calculateUnifiedTotals } from '../../../lib/engagementFinance';
+import { formatCurrency } from '../../../lib/finance';
 import { resolveExpenseTrackingMode } from '../../../lib/monthlyExpenses';
 import { computePackageOperationalStats } from '../../../lib/package/packageDashboardStats';
 import { resolvePackageDashboardConfig } from '../../../lib/package/resolvePackageDashboardConfig';
 import { useAppStore } from '../../../store/useAppStore';
+import '../../../styles/package-workspace.css';
 
 function formatTrendPct(current: number, previous: number): { delta: string; sub: string } {
   if (previous === 0 && current === 0) return { delta: '—', sub: 'ללא שינוי' };
@@ -106,6 +108,13 @@ export function PackageDashboardView({ calendarExport }: PackageDashboardViewPro
         insights={kpiInsights}
         hideExpected
       />
+
+      {(totals.revenue > 0 || totals.expense > 0) && (
+        <p className="pkg-dashboard-profit" aria-label="רווח החודש">
+          <span>רווח החודש</span>
+          <strong>{formatCurrency(totals.profit)}</strong>
+        </p>
+      )}
 
       <hr className="dash-v2-divider" aria-hidden />
 

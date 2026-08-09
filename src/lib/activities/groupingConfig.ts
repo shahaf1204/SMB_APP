@@ -89,7 +89,7 @@ const GROUPS: Record<Exclude<OperatingModel, 'hybrid'>, ActivityGroupDefinition[
     { id: 'completed', title: 'הושלמו', collapsible: true, defaultCollapsed: true },
   ],
   package: [
-    { id: 'nearly_depleted', title: 'כמעט הסתיימו' },
+    { id: 'nearly_depleted', title: 'קרובות לסיום' },
     { id: 'expiring_soon', title: 'עומדות לפוג' },
     { id: 'active', title: 'כרטיסיות פעילות' },
     { id: 'completed', title: 'הסתיימו', collapsible: true, defaultCollapsed: true },
@@ -142,7 +142,7 @@ const FILTER_CHIPS: Record<Exclude<OperatingModel, 'hybrid'>, ActivityFilterChip
   package: [
     { id: 'all', label: 'הכל' },
     { id: 'active', label: 'פעילות' },
-    { id: 'low_remaining', label: 'כמעט הסתיימו' },
+    { id: 'low_remaining', label: 'קרובות לסיום' },
     { id: 'expiring_soon', label: 'עומדות לפוג' },
     { id: 'completed', label: 'הסתיימו' },
   ],

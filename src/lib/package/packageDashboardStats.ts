@@ -26,6 +26,8 @@ function isPackExpired(engagement: Engagement, todayIso: string): boolean {
   return engagement.packExpiresAt.slice(0, 10) < todayIso;
 }
 
+export { isPackExpired };
+
 export function isPackExpiringSoon(
   engagement: Engagement,
   todayIso: string,

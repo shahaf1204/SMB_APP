@@ -988,22 +988,33 @@ The production Activities page (`/activities`) is **configuration-driven** — i
 
 ### Package workspace dashboard
 
-When `primaryOperatingModel === 'package'`, the dashboard renders `PackageDashboardView` instead of the default event-centric layout. All package logic lives under `src/lib/package/` and `src/components/dashboard/package/`.
+When `primaryOperatingModel === 'package'`, the dashboard renders `PackageDashboardView` instead of the default event-centric layout. All package logic lives under `src/lib/package/` and `src/components/package/`.
+
+**Dashboard max record rule:** No operational section shows more than **3 preview rows**. Full browsing belongs on the Activities page.
 
 | Zone | Component | Behavior |
 |------|-----------|----------|
 | Hero | `PackageDashboardHero` | Usage/expiry context — not event calendar copy |
-| Sections | `PackageDashboardSections` | כרטיסיות קרובות לסיום · עומדות לפוג · פעילות · הסתיימו — empty sections hidden |
-| Quick actions | `PackageDashboardQuickActions` | Primary: **רישום מפגש** → existing detail flow via `?action=log-session` |
-| Revenue KPIs | `KpiCards hideExpected` | הכנסות + הוצאות החודש |
-| Operational KPIs | `PackageOperationalKpis` | כרטיסיות פעילות · מפגשים שנותרו · מפגשים שבוצעו החודש · כרטיסיות שעומדות לפוג |
-| Chart | `PackageSessionsChart` | Bar chart — monthly sessions used; optional packages sold overlay |
+| Previews | `PackageDashboardPreviewSection` + `PackagePreviewRow` | Max 3 rows · **הצג הכל** → `/activities?filter=…` |
+| Summary | `PackageActivitySummary` | Compact metrics — no individual package cards |
+| Quick actions | `PackageDashboardQuickActions` | רישום מפגש · כרטיסייה חדשה · לקוח · חשבונית |
+| Revenue KPIs | `KpiCards hideExpected` + profit line | הכנסות · הוצאות · רווח |
+| Operational KPIs | `PackageOperationalKpis` | 4 package metrics |
+| Chart | `PackageSessionsChart` | Bar chart — monthly sessions used |
+
+**Package Activities page exception:** The generic `ActivityCard` is **not** used for the package client list. Use domain-specific components:
+
+- `PackageClientRow` — client-first collapsible group (~70–100px collapsed)
+- `PackageSummaryRow` — single package line + expanded details
+- `PackageActivitiesPage` — full page at `/activities` when package-primary
+
+**Progressive disclosure:** Collapsed row shows client + usage; expanded shows purchase date, expiration, payment, session history, **+ רישום מפגש**.
+
+**Usage display:** Always `נותרו X מתוך Y` with thin progress bar — real values only.
+
+**Register session:** Lucide `Plus` + Hebrew label — never pencil/edit for session registration.
 
 **Thresholds:** `BusinessWorkspaceConfig.packageSettings` — `lowSessionsThreshold` (default 3), `expiringDaysThreshold` (default 14).
-
-**Package ActivityCard:** Utilization summary (`נותרו X מתוך Y`), thin progress bar, expiration emphasis. Primary quick action: **רישום מפגש** → `/engagements/:id?action=log-session`.
-
-**Attention rule:** Real data only — overdue payment, expired, low remaining, expiring soon. No generic "דורש טיפול" section.
 
 ---
 

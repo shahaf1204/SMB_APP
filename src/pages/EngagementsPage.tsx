@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ActivitiesPageHeader } from '../components/activities/ActivitiesPageHeader';
+import { PackageActivitiesPage } from '../components/package/PackageActivitiesPage';
 import { ActivitiesPageSkeleton } from '../components/activities/ActivitiesPageSkeleton';
 import { ActivitiesSearchField } from '../components/activities/ActivitiesSearchField';
 import { ActivitiesSection } from '../components/activities/ActivitiesSection';
@@ -10,6 +11,7 @@ import { BottomNav } from '../components/BottomNav';
 import { EmptyState } from '../components/ds/EmptyState';
 import { PillTabs } from '../components/ui/PillTabs';
 import { useStoreHydration } from '../hooks/useStoreHydration';
+import { isPackagePrimaryWorkspace } from '../lib/package/resolvePackageDashboardConfig';
 import {
   applyAttentionFlags,
   buildActivityRecords,
@@ -35,6 +37,20 @@ function weekEndIso(): string {
 }
 
 export function EngagementsPage() {
+  const business = useAppStore((s) => s.business);
+  const isPackageWorkspace = useMemo(
+    () => isPackagePrimaryWorkspace(business),
+    [business],
+  );
+
+  if (isPackageWorkspace) {
+    return <PackageActivitiesPage />;
+  }
+
+  return <DefaultActivitiesPage />;
+}
+
+function DefaultActivitiesPage() {
   const hydrated = useStoreHydration();
   const navigate = useNavigate();
 
