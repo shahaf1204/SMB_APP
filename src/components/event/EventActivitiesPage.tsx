@@ -1,19 +1,15 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ActivitiesPageHeader } from '../components/activities/ActivitiesPageHeader';
-import { PackageActivitiesPage } from '../components/package/PackageActivitiesPage';
-import { EventActivitiesPage } from '../components/event/EventActivitiesPage';
-import { ActivitiesPageSkeleton } from '../components/activities/ActivitiesPageSkeleton';
-import { ActivitiesSearchField } from '../components/activities/ActivitiesSearchField';
-import { ActivitiesSection } from '../components/activities/ActivitiesSection';
-import { CreateActivityEmptyAction } from '../components/create/CreateActivityButton';
-import { ActivityCard } from '../components/business/ActivityCard';
-import { BottomNav } from '../components/BottomNav';
-import { EmptyState } from '../components/ds/EmptyState';
-import { PillTabs } from '../components/ui/PillTabs';
-import { useStoreHydration } from '../hooks/useStoreHydration';
-import { isPackagePrimaryWorkspace } from '../lib/package/resolvePackageDashboardConfig';
-import { isEventPrimaryWorkspace } from '../lib/event/isEventPrimaryWorkspace';
+import { ActivitiesPageHeader } from '../activities/ActivitiesPageHeader';
+import { ActivitiesPageSkeleton } from '../activities/ActivitiesPageSkeleton';
+import { ActivitiesSearchField } from '../activities/ActivitiesSearchField';
+import { ActivitiesSection } from '../activities/ActivitiesSection';
+import { CreateActivityEmptyAction } from '../create/CreateActivityButton';
+import { ActivityCard } from '../business/ActivityCard';
+import { BottomNav } from '../BottomNav';
+import { EmptyState } from '../ds/EmptyState';
+import { PillTabs } from '../ui/PillTabs';
+import { useStoreHydration } from '../../hooks/useStoreHydration';
 import {
   applyAttentionFlags,
   buildActivityRecords,
@@ -28,9 +24,11 @@ import {
   searchActivityRecords,
   selectFeaturedActivity,
   type ActivityFilterId,
-} from '../lib/activities';
-import { useAppStore } from '../store/useAppStore';
-import '../styles/activities-page.css';
+} from '../../lib/activities';
+import { useAppStore } from '../../store/useAppStore';
+import { EventSummaryRow } from './EventSummaryRow';
+import '../../styles/activities-page.css';
+import '../../styles/event-workspace.css';
 
 function weekEndIso(): string {
   const d = new Date();
@@ -38,29 +36,8 @@ function weekEndIso(): string {
   return d.toISOString().slice(0, 10);
 }
 
-export function EngagementsPage() {
-  const business = useAppStore((s) => s.business);
-  const isPackageWorkspace = useMemo(
-    () => isPackagePrimaryWorkspace(business),
-    [business],
-  );
-  const isEventWorkspace = useMemo(
-    () => isEventPrimaryWorkspace(business),
-    [business],
-  );
-
-  if (isPackageWorkspace) {
-    return <PackageActivitiesPage />;
-  }
-
-  if (isEventWorkspace) {
-    return <EventActivitiesPage />;
-  }
-
-  return <DefaultActivitiesPage />;
-}
-
-function DefaultActivitiesPage() {
+/** Event-primary Activities page — one featured ActivityCard + compact EventSummaryRow list */
+export function EventActivitiesPage() {
   const hydrated = useStoreHydration();
   const navigate = useNavigate();
 
@@ -149,7 +126,7 @@ function DefaultActivitiesPage() {
 
   return (
     <div className="app-shell">
-      <div className="page">
+      <div className="page page-event-activities">
         {!hydrated ? (
           <ActivitiesPageSkeleton />
         ) : (
@@ -171,7 +148,7 @@ function DefaultActivitiesPage() {
                       tabs={filterChips}
                       active={activeFilter}
                       onChange={setActiveFilter}
-                      ariaLabel="סינון פעילויות"
+                      ariaLabel="סינון אירועים"
                     />
                   </div>
                 )}
@@ -190,17 +167,17 @@ function DefaultActivitiesPage() {
 
             {showNoResults && (
               <p className="activities-search-empty" role="status">
-                לא נמצאו פעילויות התואמות לחיפוש או לסינון
+                לא נמצאו אירועים התואמים לחיפוש או לסינון
               </p>
             )}
 
             {showContent && (
               <div
                 className="activities-page-content"
-                data-workspace-model={groupingConfig.primaryModel}
+                data-workspace-model="event"
               >
                 {featuredCard && (
-                  <section className="activities-featured" aria-label="פעילות מומלצת">
+                  <section className="activities-featured" aria-label="אירוע מומלץ">
                     <span className="activities-featured__label">
                       {featured?.needsAttention ? 'דורש טיפול' : 'הבא בתור'}
                     </span>
@@ -221,15 +198,16 @@ function DefaultActivitiesPage() {
                       collapsible={group.collapsible}
                       defaultCollapsed={group.defaultCollapsed}
                     >
-                      <ul className="activities-card-list">
-                        {items.map((record) => {
-                          const card = mapActivityRecordToCard(record, 'standard', navigate);
-                          return (
-                            <li key={record.id}>
-                              <ActivityCard {...card} />
-                            </li>
-                          );
-                        })}
+                      <ul className="event-summary-list">
+                        {items.map((record) => (
+                          <li key={record.id}>
+                            <EventSummaryRow
+                              record={record}
+                              categories={categories}
+                              eventValues={eventValues}
+                            />
+                          </li>
+                        ))}
                       </ul>
                     </ActivitiesSection>
                   );

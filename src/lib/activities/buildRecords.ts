@@ -265,6 +265,8 @@ export function searchActivityRecords(
       r.title,
       r.clientName,
       r.location ?? '',
+      r.phone ?? '',
+      r.sortDate,
       r.stage ?? '',
       r.status,
       ...r.tags,

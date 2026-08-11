@@ -60,6 +60,26 @@ One business type may use multiple operating models. Example: a photographer may
 - activitySingular: אירוע
 - activityPlural: אירועים
 
+### Event Activities page (event-primary only)
+
+Production route: `/activities` when `primaryOperatingModel === 'event'`.
+
+**Featured:** One full `ActivityCard variant="hero"` — label **הבא בתור** or **דורש טיפול**. Selected via `selectFeaturedActivity()`; excluded from grouped lists.
+
+**List density:** All other events use compact `EventSummaryRow` (~72–100px collapsed) — not full ActivityCards. Scales to 100+ events.
+
+**Collapsed row:** date/time · client · title · location · amount · status · expand chevron.
+
+**Expanded row:** full date/time, location, amount, payment, notes, tags, up to 3 quick actions (edit · call · navigate · invoice).
+
+**Groups:** דורש טיפול · השבוע · אירועים קרובים · אירועים שהושלמו (collapsed by default).
+
+**Filters:** הכל · השבוע · עתידיים · הושלמו · דורש טיפול.
+
+**Search:** client, title, location, date, phone, tags.
+
+**Distinction:** `ActivityCard` = featured/detail component. `EventSummaryRow` = high-density list browsing.
+
 ---
 
 ## appointment — פגישות וטיפולים

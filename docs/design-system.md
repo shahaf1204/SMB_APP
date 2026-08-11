@@ -970,7 +970,9 @@ The production Activities page (`/activities`) is **configuration-driven** — i
 | Filters | `PillTabs` | Adaptive chips from `getActivitiesFilterChips()` — only enabled models in hybrid |
 | Featured | `ActivityCard variant="hero"` | One highest-priority activity — excluded from section lists |
 | Sections | `ActivitiesSection` | Groups from `getActivitiesGroupingConfig()` — empty sections hidden |
-| Cards | `ActivityCard variant="standard"` | Mapped via `mapActivityRecordToCard()` — single adapter, no duplicated markup |
+| Cards | `ActivityCard variant="standard"` | Default for appointment/journey/project/recurring/hybrid |
+| Event rows | `EventSummaryRow` | Event-primary only — compact list rows with progressive disclosure |
+| Package rows | `PackageClientRow` / `PackageSummaryRow` | Package-primary only — client-first compact rows |
 | Empty | `EmptyState` | Model-aware copy from `getActivitiesPageCopy()` |
 | Loading | `ActivitiesPageSkeleton` | Shown until store hydration completes — no empty flash |
 
@@ -1011,6 +1013,24 @@ When `primaryOperatingModel === 'package'`, the dashboard renders `PackageDashbo
 **Package Activities page:** Client-first `PackageClientRow` / `PackageSummaryRow` — not ActivityCard lists.
 
 **Thresholds:** `BusinessWorkspaceConfig.packageSettings` — `lowSessionsThreshold` (default 3), `expiringDaysThreshold` (default 14).
+
+### Event Activities page
+
+When `primaryOperatingModel === 'event'`, the Activities page renders `EventActivitiesPage`.
+
+| Zone | Component | Behavior |
+|------|-----------|----------|
+| Featured | `ActivityCard variant="hero"` | One event — **הבא בתור** or **דורש טיפול** — excluded from list |
+| List | `EventSummaryRow` | Compact agenda-style rows (~72–100px collapsed) |
+| Sections | `ActivitiesSection` | דורש טיפול · השבוע · קרובים · הושלמו (completed collapsed by default) |
+
+**EventSummaryRow collapsed:** date/time → client → title · location → amount → status → chevron.
+
+**EventSummaryRow expanded:** full details, payment, notes, max 3 quick actions (edit, call, navigate, invoice).
+
+**Density rule:** Do not render full ActivityCard for every event — one featured card only. `EventSummaryRow` is for high-volume scanning; `ActivityCard` remains the detailed business component.
+
+**Attention emphasis:** Real `needsAttention` / overdue payment only — subtle border tint, no invented warnings.
 
 ### Business Coach
 
