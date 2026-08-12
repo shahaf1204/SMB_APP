@@ -10,6 +10,8 @@ import type {
 } from '../../types/onboarding';
 import type { Category } from '../../types/models';
 import type { OperatingModel } from '../../types/workspace';
+import { applyDefaultEnabledToDrafts } from '../activityForm/resolveActivityFormSchema';
+import { defaultEnabledForDraft, resolveFieldMeta } from '../activityForm/fieldMetadata';
 import { withCategorySortOrders } from '../categories';
 
 function mergeTemplates(...groups: CategoryTemplate[][]): CategoryTemplate[] {
@@ -87,7 +89,7 @@ export function resolveRecommendedCategories(
 export function templatesToOnboardingDrafts(
   templates: CategoryTemplate[],
 ): OnboardingCategoryDraft[] {
-  return templates.map((t, index) => ({
+  const drafts = templates.map((t, index) => ({
     key: t.key,
     name: t.name,
     valueType: t.valueType,
@@ -98,6 +100,7 @@ export function templatesToOnboardingDrafts(
     enabled: true,
     sortOrder: t.sortPriority ?? index,
   }));
+  return applyDefaultEnabledToDrafts(drafts);
 }
 
 export function onboardingDraftsToCategoryDefs(
@@ -145,7 +148,7 @@ export function mergeDraftWithRecommendations(
       source: t.source,
       isProtected: Boolean(t.isProtected),
       isRequired: Boolean(t.isRequired),
-      enabled: true,
+      enabled: defaultEnabledForDraft(t.key, resolveFieldMeta(t.key, t.name, t.metricRole, Boolean(t.isProtected))),
       sortOrder: t.sortPriority ?? index,
     };
   });

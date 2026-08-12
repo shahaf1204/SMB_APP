@@ -431,14 +431,32 @@ Categories merge by semantic `key`. Core fields (revenue, expense, client, custo
 | `revenue_amount` | Revenue (core) |
 | `expense_amount` | Expense (core) |
 
-### Category priority
+### Category priority → form sections
 
-1. Core client + model schedule fields  
-2. Business-type-specific fields  
-3. Financial fields  
-4. Notes / status  
+Field presentation is resolved by **`resolveActivityFormSchema()`** (`src/lib/activityForm/`).  
+See **`docs/activity-form-schema.md`** for full mapping rules.
 
-Built-in form fields (title, date, location, notes) render before categories in `EventForm`.
+| Priority | Default visibility | Example fields (event model) |
+|----------|-------------------|------------------------------|
+| `core` | Always on | client_name, built-in title/date |
+| `primary` | On | start/end time, location, total_amount, deposit |
+| `optional` | On when relevant | participants_count, balance_due |
+| `advanced` | Off / collapsed | preparation_status, customer_source |
+
+### Default form sections
+
+| Section | Event example fields |
+|---------|---------------------|
+| `activity_details` | title, date, times, location |
+| `client` | client picker |
+| `business_details` | event type, package, photo_type |
+| `financial` | total, deposit, balance |
+| `advanced` | customer source, prep status |
+| `notes` | notes |
+
+**Recommended visible field count:** 5–8 expanded fields before collapsed sections.
+
+Built-in form fields (title, date, location, notes) are system fields — category keys that duplicate them (`event_date`, `event_location`) bind to builtins and are not rendered twice.
 
 ---
 

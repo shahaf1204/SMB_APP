@@ -1,46 +1,43 @@
-import { ONBOARDING_FORM_BUILTIN_FIELDS } from '../../config/onboardingModelContent';
+import { useMemo } from 'react';
+import {
+  buildOnboardingPreviewRows,
+  resolveActivityFormSchemaFromDrafts,
+} from '../../lib/activityForm/resolveActivityFormSchema';
 import type { OnboardingCategoryDraft } from '../../types/onboarding';
-
-const TYPE_LABELS = {
-  text: 'טקסט',
-  number: 'מספר',
-  date: 'תאריך',
-  duration: 'שעה',
-};
+import type { OperatingModel } from '../../types/workspace';
 
 export function CategoryFormPreview({
   categories,
+  businessType,
+  operatingModel,
 }: {
   categories: OnboardingCategoryDraft[];
+  businessType?: string;
+  operatingModel: OperatingModel;
 }) {
-  const enabled = categories.filter((c) => c.enabled).slice(0, 5);
-  const rows = [
-    ...ONBOARDING_FORM_BUILTIN_FIELDS.map((f) => ({
-      key: `builtin-${f.label}`,
-      label: f.label,
-      type: f.type,
-    })),
-    ...enabled.map((c) => ({
-      key: c.key,
-      label: c.name,
-      type: c.valueType,
-    })),
-  ].slice(0, 5);
+  const rows = useMemo(() => {
+    const schema = resolveActivityFormSchemaFromDrafts({
+      drafts: categories,
+      businessType,
+      operatingModel,
+    });
+    return buildOnboardingPreviewRows(schema);
+  }, [categories, businessType, operatingModel]);
 
   return (
-    <div className="onboarding-form-preview card" aria-label="תצוגה מקדימה של טופס יצירת פעילות">
-      <p className="onboarding-form-preview__title">כך ייראה טופס יצירת הפעילות שלך</p>
+    <div className="onboarding-form-preview" aria-label="תצוגה מקדימה של טופס יצירת פעילות">
+      <p className="onboarding-form-preview__title">כך ייראה הטופס שלך</p>
       <div className="onboarding-form-preview__fields">
         {rows.map((row) => (
-          <div key={row.key} className="onboarding-form-preview__field">
+          <div key={row.label} className="onboarding-form-preview__field">
             <span className="onboarding-form-preview__label">{row.label}</span>
-            <span className="onboarding-form-preview__input" aria-hidden />
-            <span className="onboarding-form-preview__type">
-              {TYPE_LABELS[row.type as keyof typeof TYPE_LABELS] ?? row.type}
+            <span className="onboarding-form-preview__placeholder" aria-hidden>
+              {row.placeholder}
             </span>
           </div>
         ))}
       </div>
+      <p className="onboarding-form-preview__note">תצוגה מקדימה בלבד</p>
     </div>
   );
 }

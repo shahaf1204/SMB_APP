@@ -105,6 +105,8 @@ export function OnboardingShowcasePage() {
         <OnboardingStepCategories
           categories={draft.categories}
           removedRecommendations={draft.categories.filter((c) => !c.enabled && c.source !== 'manual')}
+          businessType={draft.presetId !== '__other__' ? draft.presetId : undefined}
+          operatingModel={draft.primaryModel}
           onReorder={() => {}}
           onUpdate={(key, patch) =>
             setDraft({

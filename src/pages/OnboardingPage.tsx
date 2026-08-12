@@ -46,9 +46,9 @@ const STEP_TITLES: Record<OnboardingDraft['step'], { title: string; subtitle: st
       'אפשר להוסיף מודלים נוספים עכשיו, או לדלג ולשנות זאת בהמשך בהגדרות.',
   },
   4: {
-    title: 'התאמנו לך קטגוריות התחלה',
+    title: 'התאמת פרטי הפעילות',
     subtitle:
-      'אלו השדות שיופיעו בפעילויות שלך. אפשר להסיר, לערוך או להוסיף כל קטגוריה לפי הצרכים של העסק.',
+      'כבר הכנו עבורך את השדות שמתאימים לעסק שלך. אפשר להסיר, להוסיף או לשנות לפי הצורך.',
   },
   5: {
     title: 'העסק שלך מוכן',
@@ -263,6 +263,8 @@ export function OnboardingPage() {
         <OnboardingStepCategories
           categories={draft.categories}
           removedRecommendations={removedRecommendations}
+          businessType={resolvePresetId(draft.mode, draft.presetId)}
+          operatingModel={draft.primaryModel}
           onReorder={(from, to) => {
             const enabled = draft.categories
               .filter((c) => c.enabled)

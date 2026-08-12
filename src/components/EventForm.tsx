@@ -1,22 +1,22 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Banknote, Calendar, StickyNote, User } from 'lucide-react';
 import { LEAD_SOURCE_OPTIONS } from '../data/leadSources';
 import { sortCategories } from '../lib/categories';
 import { includesDirectExpenses, resolveExpenseTrackingMode } from '../lib/monthlyExpenses';
-import { FormSection } from './ui/FormSection';
-import { useAppStore } from '../store/useAppStore';
-import { eventValueToInput, type EventFormValues } from '../lib/eventForm';
+import { resolveActivityFormSchemaFromCategories } from '../lib/activityForm/resolveActivityFormSchema';
+import { formCopyText } from '../config/businessFormCopy';
+import { resolveWorkspace } from '../lib/workspace';
 import { isSourceCategory } from '../lib/sources';
 import { getEventSaveWarnings } from '../lib/eventWarnings';
+import { eventValueToInput, type EventFormValues } from '../lib/eventForm';
+import { ClientFieldGroup } from './activityForm/ClientFieldGroup';
+import { LightFormSection } from './activityForm/LightFormSection';
+import { useAppStore } from '../store/useAppStore';
+import type {
+  ActivityFormFieldPresentation,
+  ActivityFormSchemaSection,
+} from '../lib/activityForm/types';
 import type { Category, Event, EventTemplate, EventValue, ValueType } from '../types/models';
-
-const VALUE_TYPE_LABELS: Record<ValueType, string> = {
-  text: 'טקסט',
-  number: 'מספר',
-  date: 'תאריך',
-  duration: 'שעה (דקות)',
-};
 
 export type { EventFormValues };
 
@@ -31,6 +31,12 @@ interface EventFormProps {
   onSubmit: (values: EventFormValues) => void;
 }
 
+function inputTypeForValueType(valueType: ValueType): string {
+  if (valueType === 'number' || valueType === 'duration') return 'number';
+  if (valueType === 'date') return 'date';
+  return 'text';
+}
+
 export function EventForm({
   categories,
   existingEvents = [],
@@ -42,11 +48,42 @@ export function EventForm({
   onSubmit,
 }: EventFormProps) {
   const business = useAppStore((s) => s.business);
+  const events = useAppStore((s) => s.events);
+  const leads = useAppStore((s) => s.leads);
+  const invoices = useAppStore((s) => s.invoices);
+  const allEventValues = useAppStore((s) => s.eventValues);
+
+  const workspace = resolveWorkspace(business);
+  const operatingModel = workspace?.primaryOperatingModel ?? 'event';
+  const businessType = business?.presetId ?? business?.businessType;
+
   const showDirectExpenses = includesDirectExpenses(resolveExpenseTrackingMode(business));
 
   const activeCategories = useMemo(
     () => sortCategories(categories.filter((c) => c.isActive)),
     [categories],
+  );
+
+  const schema = useMemo(
+    () =>
+      resolveActivityFormSchemaFromCategories({
+        categories: activeCategories.map((c) => ({
+          id: c.id,
+          name: c.name,
+          valueType: c.valueType,
+          metricRole: c.metricRole,
+          isActive: c.isActive,
+          templateKey: c.templateKey,
+          sortOrder: c.sortOrder,
+        })),
+        businessType,
+        operatingModel,
+      }),
+    [activeCategories, businessType, operatingModel],
+  );
+
+  const clientCategory = activeCategories.find(
+    (c) => c.templateKey === 'client_name' || c.name.includes('לקוח') || c.name.includes('מטופל'),
   );
 
   const buildInitialInputs = () => {
@@ -66,15 +103,13 @@ export function EventForm({
   const [clientPhone, setClientPhone] = useState(initial?.clientPhone ?? '');
   const [categoryInputs, setCategoryInputs] = useState(buildInitialInputs);
 
-  const paymentCategories = activeCategories.filter(
-    (c) =>
-      c.metricRole === 'revenue' ||
-      (showDirectExpenses && c.metricRole === 'expense'),
+  const clientValue = clientCategory ? categoryInputs[clientCategory.id] ?? '' : '';
+
+  const titlePlaceholder = formCopyText(
+    { businessType, operatingModel, fieldKey: 'title' },
+    'placeholder',
+    'למשל: פעילות חדשה',
   );
-  const otherCategories = activeCategories.filter(
-    (c) => c.metricRole === 'neutral' && !isSourceCategory(c.name),
-  );
-  const sourceCategory = activeCategories.find((c) => isSourceCategory(c.name));
 
   const saveWarnings = useMemo(
     () =>
@@ -124,155 +159,183 @@ export function EventForm({
     });
   };
 
-  const renderCategoryField = (cat: Category) => (
-    <div key={cat.id} className="field">
-      <label htmlFor={`cat-${cat.id}`}>
-        {cat.name}
-        {!isSourceCategory(cat.name) && ` (${VALUE_TYPE_LABELS[cat.valueType]})`}
-      </label>
-      {isSourceCategory(cat.name) ? (
-        <select
-          id={`cat-${cat.id}`}
-          value={categoryInputs[cat.id] ?? ''}
-          onChange={(e) =>
-            setCategoryInputs((prev) => ({ ...prev, [cat.id]: e.target.value }))
-          }
-        >
-          <option value="">בחרו מקור הגעה</option>
-          {LEAD_SOURCE_OPTIONS.map((opt) => (
-            <option key={opt.id} value={opt.id}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-      ) : (
-        <input
-          id={`cat-${cat.id}`}
-          type={
-            cat.valueType === 'number' || cat.valueType === 'duration'
-              ? 'number'
-              : cat.valueType === 'date'
-                ? 'date'
-                : 'text'
-          }
-          value={categoryInputs[cat.id] ?? ''}
-          onChange={(e) =>
-            setCategoryInputs((prev) => ({ ...prev, [cat.id]: e.target.value }))
-          }
+  const renderBuiltinField = (field: ActivityFormFieldPresentation) => {
+    switch (field.builtin) {
+      case 'title':
+        return (
+          <div key={field.key} className="field">
+            <label htmlFor="title">{field.label}</label>
+            <input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder={titlePlaceholder}
+              required
+            />
+          </div>
+        );
+      case 'date':
+        return (
+          <div key={field.key} className="field">
+            <label htmlFor="date">{field.label}</label>
+            <input
+              id="date"
+              type="date"
+              value={eventDate}
+              onChange={(e) => setEventDate(e.target.value)}
+              required
+            />
+          </div>
+        );
+      case 'location':
+        return (
+          <div key={field.key} className="field">
+            <label htmlFor="loc">{field.label}</label>
+            <input
+              id="loc"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="אופציונלי"
+            />
+          </div>
+        );
+      case 'notes':
+        return (
+          <div key={field.key} className="field" style={{ marginBottom: 0 }}>
+            <label htmlFor="notes">{field.label}</label>
+            <textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+            />
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const renderCategoryField = (field: ActivityFormFieldPresentation) => {
+    const catId = field.categoryId;
+    if (!catId) return null;
+    const cat = activeCategories.find((c) => c.id === catId);
+    if (!cat) return null;
+
+    const isSource = isSourceCategory(cat.name);
+
+    return (
+      <div key={field.key} className="field">
+        <label htmlFor={`cat-${cat.id}`}>{field.label}</label>
+        {isSource ? (
+          <select
+            id={`cat-${cat.id}`}
+            value={categoryInputs[cat.id] ?? ''}
+            onChange={(e) =>
+              setCategoryInputs((prev) => ({ ...prev, [cat.id]: e.target.value }))
+            }
+          >
+            <option value="">בחרו מקור הגעה</option>
+            {LEAD_SOURCE_OPTIONS.map((opt) => (
+              <option key={opt.id} value={opt.id}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <input
+            id={`cat-${cat.id}`}
+            type={inputTypeForValueType(cat.valueType)}
+            value={categoryInputs[cat.id] ?? ''}
+            onChange={(e) =>
+              setCategoryInputs((prev) => ({ ...prev, [cat.id]: e.target.value }))
+            }
+          />
+        )}
+      </div>
+    );
+  };
+
+  const renderSectionFields = (section: ActivityFormSchemaSection) => {
+    if (section.id === 'client') {
+      return (
+        <ClientFieldGroup
+          clientCategory={clientCategory}
+          clientValue={clientValue}
+          onClientValueChange={(value) => {
+            if (!clientCategory) return;
+            setCategoryInputs((prev) => ({ ...prev, [clientCategory.id]: value }));
+          }}
+          clientEmail={clientEmail}
+          clientPhone={clientPhone}
+          onClientEmailChange={setClientEmail}
+          onClientPhoneChange={setClientPhone}
+          events={events}
+          leads={leads}
+          invoices={invoices}
+          categories={categories}
+          eventValues={allEventValues}
         />
-      )}
-    </div>
-  );
+      );
+    }
+
+    return section.fields.map((field) => {
+      if (field.builtin) return renderBuiltinField(field);
+      if (field.section === 'client') return null;
+      return renderCategoryField(field);
+    });
+  };
+
+  const financialSection = schema.sections.find((s) => s.id === 'financial');
 
   return (
-    <form onSubmit={handleSubmit} className="form-stack">
+    <form onSubmit={handleSubmit} className="form-stack activity-form">
       {templates.length > 0 && (
-        <FormSection title="תבנית" icon={Calendar}>
-          <div className="field" style={{ marginBottom: 0 }}>
-            <label htmlFor="template-pick">בחרו תבנית (אופציונלי)</label>
-            <select
-              id="template-pick"
-              defaultValue=""
-              onChange={(e) => {
-                if (e.target.value) applyTemplate(e.target.value);
-                e.target.value = '';
-              }}
-            >
-              <option value="">ללא תבנית</option>
-              {templates.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </FormSection>
+        <div className="activity-form-template-pick field">
+          <label htmlFor="template-pick">תבנית (אופציונלי)</label>
+          <select
+            id="template-pick"
+            defaultValue=""
+            onChange={(e) => {
+              if (e.target.value) applyTemplate(e.target.value);
+              e.target.value = '';
+            }}
+          >
+            <option value="">ללא תבנית</option>
+            {templates.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+        </div>
       )}
 
-      <FormSection title="פרטי פעילות" icon={Calendar}>
-        <div className="field">
-          <label htmlFor="title">שם אירוע</label>
-          <input
-            id="title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="לדוגמה: יום הולדת מאיה"
-            required
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="date">תאריך אירוע</label>
-          <input
-            id="date"
-            type="date"
-            value={eventDate}
-            onChange={(e) => setEventDate(e.target.value)}
-            required
-          />
-        </div>
-        <div className="field" style={{ marginBottom: 0 }}>
-          <label htmlFor="loc">מיקום</label>
-          <input
-            id="loc"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            placeholder="אופציונלי"
-          />
-        </div>
-      </FormSection>
+      {schema.sections.map((section) => {
+        const fieldsInSection = section.fields.filter((f) => {
+          if (f.builtin === 'notes' && section.id !== 'notes') return false;
+          if (f.section === 'client' && section.id !== 'client') return false;
+          return true;
+        });
+        if (!fieldsInSection.length && section.id !== 'client') return null;
+        if (section.id === 'client' && !clientCategory) return null;
 
-      <FormSection title="פרטי לקוח" icon={User}>
-        <div className="field">
-          <label htmlFor="client-email">אימייל לקוח</label>
-          <input
-            id="client-email"
-            type="email"
-            value={clientEmail}
-            onChange={(e) => setClientEmail(e.target.value)}
-            placeholder="client@example.com"
-            dir="ltr"
-            autoComplete="email"
-          />
-        </div>
-        <div className="field" style={{ marginBottom: 0 }}>
-          <label htmlFor="client-phone">טלפון לקוח</label>
-          <input
-            id="client-phone"
-            type="tel"
-            value={clientPhone}
-            onChange={(e) => setClientPhone(e.target.value)}
-            placeholder="050-1234567"
-            dir="ltr"
-            autoComplete="tel"
-          />
-        </div>
-      </FormSection>
-
-      {(paymentCategories.length > 0 || sourceCategory) && (
-        <FormSection title="תשלום" icon={Banknote}>
-          {paymentCategories.map(renderCategoryField)}
-          {sourceCategory && renderCategoryField(sourceCategory)}
-          {!showDirectExpenses && (
-            <p className="field-hint" style={{ marginBottom: 0 }}>
-              הוצאות העסק מדווחות ב
-              <Link to="/settings/monthly-expenses"> הוצאות חודשיות</Link>
-            </p>
-          )}
-        </FormSection>
-      )}
-
-      {otherCategories.length > 0 && (
-        <FormSection title="שדות נוספים" icon={Calendar}>
-          {otherCategories.map(renderCategoryField)}
-        </FormSection>
-      )}
-
-      <FormSection title="הערות" icon={StickyNote}>
-        <div className="field" style={{ marginBottom: 0 }}>
-          <label htmlFor="notes">הערות</label>
-          <textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
-        </div>
-      </FormSection>
+        return (
+          <LightFormSection
+            key={section.id}
+            title={section.titleHe}
+            collapsedByDefault={section.collapsedByDefault}
+          >
+            {renderSectionFields({ ...section, fields: fieldsInSection })}
+            {section.id === 'financial' && !showDirectExpenses && financialSection && (
+              <p className="field-hint" style={{ marginBottom: 0 }}>
+                הוצאות העסק מדווחות ב
+                <Link to="/settings/monthly-expenses"> הוצאות חודשיות</Link>
+              </p>
+            )}
+          </LightFormSection>
+        );
+      })}
 
       {saveWarnings.length > 0 && (
         <div className="event-save-warnings card" role="alert">

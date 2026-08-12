@@ -1335,15 +1335,16 @@ Full reference: **`docs/onboarding-flow.md`**
 | 1 | Business name + type (Hebrew preset list + "אחר") |
 | 2 | Primary operating model — expandable `OperatingModelSelectCard` |
 | 3 | Optional additional models — primary locked at top |
-| 4 | Recommended categories — edit, reorder, add, remove |
+| 4 | Field configuration — simple toggles + optional advanced editor |
 | 5 | Review summary + adapted app preview |
 
 **Anatomy:**
 
 - Progress: subtle `N מתוך 5` dots
 - Model cards: Lucide icon, title, description, examples, inline preview on select
-- Category rows: drag handle, name, type, source badge, protected state
-- Form preview: 3–5 sample rows (visual only — no mock store data)
+- Category rows (advanced mode only): drag handle, name, type, source badge, protected state
+- Simple mode: core summary, recommended toggles, collapsed "עוד שדות"
+- Form preview: 4–5 sample rows with muted placeholders (visual only — no mock store data)
 - One primary CTA per step; back navigation preserves draft
 
 **Category source badges:**
@@ -1361,4 +1362,55 @@ Full reference: **`docs/onboarding-flow.md`**
 
 ---
 
-*Last updated: 5-step onboarding, category recommendation engine, workspace hooks.*
+## Field Configuration UX
+
+Full schema reference: **`docs/activity-form-schema.md`**
+
+### Simple vs advanced mode
+
+| Mode | When | UI |
+|------|------|-----|
+| **Simple** (default) | Onboarding step 4, future Settings | Core summary, recommended toggles, collapsed optional fields |
+| **Advanced** | User taps "עריכת סדר ושדות" | Full row editor — reorder, rename, metric role, delete |
+
+Technical metadata (value type, MetricRole) is hidden in simple mode.
+
+### Field priority system (internal)
+
+| Priority | User-facing | Behavior |
+|----------|-------------|----------|
+| `core` | שדה בסיסי | Locked — title, client, date |
+| `primary` | (recommended) | Enabled by default |
+| `optional` | (recommended / more) | Enabled when strongly relevant |
+| `advanced` | עוד שדות | Collapsed, off by default |
+
+### Activity form anatomy
+
+Production create/edit forms use **`resolveActivityFormSchema()`** — one resolver for onboarding preview and EventForm.
+
+| Section | Hebrew | Contents |
+|---------|--------|----------|
+| `activity_details` | פרטי הפעילות | Title, date, time, location |
+| `client` | לקוח | Client picker — no duplicate contact when existing client selected |
+| `business_details` | פרטים נוספים | Model/business-specific fields |
+| `financial` | תשלום | Revenue/expense categories only |
+| `advanced` | עוד פרטים | Source, prep status, custom low-priority fields |
+| `notes` | הערות | Notes textarea |
+
+### Progressive disclosure rules
+
+- Target **5–8 visible fields** before any collapsed section.
+- Payment section never includes marketing/operational fields (e.g. מקור הגעה).
+- Section headers are lightweight — no nested cards per section.
+- Collapsed sections: `advanced`, `notes` by default.
+
+### Onboarding preview pattern
+
+- Title: **כך ייראה הטופס שלך**
+- Max 5 rows with muted placeholder values
+- Footer: **תצוגה מקדימה בלבד**
+- Do not render a full interactive form
+
+---
+
+*Last updated: field configuration redesign, shared activity form schema, lightweight EventForm.*

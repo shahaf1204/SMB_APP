@@ -259,6 +259,26 @@
 /* Category customization */
 .onboarding-form-preview {
   padding: 0.85rem 1rem;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-surface-muted) 35%, var(--color-surface));
+  border: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent);
+}
+
+.onboarding-form-preview__note {
+  font-size: 0.6875rem;
+  color: var(--color-text-muted);
+  margin: 0.5rem 0 0;
+}
+
+.onboarding-form-preview__placeholder {
+  grid-column: 1 / -1;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  padding-inline: 0.1rem;
+}
+
+.onboarding-form-preview__type {
+  display: none;
 }
 
 .onboarding-form-preview__title {
@@ -287,11 +307,123 @@
 }
 
 .onboarding-form-preview__input {
-  grid-column: 1 / -1;
-  height: 32px;
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--color-surface-muted) 60%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+  display: none;
+}
+
+/* Field configuration — simple mode */
+.field-config-simple {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.field-config-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.field-config-block__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.field-config-block__title {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+.field-config-badge {
+  font-size: 0.625rem;
+  font-weight: 600;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-pill, 999px);
+  background: color-mix(in srgb, var(--color-primary-soft) 50%, var(--color-surface));
+  color: color-mix(in srgb, var(--color-primary) 70%, var(--color-text-secondary));
+}
+
+.field-config-core-summary {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.field-config-core-hint {
+  margin: 0;
+}
+
+.field-config-toggle-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.field-config-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 44px;
+  padding: 0.35rem 0.5rem;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--color-surface-muted) 40%, transparent);
+  cursor: pointer;
+}
+
+.field-config-toggle-row__label {
+  font-size: 0.875rem;
+}
+
+.field-config-toggle {
+  width: 2.75rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+  accent-color: var(--color-primary);
+}
+
+.field-config-collapse-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 44px;
+  padding: 0.35rem 0;
+  border: none;
+  background: none;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.field-config-collapse-icon {
+  transition: transform 180ms ease;
+}
+
+.field-config-collapse-icon--open {
+  transform: rotate(180deg);
+}
+
+.field-config-simple-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.field-config-add-btn {
+  justify-content: flex-start;
+}
+
+.field-config-back-simple {
+  align-self: flex-start;
+  margin-block-end: 0.25rem;
 }
 
 .onboarding-form-preview__type {

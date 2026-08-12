@@ -26,6 +26,7 @@ export function CategoryCustomizeList({
   onRestore,
   onReset,
   onAdd,
+  addOnly = false,
 }: {
   categories: OnboardingCategoryDraft[];
   removedRecommendations: OnboardingCategoryDraft[];
@@ -35,10 +36,12 @@ export function CategoryCustomizeList({
   onRestore: (key: string) => void;
   onReset: () => void;
   onAdd: (draft: Omit<OnboardingCategoryDraft, 'sortOrder'>) => void;
+  /** Show only custom-field add form (simple mode) */
+  addOnly?: boolean;
 }) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [editKey, setEditKey] = useState<string | null>(null);
-  const [showAdd, setShowAdd] = useState(false);
+  const [showAdd, setShowAdd] = useState(addOnly);
   const [newName, setNewName] = useState('');
   const [newType, setNewType] = useState<ValueType>('text');
   const [newMetric, setNewMetric] = useState<MetricRole>('neutral');
@@ -74,6 +77,55 @@ export function CategoryCustomizeList({
     setNewMetric('neutral');
     setShowAdd(false);
   };
+
+  if (addOnly) {
+    return (
+      <form onSubmit={handleAdd} className="onboarding-category-add card">
+        <div className="field">
+          <label htmlFor="new-cat-name">שם השדה</label>
+          <input
+            id="new-cat-name"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            required
+          />
+        </div>
+        <div className="field-row">
+          <div className="field">
+            <label htmlFor="new-cat-type">סוג הערך</label>
+            <select
+              id="new-cat-type"
+              value={newType}
+              onChange={(e) => setNewType(e.target.value as ValueType)}
+            >
+              {VALUE_TYPES.map((t) => (
+                <option key={t} value={t}>
+                  {VALUE_TYPE_LABELS[t]}
+                </option>
+              ))}
+            </select>
+          </div>
+          {newType === 'number' && (
+            <div className="field">
+              <label htmlFor="new-cat-metric">תפקיד</label>
+              <select
+                id="new-cat-metric"
+                value={newMetric}
+                onChange={(e) => setNewMetric(e.target.value as MetricRole)}
+              >
+                <option value="neutral">כללי</option>
+                <option value="revenue">הכנסה</option>
+                <option value="expense">הוצאה</option>
+              </select>
+            </div>
+          )}
+        </div>
+        <button type="submit" className="btn btn-primary">
+          הוספה
+        </button>
+      </form>
+    );
+  }
 
   return (
     <div className="onboarding-categories">
@@ -181,7 +233,7 @@ export function CategoryCustomizeList({
           className="btn btn-ghost"
           onClick={() => setShowAdd((v) => !v)}
         >
-          <Plus size={16} aria-hidden /> הוספת קטגוריה
+          <Plus size={16} aria-hidden /> הוספת שדה
         </button>
         <button type="button" className="btn btn-ghost" onClick={onReset}>
           <RotateCcw size={16} aria-hidden /> איפוס להמלצות
@@ -191,7 +243,7 @@ export function CategoryCustomizeList({
       {showAdd && (
         <form onSubmit={handleAdd} className="onboarding-category-add card">
           <div className="field">
-            <label htmlFor="new-cat-name">שם הקטגוריה</label>
+            <label htmlFor="new-cat-name">שם השדה</label>
             <input
               id="new-cat-name"
               value={newName}
