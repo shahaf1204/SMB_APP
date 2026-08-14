@@ -60,15 +60,20 @@ describe('resolveActivityFormSchema', () => {
     expect(partition.more.some((d) => d.key === 'preparation_status')).toBe(true);
   });
 
-  it('preview returns at most 5 rows', () => {
+  it('preview returns realistic examples', () => {
     const schema = resolveActivityFormSchemaFromDrafts({
       drafts: photographerEventDrafts,
       businessType: 'photographer',
       operatingModel: 'event',
     });
-    const rows = buildOnboardingPreviewRows(schema);
+    const rows = buildOnboardingPreviewRows(schema, {
+      businessType: 'photographer',
+      operatingModel: 'event',
+    });
     expect(rows.length).toBeLessThanOrEqual(5);
     expect(rows.length).toBeGreaterThanOrEqual(3);
+    expect(rows.some((r) => r.example.includes('₪'))).toBe(true);
+    expect(rows.some((r) => r.example === 'דנה כהן' || r.label.includes('לקוח'))).toBe(true);
   });
 
   it('journey business resolves without error', () => {

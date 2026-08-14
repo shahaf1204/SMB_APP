@@ -19,6 +19,10 @@ import type {
   ResolveFromCategoriesInput,
   ResolveFromDraftsInput,
 } from './types';
+import type { OperatingModel } from '../../types/workspace';
+import { resolvePreviewExample, type PreviewRow } from './previewExamples';
+
+export type { PreviewRow };
 
 export { SECTION_ORDER, SECTION_TITLES_HE } from './types';
 export type {
@@ -389,10 +393,13 @@ export function applyDefaultEnabledToDrafts(
   });
 }
 
-/** Preview rows for onboarding — max 5 representative fields */
-export function buildOnboardingPreviewRows(schema: ActivityFormSchema): Array<{ label: string; placeholder: string }> {
+/** Preview rows for onboarding — max 5 representative fields with realistic examples */
+export function buildOnboardingPreviewRows(
+  schema: ActivityFormSchema,
+  context: { businessType?: string; operatingModel?: OperatingModel } = {},
+): PreviewRow[] {
   const prefer = ['__builtin_title', '__builtin_date', 'client_name', '__builtin_location', 'total_amount'];
-  const rows: Array<{ label: string; placeholder: string }> = [];
+  const rows: PreviewRow[] = [];
 
   for (const key of prefer) {
     const field = schema.fields.find((f) => {
@@ -404,30 +411,27 @@ export function buildOnboardingPreviewRows(schema: ActivityFormSchema): Array<{ 
     });
     if (!field) continue;
     rows.push({
+      key: field.key,
       label: field.label,
-      placeholder: field.placeholder ?? placeholderForField(field.label),
+      example: resolvePreviewExample(field, context),
     });
     if (rows.length >= 5) break;
   }
 
   if (rows.length < 4) {
     for (const f of schema.fields) {
-      if (rows.some((r) => r.label === f.label)) continue;
+      if (rows.some((r) => r.key === f.key)) continue;
       if (f.section === 'advanced') continue;
-      rows.push({ label: f.label, placeholder: placeholderForField(f.label) });
+      rows.push({
+        key: f.key,
+        label: f.label,
+        example: resolvePreviewExample(f, context),
+      });
       if (rows.length >= 5) break;
     }
   }
 
   return rows.slice(0, 5);
-}
-
-function placeholderForField(label: string): string {
-  if (label.includes('תאריך')) return '01/01/2026';
-  if (label.includes('סכום') || label.includes('מחיר')) return '₪0';
-  if (label.includes('מיקום') || label.includes('לוקיישן')) return 'תל אביב';
-  if (label.includes('לקוח')) return 'דנה כהן';
-  return '…';
 }
 
 /** Visible expanded fields count target for production form */

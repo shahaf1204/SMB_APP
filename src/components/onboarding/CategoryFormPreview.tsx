@@ -21,7 +21,7 @@ export function CategoryFormPreview({
       businessType,
       operatingModel,
     });
-    return buildOnboardingPreviewRows(schema);
+    return buildOnboardingPreviewRows(schema, { businessType, operatingModel });
   }, [categories, businessType, operatingModel]);
 
   return (
@@ -29,10 +29,10 @@ export function CategoryFormPreview({
       <p className="onboarding-form-preview__title">כך ייראה הטופס שלך</p>
       <div className="onboarding-form-preview__fields">
         {rows.map((row) => (
-          <div key={row.label} className="onboarding-form-preview__field">
+          <div key={row.key} className="onboarding-form-preview__field">
             <span className="onboarding-form-preview__label">{row.label}</span>
-            <span className="onboarding-form-preview__placeholder" aria-hidden>
-              {row.placeholder}
+            <span className="onboarding-form-preview__value" aria-hidden>
+              {row.example}
             </span>
           </div>
         ))}
