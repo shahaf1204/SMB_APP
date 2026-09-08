@@ -288,7 +288,7 @@ Capabilities are **architecture vocabulary**, not necessarily user vocabulary.
 |-------|------|
 | **Architectural recommendations** | Ideal future configuration from Business Type + Models — includes `planned` capabilities (`resolveArchitecturalRecommendedCapabilities()`) |
 | **Effective recommendations** | Honest user-facing guidance NOW — excludes `planned` (`resolveEffectiveRecommendedCapabilities()`) |
-| **Enabled capabilities** | Explicit activation in `capabilityProfile.activation` — never auto-populated from recommendations |
+| **Enabled capabilities** | Explicit activation in `capabilityProfile.activation` — never auto-populated from recommendations; **visible setup consent required** (Phase 2B.1) |
 
 ### Activation vs configuration completeness (Phase 2A.1)
 
@@ -330,6 +330,8 @@ Normalization applies requirement-aware defaults on read (does not mutate existi
 `enabled` + `none` or `optional` without extra configuration must **not** auto-create Attention.
 
 Readiness exposure rules from Phase 2A.1 are unchanged — `planned` capabilities stay out of effective recommendations regardless of configuration requirement.
+
+**Phase 2B.1 — Setup consent (onboarding):** Recommendation ≠ activation. Optional capabilities hidden from the setup UI (e.g. summary-only low-readiness) are not newly enabled on finish. The setup step owns only `managedKeys` (visible features); edit save merges into existing profile without deleting out-of-scope keys.
 
 ### Capability readiness
 

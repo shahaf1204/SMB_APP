@@ -692,3 +692,115 @@
     flex-wrap: wrap;
   }
 }
+
+/* Business setup (Phase 2B) */
+.onboarding-setup-summary {
+  padding: var(--space-4, 16px);
+  background: color-mix(in srgb, var(--color-primary) 6%, var(--color-surface));
+  border: 1px solid color-mix(in srgb, var(--color-primary) 12%, var(--color-border));
+}
+
+.onboarding-setup-summary__headline {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.onboarding-setup-summary__body {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+}
+
+.onboarding-setup-features {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.onboarding-setup-features__group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.onboarding-setup-features__title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 650;
+  color: var(--color-text-primary);
+}
+
+.onboarding-setup-features__hint {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.onboarding-setup-feature-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.onboarding-setup-feature-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-pill, 999px);
+  font-size: 0.8125rem;
+  font-weight: 550;
+  background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface));
+  color: var(--color-text-primary);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 18%, transparent);
+}
+
+.onboarding-setup-feature-chip--essential {
+  background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface));
+}
+
+.onboarding-setup-feature-toggles {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.onboarding-setup-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 44px;
+  padding: 0.35rem 0.5rem;
+  border-radius: var(--radius-md, 8px);
+  cursor: pointer;
+}
+
+.onboarding-setup-toggle input {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--color-primary);
+}
+
+.onboarding-setup-toggle__label {
+  font-size: 0.9375rem;
+}
+
+.onboarding-setup-bridge {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.onboarding-setup-bridge--muted {
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+}

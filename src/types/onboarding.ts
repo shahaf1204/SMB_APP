@@ -1,4 +1,5 @@
 import type { MetricRole, ValueType } from './models';
+import type { CapabilityKey } from './businessArchitecture';
 import type { OperatingModel } from './workspace';
 
 /** Semantic source for category recommendation badges */
@@ -40,8 +41,8 @@ export interface OnboardingCategoryDraft {
 export type PrimaryModelSelectionSource = 'none' | 'recommended' | 'manual';
 
 export interface OnboardingDraft {
-  version: 1;
-  step: 1 | 2 | 3 | 4 | 5;
+  version: 2;
+  step: 1 | 2 | 3 | 4 | 5 | 6;
   name: string;
   mode: 'list' | 'custom';
   presetId: string;
@@ -53,6 +54,8 @@ export interface OnboardingDraft {
   primaryModelSource: PrimaryModelSelectionSource;
   /** Selected option for ambiguous presets (coach, consultant, freelance) */
   clarificationChoiceId?: string;
+  /** Optional features the user turned off during business setup (step 4) */
+  setupDisabledFeatures?: CapabilityKey[];
   categories: OnboardingCategoryDraft[];
   updatedAt: string;
 }

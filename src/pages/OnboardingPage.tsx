@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { OnboardingProgress } from '../components/onboarding/OnboardingProgress';
 import { OnboardingStepAdditionalModels } from '../components/onboarding/OnboardingStepAdditionalModels';
+import { OnboardingStepBusinessSetup } from '../components/onboarding/OnboardingStepBusinessSetup';
 import { OnboardingStepCategories } from '../components/onboarding/OnboardingStepCategories';
 import { OnboardingStepIdentity } from '../components/onboarding/OnboardingStepIdentity';
 import { OnboardingStepPrimaryModel } from '../components/onboarding/OnboardingStepPrimaryModel';
@@ -21,9 +22,14 @@ import {
 import {
   clearOnboardingDraft,
   createDefaultDraft,
+  initializeSetupDisabledFromProfile,
   loadOnboardingDraft,
   saveOnboardingDraft,
 } from '../lib/onboarding/draftStorage';
+import {
+  buildCapabilityProfileFromSetup,
+  toggleSetupFeatureDisabled,
+} from '../lib/onboarding/businessSetup';
 import {
   acceptRecommendedPrimaryModel,
   applyBusinessTypeChangeToDraft,
@@ -34,6 +40,7 @@ import {
 import { normalizeEnabledModels, syncWorkModelsFromWorkspace } from '../lib/workspace';
 import { useAppStore } from '../store/useAppStore';
 import type { OnboardingCategoryDraft, OnboardingDraft } from '../types/onboarding';
+import type { CapabilityKey } from '../types/businessArchitecture';
 import type { OperatingModel } from '../types/workspace';
 import '../components/onboarding/onboarding.css';
 
@@ -54,11 +61,16 @@ const STEP_TITLES: Record<OnboardingDraft['step'], { title: string; subtitle: st
       'אפשר להוסיף עכשיו — או לדלג ולשנות בהמשך בהגדרות.',
   },
   4: {
+    title: 'התאמנו את סביבת העבודה לעסק שלך',
+    subtitle:
+      'סיכום קצר של איך המערכת תתאים לצורת העבודה שבחרת — אפשר לכוונן בעדינות.',
+  },
+  5: {
     title: 'התאמת פרטי הפעילות',
     subtitle:
       'כבר הכנו עבורך את השדות שמתאימים לעסק שלך. אפשר להסיר, להוסיף או לשנות לפי הצורך.',
   },
-  5: {
+  6: {
     title: 'העסק שלך מוכן',
     subtitle: 'סיכום קצר לפני הכניסה — תמיד אפשר לערוך בהגדרות.',
   },
@@ -129,11 +141,12 @@ export function OnboardingPage() {
     const base = createDefaultDraft();
     if (business && editMode) {
       const ws = business.workspace;
-      return {
+      const presetId = business.presetId ?? 'freelance';
+      const baseDraft: OnboardingDraft = {
         ...base,
         name: business.name,
-        mode: business.isGeneric || !business.presetId ? 'custom' : 'list',
-        presetId: business.presetId ?? 'freelance',
+        mode: (business.isGeneric || !business.presetId ? 'custom' : 'list') as OnboardingDraft['mode'],
+        presetId,
         customType: business.businessType,
         primaryModel: ws?.primaryOperatingModel ?? 'event',
         additionalModels:
@@ -141,6 +154,14 @@ export function OnboardingPage() {
         primaryModelConfirmed: true,
         primaryModelSource: 'manual',
         step: 1,
+      };
+      return {
+        ...baseDraft,
+        setupDisabledFeatures: initializeSetupDisabledFromProfile(
+          baseDraft,
+          business.isGeneric || !business.presetId ? undefined : presetId,
+          ws?.capabilityProfile,
+        ),
       };
     }
     return base;
@@ -174,7 +195,7 @@ export function OnboardingPage() {
 
   const goStep = (step: OnboardingDraft['step'], patch: Partial<OnboardingDraft> = {}) => {
     const next = { ...draft, ...patch, step };
-    if (step === 4 && (!next.categories.length || patch.primaryModel || patch.additionalModels || patch.presetId)) {
+    if (step === 5 && (!next.categories.length || patch.primaryModel || patch.additionalModels || patch.presetId)) {
       next.categories = recomputeCategories(next);
     }
     persist(next);
@@ -190,10 +211,19 @@ export function OnboardingPage() {
   const handleFinish = () => {
     const presetId = resolvePresetId(draft.mode, draft.presetId);
     const enabled = enabledModels(draft.primaryModel, draft.additionalModels);
+    const capabilityProfile = buildCapabilityProfileFromSetup({
+      businessTypePresetId: presetId,
+      primaryOperatingModel: draft.primaryModel,
+      additionalOperatingModels: draft.additionalModels,
+      disabledFeatureKeys: draft.setupDisabledFeatures ?? [],
+      isEditMode: editMode,
+      existingCapabilityProfile: business?.workspace?.capabilityProfile,
+    });
     const workspace = buildWorkspaceFromOnboarding(
       draft.primaryModel,
       enabled,
       presetId,
+      capabilityProfile,
     );
 
     const workModels = syncWorkModelsFromWorkspace(workspace);
@@ -318,6 +348,27 @@ export function OnboardingPage() {
       )}
 
       {draft.step === 4 && (
+        <OnboardingStepBusinessSetup
+          businessTypePresetId={resolvePresetId(draft.mode, draft.presetId)}
+          primaryModel={draft.primaryModel}
+          additionalModels={draft.additionalModels}
+          disabledFeatureKeys={draft.setupDisabledFeatures ?? []}
+          onToggleFeature={(key: CapabilityKey, enabled) =>
+            persist({
+              ...draft,
+              setupDisabledFeatures: toggleSetupFeatureDisabled(
+                draft.setupDisabledFeatures ?? [],
+                key,
+                enabled,
+              ),
+            })
+          }
+          onBack={() => goStep(3)}
+          onSubmit={() => goStep(5, { categories: recomputeCategories(draft) })}
+        />
+      )}
+
+      {draft.step === 5 && (
         <OnboardingStepCategories
           categories={draft.categories}
           removedRecommendations={removedRecommendations}
@@ -378,19 +429,19 @@ export function OnboardingPage() {
               ],
             })
           }
-          onBack={() => goStep(3)}
-          onSubmit={() => goStep(5)}
+          onBack={() => goStep(4)}
+          onSubmit={() => goStep(6)}
         />
       )}
 
-      {draft.step === 5 && (
+      {draft.step === 6 && (
         <OnboardingStepReview
           name={draft.name}
           businessTypeLabel={businessTypeLabel}
           primaryModel={draft.primaryModel}
           additionalModels={draft.additionalModels}
           categories={draft.categories}
-          onBack={() => goStep(4)}
+          onBack={() => goStep(5)}
           onFinish={handleFinish}
         />
       )}

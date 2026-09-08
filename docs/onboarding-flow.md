@@ -12,10 +12,38 @@
 | 1 | בואו נכיר את העסק שלך | name, business type |
 | 2 | Recommended working style **or** manual picker | primary model + confirmation source |
 | 3 | האם יש עוד צורות עבודה? | additional models (explicit opt-in only) |
-| 4 | התאמנו לך קטגוריות התחלה | category customization |
-| 5 | העסק שלך מוכן | review → finish |
+| 4 | התאמנו את סביבת העבודה לעסק שלך | setup feature selections (`setupDisabledFeatures`) |
+| 5 | התאמנו לך קטגוריות התחלה | category customization |
+| 6 | העסק שלך מוכן | review → finish |
 
-Progress indicator: `N מתוך 5`
+Progress indicator: `N מתוך 6`
+
+### Step 4 — Recommended Business Setup (Phase 2B)
+
+**After** primary + additional models, **before** field customization.
+
+**Internal architecture:** Uses effective capability recommendations + `StoredBusinessCapabilityProfile` — the word "capability" never appears in UI.
+
+**User sees:**
+
+1. **Workspace summary** — business-language adaptation headline (e.g. beauty → "תורים וטיפולים יהיו במרכז…")
+2. **Active features** — only effective/exposable behavior, translated labels (chips / optional toggles)
+3. **Bridge to fields** — "בשלב הבא נתאים יחד אילו פרטים נשמרים בכל פעילות"
+
+**Rules:**
+
+- Planned capabilities never shown
+- Low-readiness setups (e.g. Beauty + Appointment) emphasize summary over a sparse feature list
+- Optional recommendations can be turned off; essential (`none` requirement) items are not removable
+- No fake configuration editors — required capabilities without UI are not activated
+- On finish: writes explicit `capabilityProfile` on workspace when at least one capability was **visible and confirmed** (activation + `not_required`; no `incomplete` without real setup)
+- **Phase 2B.1:** Recommendation ≠ activation. Hidden optional recommendations (summary-only UX) are **not** activated. Empty consent → no profile written (legacy behavior preserved).
+
+**Config:** `src/config/businessSetupPresentationConfig.ts` · resolver: `src/lib/onboarding/businessSetup.ts`
+
+**Edit mode:** Existing explicit profile preserved for **out-of-scope** keys (not shown/managed by current setup UI). Only visible managed keys are updated on save. Legacy no-profile businesses unchanged until finish.
+
+**Setup ownership boundary:** The setup step modifies only `managedKeys` (visible in UI). Hidden recommendations do not imply consent.
 
 ### Step 2 — recommendation-first (Phase 1)
 
@@ -50,7 +78,7 @@ Changing business type before confirmation updates the recommendation/clarificat
 
 **User-facing copy:** Working styles (e.g. "תורים ופגישות") — not internal terms like "Operating Model".
 
-**Future (not implemented):** Existing-business onboarding, import/baseline, capability persistence.
+**Future (not implemented):** Existing-business onboarding, import/baseline beyond capability profile on finish.
 
 ---
 
@@ -72,6 +100,7 @@ Written to Zustand persist (v13+) on `Business`:
 |-------|----------|
 | `businessType`, `presetId`, `name` | `Business` |
 | `primaryOperatingModel`, `enabledOperatingModels` | `Business.workspace` |
+| `capabilityProfile` (explicit, on finish) | `Business.workspace` |
 | `terminology`, `onboardingCompleted`, `onboardingCompletedAt` | `Business.workspace` |
 | Categories | `categories[]` in store |
 | Legacy sync | `workModels`, `primaryWorkModel` |

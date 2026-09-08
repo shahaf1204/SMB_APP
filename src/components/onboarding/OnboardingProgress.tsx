@@ -1,6 +1,6 @@
 import './onboarding.css';
 
-export function OnboardingProgress({ step, total = 5 }: { step: number; total?: number }) {
+export function OnboardingProgress({ step, total = 6 }: { step: number; total?: number }) {
   return (
     <div className="onboarding-progress" role="status" aria-live="polite">
       <span className="onboarding-progress__label">

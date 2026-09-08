@@ -152,14 +152,18 @@ export function buildWorkspaceFromOnboarding(
   primary: OperatingModel,
   additional: OperatingModel[],
   presetId?: string,
+  capabilityProfile?: import('../../types/businessArchitecture').StoredBusinessCapabilityProfile,
 ) {
   const now = new Date().toISOString();
-  return buildWorkspaceConfig({
-    primaryOperatingModel: primary,
-    enabledOperatingModels: normalizeEnabledModels(primary, additional),
-    businessType: presetId,
-    onboardingCompleted: true,
-    onboardingCompletedAt: now,
-    terminology: getOperatingModelDefinition(primary).defaultTerminology,
-  });
+  return {
+    ...buildWorkspaceConfig({
+      primaryOperatingModel: primary,
+      enabledOperatingModels: normalizeEnabledModels(primary, additional),
+      businessType: presetId,
+      onboardingCompleted: true,
+      onboardingCompletedAt: now,
+      terminology: getOperatingModelDefinition(primary).defaultTerminology,
+    }),
+    ...(capabilityProfile ? { capabilityProfile } : {}),
+  };
 }
