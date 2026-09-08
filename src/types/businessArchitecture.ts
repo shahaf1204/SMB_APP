@@ -107,6 +107,12 @@ export type CapabilityConfigurationStatus =
   | 'configured';
 
 /**
+ * Whether business-level setup is needed before a capability is meaningfully usable.
+ * Independent from readiness (planned + required is valid architecturally).
+ */
+export type CapabilityConfigurationRequirement = 'none' | 'optional' | 'required';
+
+/**
  * @deprecated Phase 2A v1 shape — normalized to v2 on read.
  * `configured` conflated activation with completeness; split in v2.
  */
@@ -121,6 +127,8 @@ export interface CapabilityRegistryEntry {
   /** Safe to include in generic model baselines (available/partial only) */
   safeToRecommendByDefault: boolean;
   readiness: CapabilityReadiness;
+  /** Whether business-level setup is required before meaningful use */
+  configurationRequirement: CapabilityConfigurationRequirement;
 }
 
 /**

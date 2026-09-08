@@ -264,7 +264,7 @@ Future phases may add **optional refs** (e.g. `configurationVersion`, capability
 
 ---
 
-*Last updated: Phase 2A.1 — readiness enforcement and profile hardening.*
+*Last updated: Phase 2A.2 — configuration requirement metadata.*
 
 ---
 
@@ -301,6 +301,35 @@ A capability may be **enabled + incomplete** (future Attention target) or **enab
 `configured` does **not** replace `enabled`.
 
 v1 snapshots `{ enabled: { key: 'configured' } }` normalize to v2 on read.
+
+### Configuration requirement (Phase 2A.2)
+
+Independent from readiness. Lives on each registry entry as `configurationRequirement`:
+
+| Requirement | Meaning | Default status when enabled |
+|-------------|---------|----------------------------|
+| **none** | No business-level setup needed — capability usable immediately | `not_required` |
+| **optional** | Enhanced settings may exist but are not mandatory | `not_required` |
+| **required** | Business-level setup needed before meaningful use | `incomplete` until configured |
+
+Four independent dimensions:
+
+| Dimension | Question |
+|-----------|----------|
+| **Readiness** | Can the product honestly expose this capability now? |
+| **Configuration requirement** | Does this capability need business-level setup? |
+| **Activation** | Does this business use it? |
+| **Configuration status** | Has required setup been completed? |
+
+Pure helpers: `resolveInitialConfigurationStatus()`, `resolveConfigurationStatusOnEnable()`, `normalizeConfigurationStatusForCapability()` in `src/lib/capabilities/configurationRequirement.ts`.
+
+Normalization applies requirement-aware defaults on read (does not mutate existing businesses without profiles). Explicit stored statuses are preserved unless invalid (e.g. `none` + `incomplete` → `not_required`).
+
+**Future Attention boundary (not implemented):**  
+`enabled` + `configurationRequirement=required` + `configurationStatus=incomplete` may become actionable.  
+`enabled` + `none` or `optional` without extra configuration must **not** auto-create Attention.
+
+Readiness exposure rules from Phase 2A.1 are unchanged — `planned` capabilities stay out of effective recommendations regardless of configuration requirement.
 
 ### Capability readiness
 

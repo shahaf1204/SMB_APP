@@ -1,4 +1,12 @@
 export {
+  getCapabilityConfigurationRequirement,
+  isPotentiallyActionableIncompleteConfiguration,
+  normalizeConfigurationStatusForCapability,
+  resolveConfigurationStatusOnEnable,
+  resolveInitialConfigurationStatus,
+} from './configurationRequirement';
+
+export {
   assertCapabilityProfileIsLightweight,
   canEnableCapabilityInProfile,
   createEmptyCapabilityProfile,

@@ -6,6 +6,10 @@ import type {
   StoredBusinessCapabilityProfile,
 } from '../../types/businessArchitecture';
 import type { BusinessWorkspaceConfig } from '../../types/workspace';
+import {
+  normalizeConfigurationStatusForCapability,
+  resolveInitialConfigurationStatus,
+} from './configurationRequirement';
 import { canNewlyEnableCapability } from './readiness';
 
 export type CapabilityProfileMode = 'legacy' | 'explicit';
@@ -50,7 +54,7 @@ function normalizeV1Profile(
     }
     if (value === 'enabled') {
       activation[capabilityKey] = 'enabled';
-      configurationStatus[capabilityKey] = 'incomplete';
+      configurationStatus[capabilityKey] = resolveInitialConfigurationStatus(capabilityKey);
       continue;
     }
     if (value === 'configured') {
@@ -96,8 +100,12 @@ function normalizeV2Profile(
   }
 
   for (const key of Object.keys(activation) as CapabilityKey[]) {
-    if (activation[key] === 'enabled' && !configurationStatus[key]) {
-      configurationStatus[key] = 'incomplete';
+    if (activation[key] === 'enabled') {
+      configurationStatus[key] = normalizeConfigurationStatusForCapability(
+        key,
+        'enabled',
+        configurationStatus[key],
+      );
     }
   }
 
@@ -189,7 +197,11 @@ export function getCapabilityConfigurationStatus(
   profile: StoredBusinessCapabilityProfile | undefined,
 ): CapabilityConfigurationStatus | undefined {
   if (!profile || profile.activation[key] !== 'enabled') return undefined;
-  return profile.configurationStatus[key] ?? 'incomplete';
+  const stored = profile.configurationStatus[key];
+  return (
+    normalizeConfigurationStatusForCapability(key, 'enabled', stored) ??
+    resolveInitialConfigurationStatus(key)
+  );
 }
 
 /** Lightweight guard — profile must not store capability payload data. */

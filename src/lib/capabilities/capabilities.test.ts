@@ -27,9 +27,11 @@ import {
   resolveArchitecturalRecommendedCapabilities,
   resolveCapabilityConfiguration,
   resolveCapabilityRecommendationSets,
+  resolveConfigurationStatusOnEnable,
   resolveEffectiveRecommendedCapabilities,
   resolveEnabledCapabilityKeys,
   resolveIncompleteCapabilityKeys,
+  resolveInitialConfigurationStatus,
   resolveModelLevelCapabilityBaseline,
   resolveRecommendedCapabilities,
 } from './index';
@@ -53,8 +55,18 @@ describe('capabilityRegistry', () => {
 
   it('planned capability can exist in registry but is not user-exposable', () => {
     expect(CAPABILITY_REGISTRY['appointment.service_catalog'].readiness).toBe('planned');
+    expect(CAPABILITY_REGISTRY['appointment.service_catalog'].configurationRequirement).toBe(
+      'required',
+    );
     expect(isCapabilityUserExposable('appointment.service_catalog')).toBe(false);
     expect(canNewlyEnableCapability('appointment.service_catalog')).toBe(false);
+  });
+
+  it('every capability has a configuration requirement', () => {
+    for (const entry of Object.values(CAPABILITY_REGISTRY)) {
+      expect(['none', 'optional', 'required']).toContain(entry.configurationRequirement);
+    }
+    expect(() => assertRegistryComplete()).not.toThrow();
   });
 });
 
@@ -184,19 +196,19 @@ describe('recommended vs enabled', () => {
   it('enabled and configuration status are independent', () => {
     const profile = createEmptyCapabilityProfile();
     profile.activation = {
-      'appointment.reminders': 'enabled',
+      'journey.cadence': 'enabled',
       'package.session_limit': 'enabled',
     };
     profile.configurationStatus = {
-      'appointment.reminders': 'incomplete',
+      'journey.cadence': 'incomplete',
       'package.session_limit': 'configured',
     };
 
-    expect(resolveEnabledCapabilityKeys(profile)).toContain('appointment.reminders');
+    expect(resolveEnabledCapabilityKeys(profile)).toContain('journey.cadence');
     expect(resolveEnabledCapabilityKeys(profile)).toContain('package.session_limit');
-    expect(getCapabilityConfigurationStatus('appointment.reminders', profile)).toBe('incomplete');
+    expect(getCapabilityConfigurationStatus('journey.cadence', profile)).toBe('incomplete');
     expect(getCapabilityConfigurationStatus('package.session_limit', profile)).toBe('configured');
-    expect(resolveIncompleteCapabilityKeys(profile)).toEqual(['appointment.reminders']);
+    expect(resolveIncompleteCapabilityKeys(profile)).toEqual(['journey.cadence']);
   });
 
   it('enabled + configured is valid without conflating activation', () => {
@@ -250,7 +262,7 @@ describe('legacy compatibility', () => {
     });
     expect(normalized?.version).toBe(2);
     expect(normalized?.activation['appointment.reminders']).toBe('enabled');
-    expect(normalized?.configurationStatus['appointment.reminders']).toBe('incomplete');
+    expect(normalized?.configurationStatus['appointment.reminders']).toBe('not_required');
     expect(normalized?.activation['package.session_limit']).toBe('enabled');
     expect(normalized?.configurationStatus['package.session_limit']).toBe('configured');
     expect(normalized?.activation).not.toHaveProperty('bad');
@@ -268,6 +280,56 @@ describe('legacy compatibility', () => {
     profile.activation['event.time'] = 'enabled';
     profile.configurationStatus['event.time'] = 'not_required';
     expect(assertCapabilityProfileIsLightweight(profile)).toBe(true);
+  });
+});
+
+describe('configuration requirement', () => {
+  it('event.location resolves to not_required', () => {
+    expect(resolveInitialConfigurationStatus('event.location')).toBe('not_required');
+    expect(resolveConfigurationStatusOnEnable('event.location')).toBe('not_required');
+  });
+
+  it('project.deadline resolves to not_required', () => {
+    expect(resolveInitialConfigurationStatus('project.deadline')).toBe('not_required');
+  });
+
+  it('required capability resolves to incomplete when newly enabled', () => {
+    expect(resolveInitialConfigurationStatus('appointment.working_hours')).toBe('incomplete');
+    expect(resolveConfigurationStatusOnEnable('journey.cadence')).toBe('incomplete');
+  });
+
+  it('optional capability does not automatically become incomplete', () => {
+    expect(resolveInitialConfigurationStatus('appointment.reminders')).toBe('not_required');
+    expect(resolveInitialConfigurationStatus('package.payment_structure')).toBe('not_required');
+  });
+
+  it('none capability does not automatically become incomplete', () => {
+    expect(resolveInitialConfigurationStatus('event.time')).toBe('not_required');
+    expect(resolveInitialConfigurationStatus('package.session_limit')).toBe('not_required');
+    expect(resolveInitialConfigurationStatus('project.milestones')).toBe('not_required');
+  });
+
+  it('v2 normalization applies requirement-aware defaults for enabled keys', () => {
+    const normalized = normalizeCapabilityProfile({
+      version: 2,
+      activation: {
+        'event.location': 'enabled',
+        'appointment.working_hours': 'enabled',
+      },
+      configurationStatus: {},
+    });
+    expect(normalized?.configurationStatus['event.location']).toBe('not_required');
+    expect(normalized?.configurationStatus['appointment.working_hours']).toBe('incomplete');
+  });
+
+  it('readiness filtering remains unchanged with configuration requirements present', () => {
+    const sets = resolveCapabilityRecommendationSets({
+      businessType: 'beauty',
+      primaryOperatingModel: 'appointment',
+    });
+    expect(sets.architectural.keys).toContain('appointment.working_hours');
+    expect(sets.effective.keys).not.toContain('appointment.working_hours');
+    expect(sets.effective.keys).toContain('appointment.reminders');
   });
 });
 

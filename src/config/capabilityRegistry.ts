@@ -1,4 +1,5 @@
 import type {
+  CapabilityConfigurationRequirement,
   CapabilityKey,
   CapabilityOperatingModel,
   CapabilityReadiness,
@@ -12,6 +13,7 @@ function entry(
   labelHe: string,
   descriptionHe: string,
   readiness: CapabilityReadiness,
+  configurationRequirement: CapabilityConfigurationRequirement,
   safeToRecommendByDefault = readiness === 'available' || readiness === 'partial',
 ): CapabilityRegistryEntry {
   return {
@@ -20,6 +22,7 @@ function entry(
     labelHe,
     descriptionHe,
     readiness,
+    configurationRequirement,
     safeToRecommendByDefault,
   };
 }
@@ -32,6 +35,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'תאריך ושעת אירוע',
     'ניהול מועד האירוע או העבודה לפי תאריך.',
     'available',
+    'none',
   ),
   'event.location': entry(
     'event.location',
@@ -39,6 +43,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'מיקום',
     'מיקום האירוע או ההזמנה.',
     'available',
+    'none',
   ),
   'event.payments': entry(
     'event.payments',
@@ -46,6 +51,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'תשלומים ומקדמות',
     'מעקב תשלומים, מקדמות והכנסות לאירוע.',
     'partial',
+    'none',
   ),
   'event.confirmation': entry(
     'event.confirmation',
@@ -53,6 +59,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'אישור הזמנה',
     'סטטוס אישור והכנה לפני האירוע.',
     'planned',
+    'required',
   ),
   'event.preparation_checklist': entry(
     'event.preparation_checklist',
@@ -60,6 +67,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'רשימת הכנה',
     'משימות הכנה לפני האירוע.',
     'planned',
+    'required',
   ),
   'event.suppliers': entry(
     'event.suppliers',
@@ -67,6 +75,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'ספקים',
     'קישור ספקים והוצאות לאירוע.',
     'planned',
+    'optional',
   ),
   'event.participants': entry(
     'event.participants',
@@ -74,6 +83,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'משתתפים',
     'מעקב משתתפים או לקוחות באירוע.',
     'planned',
+    'optional',
   ),
   'appointment.service_catalog': entry(
     'appointment.service_catalog',
@@ -81,6 +91,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'רשימת שירותים',
     'הגדרת סוגי שירות/טיפול עם ברירות מחדל.',
     'planned',
+    'required',
   ),
   'appointment.working_hours': entry(
     'appointment.working_hours',
@@ -88,6 +99,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'שעות פעילות',
     'ימים ושעות שבהם העסק מקבל תורים.',
     'planned',
+    'required',
   ),
   'appointment.default_duration': entry(
     'appointment.default_duration',
@@ -95,6 +107,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'משך ברירת מחדל',
     'משך פגישה ברירת מחדל לפי סוג שירות.',
     'planned',
+    'optional',
   ),
   'appointment.default_price': entry(
     'appointment.default_price',
@@ -102,6 +115,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'מחיר ברירת מחדל',
     'מחיר ברירת מחדל לפגישות.',
     'planned',
+    'optional',
   ),
   'appointment.confirmation': entry(
     'appointment.confirmation',
@@ -109,6 +123,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'אישור תור',
     'אישור הגעה וסטטוס פגישה.',
     'planned',
+    'optional',
   ),
   'appointment.reminders': entry(
     'appointment.reminders',
@@ -116,6 +131,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'תזכורות',
     'תזכורות לפגישות קרובות.',
     'partial',
+    'optional',
   ),
   'appointment.buffers': entry(
     'appointment.buffers',
@@ -123,6 +139,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'מרווחים בין תורים',
     'זמן מנוחה בין פגישות ביומן.',
     'planned',
+    'required',
   ),
   'appointment.cancellation': entry(
     'appointment.cancellation',
@@ -130,6 +147,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'ביטולים',
     'ניהול ביטולים ושינויי תור.',
     'planned',
+    'optional',
   ),
   'appointment.waiting_list': entry(
     'appointment.waiting_list',
@@ -137,6 +155,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'רשימת המתנה',
     'רשימת המתנה לתורים שנפתחים.',
     'planned',
+    'required',
   ),
   'package.session_limit': entry(
     'package.session_limit',
@@ -144,6 +163,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'מגבלת מפגשים',
     'מעקב מספר מפגשים בכרטיסייה או חבילה.',
     'available',
+    'none',
   ),
   'package.expiration': entry(
     'package.expiration',
@@ -151,6 +171,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'תוקף',
     'תאריך תפוגה לכרטיסייה או חבילה.',
     'available',
+    'none',
   ),
   'package.renewal': entry(
     'package.renewal',
@@ -158,6 +179,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'חידוש',
     'חידוש כרטיסייה או חבילה.',
     'planned',
+    'required',
   ),
   'package.payment_structure': entry(
     'package.payment_structure',
@@ -165,6 +187,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'מבנה תשלום',
     'תשלום מראש או לפי מפגשים בחבילה.',
     'partial',
+    'optional',
   ),
   'package.rollover': entry(
     'package.rollover',
@@ -172,6 +195,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'העברת מפגשים',
     'העברת מפגשים שלא נוצלו.',
     'planned',
+    'required',
   ),
   'journey.cadence': entry(
     'journey.cadence',
@@ -179,6 +203,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'קצב תהליך',
     'תדירות מפגשים בתהליך מתמשך.',
     'planned',
+    'required',
   ),
   'journey.stages': entry(
     'journey.stages',
@@ -186,6 +211,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'שלבים',
     'שלבים בתהליך הליווי.',
     'planned',
+    'optional',
   ),
   'journey.goals': entry(
     'journey.goals',
@@ -193,6 +219,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'מטרות',
     'מטרות הלקוח בתהליך.',
     'planned',
+    'optional',
   ),
   'journey.planned_end': entry(
     'journey.planned_end',
@@ -200,6 +227,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'סיום מתוכנן',
     'תאריך סיום צפוי לתהליך.',
     'partial',
+    'none',
   ),
   'journey.payment_structure': entry(
     'journey.payment_structure',
@@ -207,6 +235,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'מבנה תשלום',
     'תשלום לפי שלבים או תהליך.',
     'partial',
+    'optional',
   ),
   'project.deadline': entry(
     'project.deadline',
@@ -214,6 +243,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'דדליין',
     'תאריך יעד לפרויקט.',
     'partial',
+    'none',
   ),
   'project.milestones': entry(
     'project.milestones',
@@ -221,6 +251,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'אבני דרך',
     'שלבים ואבני דרך בפרויקט.',
     'available',
+    'none',
   ),
   'project.payment_milestones': entry(
     'project.payment_milestones',
@@ -228,6 +259,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'תשלומים לפי שלב',
     'תשלומים הקשורים לאבני דרך.',
     'available',
+    'none',
   ),
   'project.waiting_on': entry(
     'project.waiting_on',
@@ -235,6 +267,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'ממתין ללקוח',
     'חסימות והמתנה לתגובת לקוח.',
     'planned',
+    'optional',
   ),
   'project.deliverables': entry(
     'project.deliverables',
@@ -242,6 +275,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'תוצרים',
     'מעקב תוצרים ומסירה.',
     'planned',
+    'optional',
   ),
   'recurring.capacity': entry(
     'recurring.capacity',
@@ -249,6 +283,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'קיבולת',
     'מספר משתתפים מקסימלי בחוג או סדרה.',
     'planned',
+    'required',
   ),
   'recurring.attendance': entry(
     'recurring.attendance',
@@ -256,6 +291,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'נוכחות',
     'רישום נוכחות במפגשים חוזרים.',
     'planned',
+    'none',
   ),
   'recurring.waiting_list': entry(
     'recurring.waiting_list',
@@ -263,6 +299,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'רשימת המתנה',
     'המתנה למקום בחוג.',
     'planned',
+    'required',
   ),
   'recurring.instructor': entry(
     'recurring.instructor',
@@ -270,6 +307,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'מדריך/ה',
     'שיוך מדריך או מנחה לסדרה.',
     'planned',
+    'optional',
   ),
   'recurring.occurrence_exceptions': entry(
     'recurring.occurrence_exceptions',
@@ -277,6 +315,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'חריגות במחזור',
     'ביטול או שינוי מפגש בודד בסדרה.',
     'planned',
+    'optional',
   ),
   'recurring.payment_subscription': entry(
     'recurring.payment_subscription',
@@ -284,6 +323,7 @@ export const CAPABILITY_REGISTRY: Record<CapabilityKey, CapabilityRegistryEntry>
     'תשלום חוזר',
     'מנוי או תשלום חודשי לסדרה.',
     'planned',
+    'required',
   ),
 };
 
@@ -294,8 +334,12 @@ export function assertRegistryComplete(): void {
       if (!CAPABILITY_REGISTRY[key]) {
         throw new Error(`Missing registry entry for ${key}`);
       }
-      if (CAPABILITY_REGISTRY[key].operatingModel !== model) {
+      const regEntry = CAPABILITY_REGISTRY[key];
+      if (regEntry.operatingModel !== model) {
         throw new Error(`Registry ownership mismatch for ${key}`);
+      }
+      if (!regEntry.configurationRequirement) {
+        throw new Error(`Missing configurationRequirement for ${key}`);
       }
     }
   }
