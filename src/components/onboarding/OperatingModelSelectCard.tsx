@@ -14,6 +14,8 @@ export function OperatingModelSelectCard({
   locked,
   onSelect,
   expandable = true,
+  badge,
+  confirmedBadge,
 }: {
   modelId: OperatingModel;
   icon: LucideIcon;
@@ -24,6 +26,10 @@ export function OperatingModelSelectCard({
   locked?: boolean;
   onSelect: () => void;
   expandable?: boolean;
+  /** Optional badge e.g. "מומלץ" for recommended additional models */
+  badge?: string;
+  /** Shown when user already confirmed this working style (back navigation) */
+  confirmedBadge?: string;
 }) {
   const content = ONBOARDING_MODEL_CONTENT[modelId];
   const examples = examplesHe ?? content.examplesHe;
@@ -47,7 +53,13 @@ export function OperatingModelSelectCard({
         <Icon size={22} strokeWidth={1.65} />
       </span>
       <span className="onboarding-model-card__body">
-        <strong className="onboarding-model-card__title">{title}</strong>
+        <strong className="onboarding-model-card__title">
+          {title}
+          {badge && <span className="onboarding-model-card__badge">{badge}</span>}
+          {confirmedBadge && (
+            <span className="onboarding-model-card__confirmed">{confirmedBadge}</span>
+          )}
+        </strong>
         <span className="onboarding-model-card__desc">{description}</span>
         {examples && (
           <span className="onboarding-model-card__examples">לדוגמה: {examples}</span>

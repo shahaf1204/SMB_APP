@@ -36,6 +36,9 @@ export interface OnboardingCategoryDraft {
   sortOrder: number;
 }
 
+/** How the user chose their primary working style during onboarding step 2 */
+export type PrimaryModelSelectionSource = 'none' | 'recommended' | 'manual';
+
 export interface OnboardingDraft {
   version: 1;
   step: 1 | 2 | 3 | 4 | 5;
@@ -45,6 +48,11 @@ export interface OnboardingDraft {
   customType: string;
   primaryModel: OperatingModel;
   additionalModels: OperatingModel[];
+  /** True after user confirms step 2 (recommendation or manual picker) */
+  primaryModelConfirmed: boolean;
+  primaryModelSource: PrimaryModelSelectionSource;
+  /** Selected option for ambiguous presets (coach, consultant, freelance) */
+  clarificationChoiceId?: string;
   categories: OnboardingCategoryDraft[];
   updatedAt: string;
 }

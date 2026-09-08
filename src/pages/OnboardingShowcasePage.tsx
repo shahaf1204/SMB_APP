@@ -6,23 +6,61 @@ import { OnboardingStepCategories } from '../components/onboarding/OnboardingSte
 import { OnboardingStepIdentity } from '../components/onboarding/OnboardingStepIdentity';
 import { OnboardingStepPrimaryModel } from '../components/onboarding/OnboardingStepPrimaryModel';
 import { OnboardingStepReview, resolveBusinessTypeLabel } from '../components/onboarding/OnboardingStepReview';
+import { resolveBusinessTypeOperatingRecommendation } from '../config/businessTypeRecommendationConfig';
 import {
   mergeDraftWithRecommendations,
   resolveRecommendedCategories,
   templatesToOnboardingDrafts,
 } from '../lib/categories/resolveRecommendedCategories';
 import { createDefaultDraft } from '../lib/onboarding/draftStorage';
+import {
+  acceptRecommendedPrimaryModel,
+  applyBusinessTypeChangeToDraft,
+  applyClarificationChoiceToDraft,
+  selectManualPrimaryModel,
+  shouldShowConfirmedRecommendation,
+} from '../lib/onboarding/primaryModelDraft';
 import { normalizeEnabledModels } from '../lib/workspace';
 import type { OnboardingCategoryDraft, OnboardingDraft } from '../types/onboarding';
 import '../components/onboarding/onboarding.css';
 
 const STEP_META: Record<OnboardingDraft['step'], { title: string; subtitle: string }> = {
   1: { title: 'בואו נכיר את העסק שלך', subtitle: 'תצוגה מבודדת — לא נשמר לעסק' },
-  2: { title: 'איך רוב העבודה בעסק שלך מתנהלת?', subtitle: 'תצוגה מבודדת' },
+  2: { title: 'כך נראה שהכי נכון לנהל את העסק שלך', subtitle: 'תצוגה מבודדת' },
   3: { title: 'האם יש עוד צורות עבודה?', subtitle: 'תצוגה מבודדת' },
   4: { title: 'קטגוריות התחלה', subtitle: 'תצוגה מבודדת' },
   5: { title: 'סיכום', subtitle: 'תצוגה מבודדת' },
 };
+
+function resolveStep2Meta(draft: OnboardingDraft) {
+  const resolved = resolveBusinessTypeOperatingRecommendation(draft.mode, draft.presetId);
+  if (resolved.kind === 'fallback' || draft.primaryModelSource === 'manual') {
+    return {
+      title: 'ספרי לנו איך רוב העבודה שלך מתנהלת',
+      subtitle: 'תצוגה מבודדת',
+    };
+  }
+  if (
+    resolved.kind === 'clarification' &&
+    !draft.clarificationChoiceId &&
+    !draft.primaryModelConfirmed
+  ) {
+    return {
+      title: resolved.clarification.questionHe,
+      subtitle: 'תצוגה מבודדת',
+    };
+  }
+  if (
+    shouldShowConfirmedRecommendation(
+      draft.primaryModelConfirmed,
+      draft.primaryModelSource,
+      false,
+    )
+  ) {
+    return { title: 'כך בחרת לנהל את רוב העבודה', subtitle: 'תצוגה מבודדת' };
+  }
+  return STEP_META[2];
+}
 
 /** Dev-only onboarding preview — isolated state, no store writes */
 export function OnboardingShowcasePage() {
@@ -47,7 +85,7 @@ export function OnboardingShowcasePage() {
     setDraft(next);
   };
 
-  const meta = STEP_META[draft.step];
+  const meta = draft.step === 2 ? resolveStep2Meta(draft) : STEP_META[draft.step];
 
   return (
     <div className="page onboarding-page">
@@ -68,11 +106,13 @@ export function OnboardingShowcasePage() {
           onNameChange={(name) => setDraft({ ...draft, name })}
           onModeChange={(mode) => setDraft({ ...draft, mode })}
           onPresetChange={(presetId) =>
-            setDraft({
-              ...draft,
-              presetId,
-              mode: presetId === '__other__' ? 'custom' : 'list',
-            })
+            setDraft(
+              applyBusinessTypeChangeToDraft(
+                draft,
+                presetId,
+                presetId === '__other__' ? 'custom' : 'list',
+              ),
+            )
           }
           onCustomTypeChange={(customType) => setDraft({ ...draft, customType })}
           onSubmit={() => go(2)}
@@ -80,14 +120,28 @@ export function OnboardingShowcasePage() {
       )}
       {draft.step === 2 && (
         <OnboardingStepPrimaryModel
+          mode={draft.mode}
+          presetId={draft.presetId}
           primaryModel={draft.primaryModel}
-          onSelect={(primaryModel) => setDraft({ ...draft, primaryModel })}
+          primaryModelConfirmed={draft.primaryModelConfirmed}
+          primaryModelSource={draft.primaryModelSource}
+          clarificationChoiceId={draft.clarificationChoiceId}
+          onAcceptRecommendation={(primaryModel) =>
+            go(3, acceptRecommendedPrimaryModel(draft, primaryModel))
+          }
+          onSelectManual={(primaryModel) => go(3, selectManualPrimaryModel(draft, primaryModel))}
+          onClarificationChoice={(choiceId, primaryModel) =>
+            setDraft(applyClarificationChoiceToDraft(draft, choiceId, primaryModel))
+          }
+          onContinueConfirmed={() => go(3)}
           onBack={() => go(1)}
-          onSubmit={() => go(3)}
         />
       )}
       {draft.step === 3 && (
         <OnboardingStepAdditionalModels
+          mode={draft.mode}
+          presetId={draft.presetId}
+          clarificationChoiceId={draft.clarificationChoiceId}
           primaryModel={draft.primaryModel}
           additionalModels={draft.additionalModels}
           onToggle={(model) => {

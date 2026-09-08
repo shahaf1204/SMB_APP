@@ -1,15 +1,848 @@
 # Product Design System
 
-> **Single source of truth** for the SMB Business Operating System visual language and reusable UI patterns.  
+> **Single source of truth** for the SMB Business Operating System — product principles and visual language.  
 > Read this file before implementing or redesigning any screen.
 
 **Product:** Mobile-first Business OS for small service businesses  
 **Audience:** Developers, designers, and Cursor agents  
-**Scope:** Visual language, tokens, components, patterns — not business logic
+**Scope:** Product foundation (§ Product Foundation), then visual language, tokens, components, patterns — not business logic
+
+---
+
+# Product Foundation
+
+This section defines the product identity, philosophy, UX principles, UI principles, information architecture, and decision framework of the application.
+
+It is the product-level source of truth for future design and implementation decisions.
+
+When a page specification, feature idea, or implementation decision conflicts with these principles, these principles should be treated as the default direction unless the product requirements explicitly justify an exception.
+
+Operating-model-specific behavior remains defined in **`docs/operating-models.md`**.
 
 ---
 
 ## 1. Product Identity
+
+### Vision
+
+Build the most intuitive, adaptive, and automated operating system for service-based businesses.
+
+The product should become a natural and indispensable part of running the business — the place owners open every day to understand what is happening, what comes next, and what requires their attention.
+
+### Mission
+
+Become the everyday business companion that helps service-business owners stay organized, reduce administrative work, understand what matters, make better decisions, and run their business with less effort.
+
+### Core Belief
+
+> The application adapts to the business.
+> The business should never have to adapt to the application.
+
+Different businesses work differently.
+
+A photographer running events, a therapist managing ongoing journeys, a trainer selling packages, and a business running recurring activities should not be forced into the same workflow.
+
+The product should understand the business type and operating model, then adapt terminology, fields, workflows, KPIs, actions, automation, and insights accordingly.
+
+### Product Promise
+
+The owner should spend less time managing the system and more time running the actual business.
+
+The product should continuously reduce the amount of information the owner must remember, enter manually, search for, reconcile, or move between systems.
+
+### Core Problem
+
+Running a small service business creates constant cognitive and administrative load.
+
+Owners must keep track of:
+
+- customers
+- leads
+- activities
+- appointments
+- events
+- projects
+- packages
+- payments
+- expenses
+- invoices
+- follow-ups
+- forms
+- renewals
+- schedules
+- missing information
+- external systems
+
+The product exists to organize this complexity, automate predictable work, interpret business information, surface what matters, and help the owner take the next action.
+
+### What We Are Building
+
+We are building:
+
+- an adaptive business operating system
+- an automated operational workspace
+- an everyday business companion
+- a decision-support system
+- a connected layer between business processes
+- a product that becomes more useful as it understands the business
+
+### What We Are Not Building
+
+We are not building:
+
+- a generic CRM
+- a generic task manager
+- a traditional accounting system
+- a database users must configure before it becomes useful
+- a collection of disconnected tools
+- a product that requires the owner to manually coordinate information between multiple systems
+
+---
+
+## 2. Product Experience Loop
+
+The core product experience follows this loop:
+
+### Adapt → Automate → Interpret → Surface → Act
+
+**Adapt** — Understand the business type, operating model, configuration, context, and preferences.
+
+**Automate** — Perform predictable administrative work whenever it can be done reliably and safely.
+
+**Interpret** — Turn raw business data into meaning.
+
+**Surface** — Bring the right information, exception, or opportunity to the owner's attention at the right time.
+
+**Act** — Make the appropriate next action fast, contextual, and obvious.
+
+This loop should guide the design of new features.
+
+A feature that only stores or displays information should be evaluated for whether it can also automate, interpret, surface, or enable action.
+
+---
+
+## 3. Product Philosophy
+
+### 3.1 Adapt, Don't Force
+
+The product adapts to the business rather than forcing every business into the same workflow.
+
+Operating models may significantly change content and behavior while preserving a consistent overall product experience.
+
+### 3.2 Reduce Cognitive Load
+
+The product should remember, organize, calculate, connect, and monitor information so the owner does not have to.
+
+Do not display information simply because it exists.
+
+Show what is relevant to the current task, decision, or context.
+
+### 3.3 Action Over Information
+
+Information is valuable when it helps the owner understand something or decide what to do next.
+
+Prefer:
+
+*"3 customers have one session remaining — consider offering a renewal."*
+
+over simply:
+
+*"Average package utilization: 74%."*
+
+Analytics remain important, but everyday operational experiences should prioritize actionable meaning.
+
+### 3.4 Progressive Disclosure
+
+Complexity should exist without being visible all at once.
+
+Default pattern:
+
+**Summary → Relevant details → Advanced details on demand.**
+
+Do not expose every possible field, action, setting, or record by default.
+
+### 3.5 Context Before Action
+
+Actions should appear where their context is clear.
+
+For example:
+
+- Log session → specific customer/package
+- Generate invoice → relevant activity/payment
+- Renew package → relevant customer/package
+- Mark as paid → relevant payment
+
+Do not make contextual actions global simply to reduce the number of taps.
+
+### 3.6 Configure Once, Benefit Continuously
+
+Users should provide business configuration once and benefit from it throughout the product.
+
+Business type, operating models, fields, preferences, terminology, and automation settings should continuously influence the experience.
+
+Do not repeatedly ask for information the system already knows.
+
+### 3.7 One Product, Different Businesses
+
+Operating models may change:
+
+- terminology
+- fields
+- KPIs
+- workflows
+- contextual actions
+- automation
+- insights
+
+But they should not create separate products.
+
+Preserve the same:
+
+- visual language
+- navigation principles
+- interaction patterns
+- component behavior
+- hierarchy
+- status patterns
+- overall product philosophy
+
+Adapt the content. Preserve the language.
+
+### 3.8 Automate by Default
+
+If the system can reliably perform an administrative task instead of requiring the owner to perform it manually, automation should be the preferred solution.
+
+Before designing a new manual workflow, ask:
+
+> Does the owner actually need to perform this action?
+
+The best interaction may be the one the user never needed to perform.
+
+However:
+
+> Automation should reduce work without reducing control.
+
+Automation must remain understandable, observable, and appropriately reversible.
+
+---
+
+## 4. Automation Philosophy
+
+Automation is a core product differentiator, not a secondary feature.
+
+The product should increasingly operate as an orchestration layer between the owner's business processes and connected external systems.
+
+Information should flow through the business rather than requiring repeated manual entry.
+
+Example conceptual flow:
+
+**Lead → Customer → Activity → Payment → Invoice → Follow-up / Renewal**
+
+Whenever possible, transitions between these stages should happen automatically or be prepared automatically for the owner.
+
+### 4.1 Enter Data Once
+
+Information should be entered once and reused everywhere relevant.
+
+Example:
+
+**External form → customer information → activity → payment context → invoice context**
+
+Do not require the owner to manually copy information between records or systems.
+
+### 4.2 Automation Levels
+
+Use three primary automation levels.
+
+| Level | Pattern | Use when |
+|-------|---------|----------|
+| **Auto — Do it for me** | System performs without manual confirmation | Reliable, predictable, low-risk actions |
+| **Auto + Review — Do it, then tell me** | System performs; owner is informed | Action is safe but the event is meaningful enough to notice |
+| **Suggest — Prepare it, then ask** | System prepares; owner confirms | Human judgment required, or external/financial/legal/reversibility concerns |
+
+**Auto + Review** should be an important pattern throughout the product.
+
+### 4.3 Automate the Work, Preserve Awareness
+
+Routine administrative work should be automated whenever possible.
+
+However, meaningful business events created or changed through automation must remain visible to the owner.
+
+> Automate the work.
+> Preserve awareness.
+> Ask only when judgment is required.
+
+For example, a customer submits a complete external form. The system may automatically:
+
+- identify or create the customer
+- create the activity
+- map the submitted fields
+- calculate relevant information
+- connect related records
+
+The owner should **not** need to manually recreate the activity.
+
+However, the owner should receive a meaningful notification such as:
+
+*"New activity created automatically from Dana Cohen's form."*
+
+The activity may be marked **New**, **Created automatically**, or **Not yet reviewed**.
+
+The owner can acknowledge that they have seen it without blocking the automation itself.
+
+### 4.4 Meaningful Events Require Awareness
+
+Even when automation completes successfully with no missing information, significant externally triggered business events should be surfaced.
+
+Examples include:
+
+- new lead received
+- new customer created from an external source
+- new activity/event created
+- customer cancellation
+- meaningful externally initiated change
+
+Acknowledgment may be appropriate when it is important to know that the owner actually saw the event.
+
+Do not require acknowledgment for every minor automated operation.
+
+### 4.5 Exceptions Require Attention
+
+If an automated process is incomplete or fails, surface the exception clearly.
+
+Examples:
+
+- **Successful:** "New activity created automatically."
+- **Partial:** "New activity created — location and start time are missing."
+- **Failed:** "We couldn't create the activity from the submitted form."
+
+The owner should not have to inspect successful workflows to discover problems.
+
+Exceptions should rise to the surface automatically.
+
+### 4.6 Automation Must Be Visible
+
+Important automated actions should have a consistent visual language.
+
+Possible concepts include:
+
+- "Created automatically"
+- automation icon
+- source information
+- timestamp
+- activity history
+
+Example:
+
+*"Created automatically from customer form · Today, 14:32"*
+
+The goal is not to decorate the UI with automation labels.
+
+The goal is to build trust and make the value of the automation visible.
+
+### 4.7 Automation Must Earn Autonomy
+
+For actions that:
+
+- send something externally
+- move money
+- generate official documents
+- are difficult to reverse
+- have uncertain inputs
+
+prefer **Prepare → Suggest → Confirm** unless the user has explicitly configured that workflow for full automation.
+
+> Automation earns trust before it earns autonomy.
+
+---
+
+## 5. Attention Model
+
+The product should distinguish between three different concepts.
+
+| Concept | Meaning | Example |
+|---------|---------|---------|
+| **Notification** | Something happened | "New activity created from customer form." |
+| **Attention / Action Required** | Requires awareness, completion, or decision | "Activity created, but the location is missing." |
+| **Business Coach Insight** | System interpreted data and identified something meaningful | "Three customers are approaching the end of their packages. Consider contacting them this week." |
+
+These concepts should not be merged into one generic notification system.
+
+### Attention Inbox Concept
+
+The architecture should support an Attention Inbox or equivalent pattern.
+
+It does not necessarily need to become a dedicated navigation destination immediately.
+
+It may initially appear through a notification/attention control in the product shell.
+
+Potential items:
+
+- New activity created automatically
+- New lead received
+- Missing information
+- Failed automation
+- Customer cancellation
+- External change requiring awareness
+
+Items should have clear states such as:
+
+- New
+- Seen
+- Action required
+- Resolved
+
+Do not create unnecessary acknowledgment work.
+
+Only meaningful business events should require explicit acknowledgment.
+
+---
+
+## 6. UX Principles
+
+### 6.1 Immediate Clarity
+
+Within seconds, the user should understand:
+
+1. Where am I?
+2. What matters here?
+3. What can I do next?
+
+Do not allow multiple elements to compete equally for attention.
+
+### 6.2 Progressive Disclosure
+
+Prefer **Summary → Details on demand.**
+
+Use compact representations for large datasets and expand individual items when needed.
+
+Do not render every record as a large card.
+
+### 6.3 Contextual Actions
+
+Place actions next to the entity they affect.
+
+Avoid global actions that require the system to guess the user's intended context.
+
+### 6.4 Smart Defaults
+
+The product should begin from a strong, business-aware default.
+
+**Recommend first. Customize second.**
+
+Users should refine the product, not construct it from scratch.
+
+### 6.5 Recognition Before Recall
+
+Never require users to remember information the system already knows or can surface.
+
+Move memory from the owner's head into the product.
+
+### 6.6 Scale Gracefully
+
+Every important UI pattern should be evaluated with:
+
+- 0 records
+- 1 record
+- 10 records
+- 100 records
+- 1,000 records
+
+An interface that works only with demo data is not complete.
+
+### 6.7 One Primary Action
+
+Each area should make its primary action obvious.
+
+Secondary actions should remain accessible without competing visually.
+
+### 6.8 Design for Interruption
+
+Owners often use the product between customers, during calls, before events, or while moving through their workday.
+
+Daily actions should be:
+
+- short
+- clear
+- resumable
+- easy to complete
+- resistant to accidental data loss
+
+Do not design everyday workflows as long desktop sessions.
+
+### 6.9 Calm by Default
+
+Complexity behind the scenes should not create complexity on screen.
+
+Use warnings, badges, colors, and attention signals selectively.
+
+If everything demands attention, nothing does.
+
+### 6.10 The Owner Manages the Business; the System Manages Administration
+
+The owner should spend their attention on decisions requiring human judgment.
+
+The system should handle repetitive entry, synchronization, status propagation, monitoring, reminders, routine calculations, predictable record creation, and administrative coordination whenever safely possible.
+
+---
+
+## 7. UI Principles
+
+### 7.1 Calm, Warm, Professional
+
+The product should feel:
+
+- trustworthy enough to manage money and customers
+- friendly enough to use every day
+- modern without feeling trendy
+- calm without feeling empty
+
+Avoid both enterprise heaviness and consumer-app playfulness.
+
+### 7.2 Hierarchy Before Decoration
+
+Use typography, spacing, position, and weight to establish importance before using additional color or decoration.
+
+Primary, secondary, and tertiary information should be visually distinct.
+
+### 7.3 Cards Are for Meaning, Not Containers
+
+Use cards when information deserves meaningful grouping or emphasis.
+
+Use rows when users need to scan repeated records efficiently.
+
+| Context | Pattern |
+|---------|---------|
+| Next important activity | Card |
+| 100 activities | Compact rows |
+| Business insight | Card |
+| Customer directory | Rows |
+
+Do not place every section inside a card simply because cards are available.
+
+### 7.4 Density Follows Context
+
+Use more breathing room for decisions, summaries, and important insights.
+
+Use more compact layouts for lists, history, repeated records, and scanning workflows.
+
+Premium design does not mean excessive whitespace.
+
+### 7.5 Color Has Meaning
+
+Semantic colors should communicate state.
+
+Use color intentionally for success, attention, error/problem, and information.
+
+Do not use strong semantic colors merely for decoration.
+
+### 7.6 Icons Support Comprehension
+
+Icons should help users recognize meaning or actions.
+
+Maintain one consistent icon library and visual style.
+
+Do not add icons simply to make a screen look richer.
+
+### 7.7 One Visual Language, Adaptive Content
+
+Operating models may adapt content deeply, but the interface should always feel like the same product.
+
+### 7.8 Forms Should Feel Lighter Than Their Complexity
+
+Prefer: **Essential fields → contextual fields → additional details on demand.**
+
+Use autofill, smart defaults, chips, segmented controls, and contextual sections when appropriate.
+
+Avoid long walls of inputs.
+
+### 7.9 Interaction Should Be Self-Evident
+
+Interactive elements should communicate their behavior without requiring explanatory text.
+
+Examples: plus = add · chevron = expand/open · toggle = enable/disable · drag handle = reorder
+
+### 7.10 Motion Confirms, Never Entertains
+
+Use motion to explain changes and confirm interactions.
+
+Avoid animation that exists only for visual novelty.
+
+### 7.11 Mobile Is the Primary Canvas
+
+Design mobile-first rather than shrinking desktop layouts.
+
+Daily workflows should work comfortably with touch and, where possible, one-handed use.
+
+Do not depend on hover interactions.
+
+Avoid horizontal scrolling as a standard solution.
+
+### 7.12 Empty States Are Product States
+
+An empty state should explain what belongs here, why it may currently be empty, and what the user can do next.
+
+Empty states should not feel like broken screens.
+
+### 7.13 Loading, Partial, Success, and Error Are First-Class States
+
+Design beyond the happy path.
+
+Especially for automation and integrations, explicitly support:
+
+**Loading → Success → Partial success → Error**
+
+Partial success should not be presented as generic failure.
+
+### 7.14 Automation Has a Visual Language
+
+Important automated actions should be identifiable consistently throughout the product.
+
+The user should be able to understand when they performed an action, the system performed it, or an external integration triggered it.
+
+Keep this visual language subtle and consistent.
+
+---
+
+## 8. Information Architecture
+
+### 8.1 One Primary Question Per Screen
+
+| Screen | Primary question |
+|--------|------------------|
+| **Dashboard** | What is happening in my business, and what needs my attention? |
+| **Activities** | What work am I managing, and what should I do with it? |
+| **Customers** | What is happening in my customer relationships? |
+| **Finance** | What is happening financially, and what requires attention? |
+| **Settings** | How is my business and system configured? |
+
+### 8.2 Dashboard = Command Center
+
+Dashboard summarizes. Domain pages manage.
+
+The Dashboard may surface current business state, important KPIs, upcoming work, exceptions, attention items, Business Coach insights, relevant trends, and limited global quick actions.
+
+It should not become the full management interface for activities, customers, or finance.
+
+### 8.3 Activities = Operational Workspace
+
+Activities is where the owner manages the work the business delivers.
+
+The representation adapts by operating model (Event, Package, Journey, Appointment, Project, Recurring).
+
+The purpose remains: **Find the work → understand its state → take action.**
+
+### 8.4 Customers = Relationship Workspace
+
+Customers should not be treated as a contact database.
+
+Customer experiences should eventually bring together current activity, history, financial context, packages/journeys, notes, communication context, and relationship insights.
+
+The goal is relationship intelligence, not record storage.
+
+### 8.5 Finance = Financial Workspace
+
+Financial information can appear contextually throughout the product.
+
+Management of business-level finance belongs in Finance: income, general/monthly expenses, open payments, invoices, profitability, trends, and financial reporting.
+
+An activity may display its own price/payment information, but business-wide financial management should not live inside Activities.
+
+### 8.6 Settings = Configuration, Not Daily Work
+
+Settings contains things users configure occasionally: business type, operating models, activity fields, integrations, automation preferences, notifications, document/invoice settings.
+
+If an action is performed several times per week, it probably does not belong in Settings.
+
+### 8.7 Automation and Business Coach Are Product Layers
+
+Automation and Business Coach should not be treated primarily as isolated pages.
+
+Automation acts across the product. Business Coach interprets information across the product.
+
+Their functionality should surface contextually where it is useful.
+
+### 8.8 Global Creation vs Contextual Creation
+
+**Global actions** may include: create activity, create customer, create general expense.
+
+**Contextual actions** include: log session for a package, renew a package, generate invoice for a payment/activity, mark a specific payment as paid.
+
+Do not make contextual actions global for convenience.
+
+### 8.9 Surface Broadly, Manage Canonically
+
+Information may be surfaced in multiple relevant locations but should have one canonical management location.
+
+Example: Dashboard shows "3 overdue payments" → Finance lists overdue payments → Activity/Customer shows specific payment context.
+
+Avoid implementing multiple competing management experiences for the same concept.
+
+### 8.10 Navigation Follows the User's Mental Model
+
+Navigation should represent concepts owners understand: business overview, work, customers, money, settings.
+
+Do not expose internal data architecture such as categories, event values, or technical entities as primary navigation concepts.
+
+### 8.11 Operating Models Change Behavior, Not Product Architecture
+
+Operating models organize behavior.
+
+They should not fragment navigation into separate applications.
+
+A business may use more than one operating model.
+
+Activities should support multiple models through appropriate filtering or grouping without creating separate navigation structures.
+
+---
+
+## 9. Decision Framework
+
+When multiple product or design solutions are possible, prefer the solution that requires less work, less thought, and less learning from the business owner — without sacrificing control, reliability, or trust.
+
+### 9.1 Automation Before Manual Work
+
+Before designing an interaction, ask: *"Does the owner actually need to perform this action?"*
+
+If the system can safely do it, automate it.
+
+### 9.2 Clarity Before Flexibility
+
+Prefer strong defaults with optional customization over exposing every option immediately.
+
+### 9.3 Relevance Before Completeness
+
+Show what matters now.
+
+Do not optimize for displaying every available piece of information.
+
+### 9.4 Actionability Before Analytics
+
+Prefer information that helps the owner act.
+
+Analytics remain valuable, but should not replace operational clarity.
+
+### 9.5 Context Before Convenience
+
+Do not remove necessary context simply to save a tap.
+
+### 9.6 Recognition Before Recall
+
+Surface known information rather than asking the user to remember or re-enter it.
+
+### 9.7 Defaults Before Configuration
+
+Features should be useful before extensive setup.
+
+Configuration improves the experience; it should not be required to make the product usable.
+
+### 9.8 Automate Routine Work, Preserve Awareness of Meaningful Events
+
+Routine administrative work should be handled automatically whenever possible.
+
+However, meaningful business events created or changed by automation must remain visible to the owner.
+
+Automation should remove the need to perform the work — not remove awareness of what happened.
+
+Require acknowledgment when it is important that the owner actually sees a significant externally triggered event.
+
+Require action only when information is missing, automation fails, the system is uncertain, or human judgment is genuinely required.
+
+> Automate the work.
+> Preserve awareness.
+> Ask only when judgment is required.
+
+### 9.9 Consistency Before Novelty
+
+Reuse established interaction patterns.
+
+Innovation should primarily come from what the system can do for the user, not from making every screen behave differently.
+
+### 9.10 Scalability Before Demo Beauty
+
+Evaluate patterns with realistic data volumes.
+
+A beautiful interface that fails with real business data is not a successful design.
+
+### 9.11 Trust Before Aggressive Automation
+
+Automation should become more autonomous as confidence, reliability, and explicit user preferences allow.
+
+For consequential actions, prefer **Prepare → Suggest → Confirm** until the user has intentionally enabled full automation.
+
+### 9.12 User Value Before Feature Count
+
+Measure success by administrative work removed, time saved, decisions made easier, important things not forgotten, and business visibility improved.
+
+Do not measure product quality by the number of features.
+
+---
+
+## 10. Product Decision Checklist
+
+Before approving a new feature, workflow, or major UI pattern, ask:
+
+1. Can any part of this be automated?
+2. Is it relevant to this business type and operating model?
+3. Can the system provide a smart default?
+4. What is the minimum information the user needs?
+5. What decision or action should result from this information?
+6. Is that action presented in the correct context?
+7. Are we asking the user to enter or remember information the system already knows?
+8. What happens with 0, 1, 10, 100, and 1,000 records?
+9. What happens if automation succeeds, partially succeeds, or fails?
+10. Will the owner understand what the system did automatically?
+11. Does the owner remain appropriately informed and in control?
+12. Does this reduce or increase cognitive load?
+13. Does this make the product more useful during the owner's actual working day?
+
+If a solution performs poorly against these questions, reconsider the design before implementation.
+
+---
+
+## 11. The Daily Use Test
+
+Every significant feature should pass one final test:
+
+> Does this make the product more useful during the owner's real working day?
+
+Design for the owner who opens the application:
+
+- between customers
+- before an event
+- after a session
+- during a phone call
+- while checking the business in the evening
+
+Do not optimize primarily for demos, screenshots, or feature comparisons.
+
+The product succeeds when it becomes an indispensable, low-effort part of running the business every day.
+
+---
+
+### Final Product Principle
+
+The product should become increasingly capable of understanding the business, coordinating its processes, and handling administrative work without requiring constant manual management.
+
+The owner remains informed and in control.
+
+The system carries the operational burden.
+
+> Adapt.
+> Automate.
+> Interpret.
+> Surface.
+> Act.
+
+---
+
+> **Visual design system** — The sections below define tokens, components, patterns, and implementation rules that implement the Product Foundation.
+
+> The Product Foundation defines product-level principles and takes precedence for product and UX decisions. The visual design system below defines how those principles are expressed visually and through reusable UI patterns.
+
+---
+
+## 1. Visual Brand Identity
 
 ### What this product is
 
@@ -1413,4 +2246,4 @@ Production create/edit forms use **`resolveActivityFormSchema()`** — one resol
 
 ---
 
-*Last updated: field configuration redesign, shared activity form schema, lightweight EventForm.*
+*Last updated: Product Foundation section; field configuration redesign; shared activity form schema.*

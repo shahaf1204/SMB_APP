@@ -1,6 +1,28 @@
+import { resolveBusinessTypeOperatingRecommendation } from '../../config/businessTypeRecommendationConfig';
 import type { OnboardingDraft } from '../../types/onboarding';
+import { resolvePlaceholderPrimaryModel } from './primaryModelDraft';
 
 const DRAFT_KEY = 'smb-onboarding-draft';
+
+function normalizeOnboardingDraft(parsed: OnboardingDraft): OnboardingDraft {
+  const resolved = resolveBusinessTypeOperatingRecommendation(parsed.mode, parsed.presetId);
+  const legacyConfirmed =
+    parsed.primaryModelConfirmed ??
+    (parsed.step > 2 ? true : undefined);
+  const legacySource =
+    parsed.primaryModelSource ??
+    (parsed.step > 2 ? 'manual' : 'none');
+
+  return {
+    ...parsed,
+    primaryModelConfirmed: legacyConfirmed ?? false,
+    primaryModelSource: legacySource,
+    primaryModel:
+      legacyConfirmed === false && parsed.primaryModelSource == null
+        ? resolvePlaceholderPrimaryModel(resolved)
+        : parsed.primaryModel,
+  };
+}
 
 export function loadOnboardingDraft(userId?: string | null): OnboardingDraft | null {
   if (typeof window === 'undefined') return null;
@@ -9,7 +31,7 @@ export function loadOnboardingDraft(userId?: string | null): OnboardingDraft | n
     if (!raw) return null;
     const parsed = JSON.parse(raw) as OnboardingDraft;
     if (parsed.version !== 1) return null;
-    return parsed;
+    return normalizeOnboardingDraft(parsed);
   } catch {
     return null;
   }
@@ -33,15 +55,20 @@ export function clearOnboardingDraft(userId?: string | null): void {
 }
 
 export function createDefaultDraft(): OnboardingDraft {
+  const mode = 'list';
+  const presetId = 'freelance';
+  const resolved = resolveBusinessTypeOperatingRecommendation(mode, presetId);
   return {
     version: 1,
     step: 1,
     name: '',
-    mode: 'list',
-    presetId: 'freelance',
+    mode,
+    presetId,
     customType: '',
-    primaryModel: 'event',
+    primaryModel: resolvePlaceholderPrimaryModel(resolved),
     additionalModels: [],
+    primaryModelConfirmed: false,
+    primaryModelSource: 'none',
     categories: [],
     updatedAt: new Date().toISOString(),
   };

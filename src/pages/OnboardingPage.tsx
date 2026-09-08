@@ -10,6 +10,7 @@ import {
   resolveBusinessTypeLabel,
 } from '../components/onboarding/OnboardingStepReview';
 import { buildWorkspaceFromOnboarding } from '../components/workspace/OperatingModelSettings';
+import { resolveBusinessTypeOperatingRecommendation } from '../config/businessTypeRecommendationConfig';
 import { ONBOARDING_BUSINESS_TYPE_PRESETS } from '../data/businessTypePresets';
 import {
   mergeDraftWithRecommendations,
@@ -23,6 +24,13 @@ import {
   loadOnboardingDraft,
   saveOnboardingDraft,
 } from '../lib/onboarding/draftStorage';
+import {
+  acceptRecommendedPrimaryModel,
+  applyBusinessTypeChangeToDraft,
+  applyClarificationChoiceToDraft,
+  selectManualPrimaryModel,
+  shouldShowConfirmedRecommendation,
+} from '../lib/onboarding/primaryModelDraft';
 import { normalizeEnabledModels, syncWorkModelsFromWorkspace } from '../lib/workspace';
 import { useAppStore } from '../store/useAppStore';
 import type { OnboardingCategoryDraft, OnboardingDraft } from '../types/onboarding';
@@ -36,14 +44,14 @@ const STEP_TITLES: Record<OnboardingDraft['step'], { title: string; subtitle: st
       'כמה פרטים קצרים יעזרו לנו להתאים את האפליקציה בדיוק לצורת העבודה שלך.',
   },
   2: {
-    title: 'איך רוב העבודה בעסק שלך מתנהלת?',
+    title: 'כך נראה שהכי נכון לנהל את העסק שלך',
     subtitle:
       'הבחירה תתאים את הפעילויות, הדשבורד, הטפסים והמעקב לצורת העבודה שלך. תמיד אפשר לשנות אחר כך.',
   },
   3: {
     title: 'האם יש עוד צורות עבודה בעסק שלך?',
     subtitle:
-      'אפשר להוסיף מודלים נוספים עכשיו, או לדלג ולשנות זאת בהמשך בהגדרות.',
+      'אפשר להוסיף עכשיו — או לדלג ולשנות בהמשך בהגדרות.',
   },
   4: {
     title: 'התאמת פרטי הפעילות',
@@ -58,6 +66,40 @@ const STEP_TITLES: Record<OnboardingDraft['step'], { title: string; subtitle: st
 
 function enabledModels(primary: OperatingModel, additional: OperatingModel[]): OperatingModel[] {
   return normalizeEnabledModels(primary, additional);
+}
+
+function resolveStep2Titles(draft: OnboardingDraft): { title: string; subtitle: string } {
+  const resolved = resolveBusinessTypeOperatingRecommendation(draft.mode, draft.presetId);
+  if (resolved.kind === 'fallback' || draft.primaryModelSource === 'manual') {
+    return {
+      title: 'ספרי לנו איך רוב העבודה שלך מתנהלת',
+      subtitle:
+        'בחרי את הדרך שמתארת את רוב הפעילות בעסק — תמיד אפשר לשנות אחר כך.',
+    };
+  }
+  if (
+    resolved.kind === 'clarification' &&
+    !draft.clarificationChoiceId &&
+    !draft.primaryModelConfirmed
+  ) {
+    return {
+      title: resolved.clarification.questionHe,
+      subtitle: 'בחרי את התשובה שמתארת את רוב העבודה שלך.',
+    };
+  }
+  if (
+    shouldShowConfirmedRecommendation(
+      draft.primaryModelConfirmed,
+      draft.primaryModelSource,
+      false,
+    )
+  ) {
+    return {
+      title: 'כך בחרת לנהל את רוב העבודה',
+      subtitle: 'אפשר להמשיך או לבחור דרך עבודה אחרת.',
+    };
+  }
+  return STEP_TITLES[2];
 }
 
 function resolvePresetId(mode: OnboardingDraft['mode'], presetId: string): string | undefined {
@@ -96,6 +138,8 @@ export function OnboardingPage() {
         primaryModel: ws?.primaryOperatingModel ?? 'event',
         additionalModels:
           ws?.enabledOperatingModels.filter((m) => m !== ws.primaryOperatingModel) ?? [],
+        primaryModelConfirmed: true,
+        primaryModelSource: 'manual',
         step: 1,
       };
     }
@@ -199,7 +243,8 @@ export function OnboardingPage() {
     navigate('/dashboard');
   };
 
-  const { title, subtitle } = STEP_TITLES[draft.step];
+  const stepMeta = draft.step === 2 ? resolveStep2Titles(draft) : STEP_TITLES[draft.step];
+  const { title, subtitle } = stepMeta;
 
   return (
     <div className="page onboarding-page">
@@ -216,11 +261,13 @@ export function OnboardingPage() {
           onNameChange={(name) => persist({ ...draft, name })}
           onModeChange={(mode) => persist({ ...draft, mode })}
           onPresetChange={(presetId) => {
-            if (presetId === '__other__') {
-              persist({ ...draft, presetId, mode: 'custom' });
-            } else {
-              persist({ ...draft, presetId, mode: 'list' });
-            }
+            persist(
+              applyBusinessTypeChangeToDraft(
+                draft,
+                presetId,
+                presetId === '__other__' ? 'custom' : 'list',
+              ),
+            );
           }}
           onCustomTypeChange={(customType) => persist({ ...draft, customType })}
           onSubmit={() => goStep(2)}
@@ -229,21 +276,32 @@ export function OnboardingPage() {
 
       {draft.step === 2 && (
         <OnboardingStepPrimaryModel
+          mode={draft.mode}
+          presetId={draft.presetId}
           primaryModel={draft.primaryModel}
-          onSelect={(primaryModel) => {
-            const additionalModels =
-              primaryModel !== 'hybrid'
-                ? draft.additionalModels.filter((m) => m !== primaryModel)
-                : [];
-            persist({ ...draft, primaryModel, additionalModels });
+          primaryModelConfirmed={draft.primaryModelConfirmed}
+          primaryModelSource={draft.primaryModelSource}
+          clarificationChoiceId={draft.clarificationChoiceId}
+          allowLegacyHybridInPicker={editMode && draft.primaryModel === 'hybrid'}
+          onAcceptRecommendation={(primaryModel) => {
+            goStep(3, acceptRecommendedPrimaryModel(draft, primaryModel));
           }}
+          onSelectManual={(primaryModel) => {
+            goStep(3, selectManualPrimaryModel(draft, primaryModel));
+          }}
+          onClarificationChoice={(choiceId, primaryModel) => {
+            persist(applyClarificationChoiceToDraft(draft, choiceId, primaryModel));
+          }}
+          onContinueConfirmed={() => goStep(3)}
           onBack={() => goStep(1)}
-          onSubmit={() => goStep(3)}
         />
       )}
 
       {draft.step === 3 && (
         <OnboardingStepAdditionalModels
+          mode={draft.mode}
+          presetId={draft.presetId}
+          clarificationChoiceId={draft.clarificationChoiceId}
           primaryModel={draft.primaryModel}
           additionalModels={draft.additionalModels}
           onToggle={(model) => {
