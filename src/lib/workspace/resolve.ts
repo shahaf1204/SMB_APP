@@ -10,6 +10,7 @@ import {
   getOperatingModelDefinition,
   HYBRID_OPERATING_MODEL,
 } from '../../config/operatingModelConfig';
+import { normalizeCapabilityProfile } from '../capabilities';
 import { resolveWorkModels as resolveLegacyWorkModels } from '../workModel';
 
 const WORK_CONCEPT_TO_OPERATING: Record<WorkConcept, OperatingModel> = {
@@ -88,12 +89,16 @@ export function migrateWorkspaceFromBusiness(
 ): BusinessWorkspaceConfig | null {
   if (!business) return null;
   if (business.workspace?.onboardingCompleted) {
+    const capabilityProfile = normalizeCapabilityProfile(
+      business.workspace.capabilityProfile,
+    );
     return {
       ...business.workspace,
       enabledOperatingModels: normalizeEnabledModels(
         business.workspace.primaryOperatingModel,
         business.workspace.enabledOperatingModels,
       ),
+      ...(capabilityProfile ? { capabilityProfile } : {}),
     };
   }
 

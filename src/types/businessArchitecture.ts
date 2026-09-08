@@ -1,8 +1,9 @@
 /**
- * Product architecture contracts (Phase 0).
+ * Product architecture contracts (Phase 0 + Phase 2A runtime foundation).
  *
- * Vocabulary for future implementation phases — NOT persisted, NOT wired to runtime
- * behavior in this phase. See docs/business-architecture.md.
+ * Phase 0: vocabulary and layer boundaries.
+ * Phase 2A: capability registry, recommendations, and optional StoredBusinessCapabilityProfile
+ * on BusinessWorkspaceConfig — see docs/business-architecture.md and src/lib/capabilities/.
  *
  * Product/UX authority: docs/design-system.md (Product Foundation).
  * Operating-model behavior: docs/operating-models.md.
@@ -87,16 +88,66 @@ export type CapabilityKey =
 export type CapabilityOperatingModel = Exclude<OperatingModel, 'hybrid'>;
 
 /**
- * Whether a capability is enabled for the business and sufficiently configured.
- * Phase 0 contract only — not stored on Business yet.
+ * Product readiness — prevents implying a capability works when it does not.
+ * Used by configuration layer only; not a developer UI.
+ *
+ * - available: meaningfully usable now
+ * - partial: meaningful subset usable now; honest user-facing promise
+ * - planned: architecture only — never user-recommended or newly enabled
  */
-export type CapabilityActivation = 'disabled' | 'enabled' | 'configured';
+export type CapabilityReadiness = 'available' | 'partial' | 'planned';
+
+/** Whether a capability is actively enabled for the business. */
+export type CapabilityActivation = 'disabled' | 'enabled';
+
+/** Setup completeness — independent from activation. */
+export type CapabilityConfigurationStatus =
+  | 'not_required'
+  | 'incomplete'
+  | 'configured';
 
 /**
- * Minimal capability profile — future persistence will use a dedicated structure,
- * not inline blobs on Business.workspace.
+ * @deprecated Phase 2A v1 shape — normalized to v2 on read.
+ * `configured` conflated activation with completeness; split in v2.
  */
-export type BusinessCapabilityProfile = Partial<Record<CapabilityKey, CapabilityActivation>>;
+export type LegacyCapabilityActivation = 'disabled' | 'enabled' | 'configured';
+
+/** Registry metadata for one capability (Phase 2A). */
+export interface CapabilityRegistryEntry {
+  key: CapabilityKey;
+  operatingModel: CapabilityOperatingModel;
+  labelHe: string;
+  descriptionHe: string;
+  /** Safe to include in generic model baselines (available/partial only) */
+  safeToRecommendByDefault: boolean;
+  readiness: CapabilityReadiness;
+}
+
+/**
+ * v1 activation map — normalized to v2 on read. Do not write in new code.
+ * @deprecated
+ */
+export type BusinessCapabilityActivationMap = Partial<
+  Record<CapabilityKey, LegacyCapabilityActivation>
+>;
+
+/**
+ * Minimal persisted capability profile (Phase 2A.1).
+ * Lightweight activation + configuration status only — not capability payload storage.
+ */
+export interface StoredBusinessCapabilityProfile {
+  version: 2;
+  /** Absent keys are disabled */
+  activation: Partial<Record<CapabilityKey, CapabilityActivation>>;
+  /** Absent when disabled; when enabled defaults to incomplete unless not_required */
+  configurationStatus: Partial<
+    Record<CapabilityKey, CapabilityConfigurationStatus>
+  >;
+  updatedAt?: string;
+}
+
+/** @deprecated Alias — use activation map in StoredBusinessCapabilityProfile */
+export type BusinessCapabilityProfile = BusinessCapabilityActivationMap;
 
 /** Reference map: which capabilities belong to which operating model. */
 export const CAPABILITY_KEYS_BY_OPERATING_MODEL: Record<

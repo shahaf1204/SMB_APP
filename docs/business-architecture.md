@@ -1,7 +1,7 @@
 # Business Architecture
 
 > **Phase 0 contracts** — TypeScript vocabulary for product concepts defined in the [Product Foundation](design-system.md#product-foundation) and the architecture audit.  
-> **Not implemented in runtime yet.** No persistence, UI, or finance behavior changes in Phase 0.
+> **Phase 2A** adds the runtime capability registry, recommendation resolvers, and optional persisted capability profile — see [Phase 2A section](#phase-2a--runtime-capability-foundation-implemented) below. No configuration UI (Phase 2B) yet.
 
 **Related docs:**
 
@@ -264,4 +264,125 @@ Future phases may add **optional refs** (e.g. `configurationVersion`, capability
 
 ---
 
-*Last updated: Phase 0 — product architecture contracts.*
+*Last updated: Phase 2A.1 — readiness enforcement and profile hardening.*
+
+---
+
+## Phase 2A — Runtime capability foundation (implemented)
+
+Phase 2A adds a **read-only configuration layer**. No configuration UI (Phase 2B), no dashboard/finance/attention changes, no automatic activation of recommended capabilities.
+
+### Three concepts (must stay separate)
+
+| Concept | Meaning | Phase 2A home |
+|---------|---------|----------------|
+| **Capabilities** | What behaviors/features this business uses | `StoredBusinessCapabilityProfile` (optional) |
+| **Defaults / templates** | Reusable business-level presets (e.g. “60-min facial, ₪300”) | Contract: `BusinessDefaultsProfile`; ref only: `defaultsProfileVersion?` on workspace |
+| **Fields** | Data captured on individual activities | Unchanged: `Category[]`, `resolveActivityFormSchema()` |
+
+Capabilities are **architecture vocabulary**, not necessarily user vocabulary.
+
+### Recommendation vs activation
+
+| Layer | Role |
+|-------|------|
+| **Architectural recommendations** | Ideal future configuration from Business Type + Models — includes `planned` capabilities (`resolveArchitecturalRecommendedCapabilities()`) |
+| **Effective recommendations** | Honest user-facing guidance NOW — excludes `planned` (`resolveEffectiveRecommendedCapabilities()`) |
+| **Enabled capabilities** | Explicit activation in `capabilityProfile.activation` — never auto-populated from recommendations |
+
+### Activation vs configuration completeness (Phase 2A.1)
+
+| Concept | Values | Meaning |
+|---------|--------|---------|
+| **activation** | `disabled` \| `enabled` | Whether the capability is active for this business |
+| **configurationStatus** | `not_required` \| `incomplete` \| `configured` | Whether required setup is complete — independent from activation |
+
+A capability may be **enabled + incomplete** (future Attention target) or **enabled + configured**.  
+`configured` does **not** replace `enabled`.
+
+v1 snapshots `{ enabled: { key: 'configured' } }` normalize to v2 on read.
+
+### Capability readiness
+
+| Readiness | Meaning | User exposure |
+|-----------|---------|---------------|
+| **available** | Meaningfully usable now | May recommend and enable |
+| **partial** | Meaningful subset usable now; honest promise | May recommend and enable |
+| **planned** | Architecture only — behavior not ready | Registry only — **never** user-recommended or newly enabled |
+
+Enforced centrally in `src/lib/capabilities/readiness.ts` and applied by recommendation resolvers — not left to UI discipline.
+
+### Workspace storage boundary (Phase 2A.1)
+
+`BusinessWorkspaceConfig.capabilityProfile` **MAY** contain:
+
+- capability activation (`activation`)
+- lightweight configuration completeness (`configurationStatus`)
+- profile version + timestamps
+
+It **MUST NOT** become storage for:
+
+- service catalog records
+- working-hour schedules
+- package definitions
+- project milestone templates
+- recurring-series definitions
+- large capability-specific settings/data
+
+Those belong in dedicated defaults/config entities or snapshot sub-documents in future phases.
+
+### Resolution inputs
+
+```
+Business Type          → recommendation context (overrides generic model baseline)
+Primary Model          → operational emphasis (primary capability set)
+Additional Models      → extend recommendations (do not replace primary)
+Hybrid (legacy)        → union of enabled model baselines — no seventh capability set
+Readiness filter       → effective recommendations exclude planned centrally
+```
+
+**TypeScript:**
+
+| Module | Role |
+|--------|------|
+| `src/config/capabilityRegistry.ts` | Central registry (key, model, Hebrew label, readiness) |
+| `src/config/businessTypeCapabilityRecommendations.ts` | Business-type + model architectural rules |
+| `src/lib/capabilities/readiness.ts` | Central exposure/enablement guards |
+| `src/lib/capabilities/` | Pure resolvers: recommend, legacy compatibility, effective configuration |
+| `src/hooks/useCapabilityConfiguration.ts` | Read-only hook for active business |
+
+### Legacy compatibility
+
+| State | Behavior |
+|-------|----------|
+| **No `capabilityProfile`** | Legacy mode — all existing functionality preserved; `isCapabilityGatingActive()` is false |
+| **Explicit `capabilityProfile`** | Future features may gate on `activation === 'enabled'` |
+
+Existing completed businesses are **not** retrofitted with recommendations or profiles. Onboarding primary/additional models are unchanged.
+
+### Persistence (additive)
+
+- Optional `BusinessWorkspaceConfig.capabilityProfile?: StoredBusinessCapabilityProfile` (**version 2**)
+- v1 `{ enabled: … }` snapshots normalize to v2 on read
+- Optional `defaultsProfileVersion?: 1` — placeholder ref only
+- **No Zustand version bump** — additive optional fields on existing workspace JSON
+- **No Supabase schema change** — snapshot-compatible
+
+### Defaults / templates boundary
+
+`BusinessDefaultsProfile` and template interfaces remain **contracts only**. Capabilities answer “uses service catalog”; defaults answer “60-minute facial, ₪300”.
+
+### Fields compatibility
+
+Capabilities do not replace Category/field schema. Future configuration may **recommend** fields based on enabled capabilities; Phase 2A does not couple them.
+
+### Phase 2A scope checklist
+
+| In scope | Out of scope |
+|----------|--------------|
+| Capability registry + readiness | Phase 2B configuration UI |
+| Architectural + effective recommendations | Dashboard / finance / attention changes |
+| Primary + additional resolution | Auto-enabling recommended capabilities |
+| Lightweight `StoredBusinessCapabilityProfile` v2 | Full defaults/template editors |
+| Legacy no-profile compatibility | Hybrid removal |
+| Pure resolver tests | Supabase schema migration |

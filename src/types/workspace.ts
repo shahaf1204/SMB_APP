@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import type { ActivityPresentationType } from '../components/business/ActivityCard';
+import type { StoredBusinessCapabilityProfile } from './businessArchitecture';
 
 /** How the business delivers service — distinct from industry businessType */
 export type OperatingModel =
@@ -30,6 +31,19 @@ export interface BusinessWorkspaceConfig {
   defaultWorkflowTemplateId?: string;
   /** Optional overrides for package-primary workspaces */
   packageSettings?: PackageWorkspaceSettings;
+  /**
+   * Explicit business capability profile (Phase 2A.1).
+   * Lightweight activation + configuration status only.
+   * Undefined = legacy mode — existing behavior preserved, no capability gating.
+   *
+   * MUST NOT store service catalogs, working hours, templates, or other capability payloads.
+   */
+  capabilityProfile?: StoredBusinessCapabilityProfile;
+  /**
+   * Future ref for defaults/templates bundle — not populated in Phase 2A.
+   * See BusinessDefaultsProfile in businessArchitecture.ts.
+   */
+  defaultsProfileVersion?: 1;
   createdAt: string;
   updatedAt: string;
 }
