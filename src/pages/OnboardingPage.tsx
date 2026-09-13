@@ -56,23 +56,20 @@ const STEP_TITLES: Record<OnboardingDraft['step'], { title: string; subtitle: st
       'הבחירה תתאים את הפעילויות, הדשבורד, הטפסים והמעקב לצורת העבודה שלך. תמיד אפשר לשנות אחר כך.',
   },
   3: {
-    title: 'האם יש עוד צורות עבודה בעסק שלך?',
-    subtitle:
-      'אפשר להוסיף עכשיו — או לדלג ולשנות בהמשך בהגדרות.',
+    title: 'יש עוד דרך שבה העסק שלך עובד?',
+    subtitle: 'שאלה קצרה — אפשר להמשיך בלי להוסיף.',
   },
   4: {
-    title: 'התאמנו את סביבת העבודה לעסק שלך',
-    subtitle:
-      'סיכום קצר של איך המערכת תתאים לצורת העבודה שבחרת — אפשר לכוונן בעדינות.',
+    title: 'הכנו לך סביבת עבודה שמתאימה לעסק שלך',
+    subtitle: 'המערכת הכינה את סביבת העבודה — אפשר לכוונן רק אם צריך.',
   },
   5: {
-    title: 'התאמת פרטי הפעילות',
-    subtitle:
-      'כבר הכנו עבורך את השדות שמתאימים לעסק שלך. אפשר להסיר, להוסיף או לשנות לפי הצורך.',
+    title: 'כך ייראה הטופס שלך',
+    subtitle: 'הכנו את הפרטים שיישמרו בכל פעילות — אפשר לשנות רק אם צריך.',
   },
   6: {
     title: 'העסק שלך מוכן',
-    subtitle: 'סיכום קצר לפני הכניסה — תמיד אפשר לערוך בהגדרות.',
+    subtitle: 'אפשר להתחיל לעבוד מיד.',
   },
 };
 
@@ -374,6 +371,7 @@ export function OnboardingPage() {
           removedRecommendations={removedRecommendations}
           businessType={resolvePresetId(draft.mode, draft.presetId)}
           operatingModel={draft.primaryModel}
+          isEditMode={editMode}
           onReorder={(from, to) => {
             const enabled = draft.categories
               .filter((c) => c.enabled)

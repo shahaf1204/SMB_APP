@@ -30,10 +30,10 @@ import '../components/onboarding/onboarding.css';
 const STEP_META: Record<OnboardingDraft['step'], { title: string; subtitle: string }> = {
   1: { title: 'בואו נכיר את העסק שלך', subtitle: 'תצוגה מבודדת — לא נשמר לעסק' },
   2: { title: 'כך נראה שהכי נכון לנהל את העסק שלך', subtitle: 'תצוגה מבודדת' },
-  3: { title: 'האם יש עוד צורות עבודה?', subtitle: 'תצוגה מבודדת' },
-  4: { title: 'התאמת סביבת העבודה', subtitle: 'תצוגה מבודדת' },
-  5: { title: 'קטגוריות התחלה', subtitle: 'תצוגה מבודדת' },
-  6: { title: 'סיכום', subtitle: 'תצוגה מבודדת' },
+  3: { title: 'יש עוד דרך שבה העסק שלך עובד?', subtitle: 'תצוגה מבודדת' },
+  4: { title: 'הכנו לך סביבת עבודה שמתאימה לעסק שלך', subtitle: 'תצוגה מבודדת' },
+  5: { title: 'כך ייראה הטופס שלך', subtitle: 'תצוגה מבודדת' },
+  6: { title: 'העסק שלך מוכן', subtitle: 'תצוגה מבודדת' },
 };
 
 const SHOWCASE_PRESETS: Array<{
@@ -42,12 +42,12 @@ const SHOWCASE_PRESETS: Array<{
   patch: Partial<OnboardingDraft>;
 }> = [
   {
-    id: 'beauty',
-    label: 'Beauty + Appointment',
+    id: 'birthday',
+    label: 'Birthday/Event',
     patch: {
-      presetId: 'beauty',
+      presetId: 'birthday',
       mode: 'list',
-      primaryModel: 'appointment',
+      primaryModel: 'event',
       additionalModels: [],
       primaryModelConfirmed: true,
       primaryModelSource: 'recommended',
@@ -55,7 +55,7 @@ const SHOWCASE_PRESETS: Array<{
   },
   {
     id: 'tutor',
-    label: 'Tutor + Appointment + Package',
+    label: 'Tutor + Package',
     patch: {
       presetId: 'tutor',
       mode: 'list',
@@ -67,12 +67,24 @@ const SHOWCASE_PRESETS: Array<{
   },
   {
     id: 'photographer',
-    label: 'Photographer + Event + Project',
+    label: 'Photographer + Project',
     patch: {
       presetId: 'photographer',
       mode: 'list',
       primaryModel: 'event',
       additionalModels: ['project'],
+      primaryModelConfirmed: true,
+      primaryModelSource: 'recommended',
+    },
+  },
+  {
+    id: 'beauty',
+    label: 'Beauty + Appointment',
+    patch: {
+      presetId: 'beauty',
+      mode: 'list',
+      primaryModel: 'appointment',
+      additionalModels: [],
       primaryModelConfirmed: true,
       primaryModelSource: 'recommended',
     },

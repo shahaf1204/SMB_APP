@@ -1,20 +1,15 @@
 import { FormEvent } from 'react';
-import {
-  getOperatingModelDefinition,
-  operatingModelTitleHe,
-  WORKFLOW_STAGE_LABELS_HE,
-} from '../../config/operatingModelConfig';
-import { ONBOARDING_MODEL_CONTENT } from '../../config/onboardingModelContent';
-import { ONBOARDING_BUSINESS_TYPE_PRESETS } from '../../data/businessTypePresets';
+import { resolveOnboardingReviewContent } from '../../config/onboardingReviewContent';
 import type { OnboardingCategoryDraft } from '../../types/onboarding';
 import type { OperatingModel } from '../../types/workspace';
+import { ONBOARDING_BUSINESS_TYPE_PRESETS } from '../../data/businessTypePresets';
 
 export function OnboardingStepReview({
   name,
   businessTypeLabel,
   primaryModel,
-  additionalModels,
-  categories,
+  additionalModels: _additionalModels,
+  categories: _categories,
   onBack,
   onFinish,
 }: {
@@ -26,13 +21,7 @@ export function OnboardingStepReview({
   onBack: () => void;
   onFinish: () => void;
 }) {
-  const primaryDef = getOperatingModelDefinition(primaryModel);
-  const preview = ONBOARDING_MODEL_CONTENT[primaryModel].preview;
-  const enabledCount = categories.filter((c) => c.enabled).length;
-  const workflowStages = primaryDef.workflowStageIds
-    .slice(0, 4)
-    .map((id) => WORKFLOW_STAGE_LABELS_HE[id] ?? id)
-    .join(' / ');
+  const content = resolveOnboardingReviewContent(primaryModel);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -41,52 +30,25 @@ export function OnboardingStepReview({
 
   return (
     <form onSubmit={handleSubmit} className="onboarding-panel">
-      <div className="onboarding-review card">
-        <dl className="onboarding-review-list">
-          <div>
-            <dt>שם העסק</dt>
-            <dd>{name}</dd>
-          </div>
-          <div>
-            <dt>סוג העסק</dt>
-            <dd>{businessTypeLabel}</dd>
-          </div>
-          <div>
-            <dt>צורת עבודה ראשית</dt>
-            <dd>{primaryDef.titleHe}</dd>
-          </div>
-          {additionalModels.length > 0 && (
-            <div>
-              <dt>צורות עבודה נוספות</dt>
-              <dd>{additionalModels.map(operatingModelTitleHe).join(' · ')}</dd>
-            </div>
-          )}
-          <div>
-            <dt>קטגוריות פעילות</dt>
-            <dd>{enabledCount}</dd>
-          </div>
-        </dl>
+      <div className="onboarding-ready card">
+        <p className="onboarding-ready__title">{content.readyTitleHe}</p>
+        <p className="onboarding-ready__subtitle">{content.readySubtitleHe}</p>
+        <p className="onboarding-ready__business-name">{name}</p>
+        <p className="onboarding-ready__business-type">{businessTypeLabel}</p>
       </div>
 
-      <div className="onboarding-review-preview card">
-        <p className="onboarding-review-preview__title">כך האפליקציה תותאם אליך</p>
-        <ul className="onboarding-review-preview__list">
-          <li><strong>דשבורד:</strong> {preview.dashboard}</li>
-          <li><strong>כפתור ראשי:</strong> {preview.primaryAction}</li>
-          <li><strong>תצוגה:</strong> {preview.view}</li>
-          {workflowStages && (
-            <li><strong>תהליך:</strong> {workflowStages}</li>
-          )}
-          <li><strong>כרטיס פעילות:</strong> {primaryDef.defaultTerminology.activitySingular}</li>
-        </ul>
-      </div>
+      <ul className="onboarding-ready-value-list">
+        {content.valueBulletsHe.map((bullet) => (
+          <li key={bullet}>{bullet}</li>
+        ))}
+      </ul>
 
       <div className="onboarding-actions onboarding-actions--split">
         <button type="button" className="btn btn-ghost" onClick={onBack}>
           חזרה לעריכה
         </button>
         <button type="submit" className="btn btn-primary onboarding-cta-inline">
-          כניסה לעסק שלי
+          {content.primaryActionLabelHe}
         </button>
       </div>
     </form>

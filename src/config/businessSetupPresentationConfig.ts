@@ -103,6 +103,13 @@ const GENERIC_PRIMARY_EMPHASIS: Record<RecommendableOperatingModel, string> = {
   recurring: 'פעילות קבועה וחוזרת תהיה במרכז העבודה שלך.',
 };
 
+export const AUTOMATION_SETUP_HEADLINE_HE = 'הכנו לך סביבת עבודה שמתאימה לעסק שלך';
+
+export const AUTOMATION_SETUP_FIELDS_BRIDGE_HE =
+  'בשלב הבא תראי איך ייראה הטופס שלך — אפשר לשנות בכל שלב.';
+
+export const AUTOMATION_SETUP_ADJUST_PROMPT_HE = 'העסק שלי עובד קצת אחרת';
+
 export interface BusinessSetupSummaryInput {
   businessTypePresetId?: string;
   primaryOperatingModel: OperatingModel;
@@ -150,9 +157,49 @@ export function resolveBusinessSetupWorkspaceSummary(
   }
 
   return {
-    headlineHe: 'התאמנו את סביבת העבודה לעסק שלך',
+    headlineHe: AUTOMATION_SETUP_HEADLINE_HE,
     bodyHe,
   };
+}
+
+/** Natural-language highlights of what the product prepared — no capability jargon. */
+const PREPARED_HIGHLIGHTS_BY_PRIMARY: Record<
+  RecommendableOperatingModel,
+  string
+> = {
+  event:
+    'אירוע יהיה הפעילות המרכזית שלך, וכבר הגדרנו מעקב אחר תאריך, לקוח, מיקום ותשלום.',
+  appointment:
+    'תורים ופגישות יהיו במרכז העבודה שלך, עם מעקב אחר לקוח, תאריך ותשלום.',
+  package:
+    'חבילות וכרטיסיות יהיו במרכז, עם מעקב אחר ניצול, תוקף ויתרת מפגשים.',
+  journey:
+    'תהליכי ליווי יהיו במרכז, עם מעקב אחר שלבים, מפגשים והתקדמות.',
+  project:
+    'פרויקטים יהיו במרכז, עם מעקב אחר שלבים, דדליין ותשלומים.',
+  recurring:
+    'פעילות קבועה תהיה במרכז, עם מעקב אחר מפגשים, משתתפים וגבייה.',
+};
+
+export function resolvePreparedWorkspaceHighlights(
+  input: BusinessSetupSummaryInput,
+): string[] {
+  const primary = input.primaryOperatingModel;
+  if (primary === 'hybrid') {
+    return ['הכנו סביבת עבודה שמתאימה לצורת העבודה שבחרת.'];
+  }
+
+  const highlights: string[] = [];
+  const presetBody =
+    input.businessTypePresetId &&
+    PRIMARY_EMPHASIS_BY_PRESET[input.businessTypePresetId]?.[primary];
+  if (presetBody) {
+    highlights.push(presetBody);
+  }
+
+  highlights.push(PREPARED_HIGHLIGHTS_BY_PRIMARY[primary]);
+
+  return highlights;
 }
 
 export function getBusinessSetupFeatureLabelHe(key: CapabilityKey): string {
@@ -162,8 +209,8 @@ export function getBusinessSetupFeatureLabelHe(key: CapabilityKey): string {
 /** Minimum exposable features before showing a detailed feature list prominently. */
 export const BUSINESS_SETUP_FEATURE_LIST_THRESHOLD = 2;
 
-export const BUSINESS_SETUP_FIELDS_BRIDGE_HE =
-  'בשלב הבא נתאים יחד אילו פרטים נשמרים בכל פעילות.';
+/** @deprecated Use AUTOMATION_SETUP_FIELDS_BRIDGE_HE */
+export const BUSINESS_SETUP_FIELDS_BRIDGE_HE = AUTOMATION_SETUP_FIELDS_BRIDGE_HE;
 
 export const BUSINESS_SETUP_LOW_FEATURE_COPY_HE =
-  'המערכת מותאמת לצורת העבודה שבחרת — נמשיך להתאמת שדות המידע.';
+  'הכנו את סביבת העבודה לפי איך שהעסק שלך עובד — נמשיך לתצוגת הטופס.';

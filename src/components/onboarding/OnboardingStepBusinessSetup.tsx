@@ -1,11 +1,11 @@
-import { FormEvent, useMemo } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
 import {
-  BUSINESS_SETUP_FIELDS_BRIDGE_HE,
+  AUTOMATION_SETUP_ADJUST_PROMPT_HE,
+  AUTOMATION_SETUP_FIELDS_BRIDGE_HE,
   BUSINESS_SETUP_LOW_FEATURE_COPY_HE,
+  resolvePreparedWorkspaceHighlights,
 } from '../../config/businessSetupPresentationConfig';
-import {
-  resolveBusinessSetupPresentation,
-} from '../../lib/onboarding/businessSetup';
+import { resolveBusinessSetupPresentation } from '../../lib/onboarding/businessSetup';
 import type { CapabilityKey } from '../../types/businessArchitecture';
 import type { OperatingModel } from '../../types/workspace';
 
@@ -37,8 +37,20 @@ export function OnboardingStepBusinessSetup({
     [additionalModels, businessTypePresetId, disabledFeatureKeys, primaryModel],
   );
 
-  const essentialFeatures = presentation.features.filter((f) => f.essential);
-  const optionalFeatures = presentation.features.filter((f) => f.removable);
+  const preparedHighlights = useMemo(
+    () =>
+      resolvePreparedWorkspaceHighlights({
+        businessTypePresetId,
+        primaryOperatingModel: primaryModel,
+        additionalOperatingModels: additionalModels,
+      }),
+    [additionalModels, businessTypePresetId, primaryModel],
+  );
+
+  const optionalFeatures = presentation.features.filter((f) => f.removable && f.visible);
+  const hasAdjustableOptions = optionalFeatures.length > 0;
+
+  const [showAdjustments, setShowAdjustments] = useState(false);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -49,63 +61,52 @@ export function OnboardingStepBusinessSetup({
     <form onSubmit={handleSubmit} className="onboarding-panel">
       <div className="onboarding-setup-summary card">
         <p className="onboarding-setup-summary__headline">{presentation.summary.headlineHe}</p>
-        <p className="onboarding-setup-summary__body">{presentation.summary.bodyHe}</p>
+        <ul className="onboarding-setup-prepared-list">
+          {preparedHighlights.map((line) => (
+            <li key={line}>{line}</li>
+          ))}
+        </ul>
       </div>
 
-      {presentation.emphasizeSummaryOnly ? (
+      {presentation.emphasizeSummaryOnly && (
         <p className="onboarding-setup-bridge">{BUSINESS_SETUP_LOW_FEATURE_COPY_HE}</p>
-      ) : (
-        presentation.showFeatureList && (
-          <div className="onboarding-setup-features">
-            {essentialFeatures.length > 0 && (
-              <section className="onboarding-setup-features__group">
-                <h2 className="onboarding-setup-features__title">מה המערכת תפעיל עבורך</h2>
-                <ul className="onboarding-setup-feature-chips" aria-label="יכולות פעילות">
-                  {essentialFeatures.map((feature) => (
-                    <li
-                      key={feature.key}
-                      className="onboarding-setup-feature-chip onboarding-setup-feature-chip--essential"
-                    >
-                      {feature.labelHe}
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
+      )}
 
-            {optionalFeatures.length > 0 && (
-              <section className="onboarding-setup-features__group">
-                <h2 className="onboarding-setup-features__title">מומלץ גם</h2>
-                <p className="onboarding-setup-features__hint">
-                  אפשר לכבות אפשרויות שלא רלוונטיות כרגע
-                </p>
-                <ul className="onboarding-setup-feature-toggles">
-                  {optionalFeatures.map((feature) => (
-                    <li key={feature.key}>
-                      <label className="onboarding-setup-toggle">
-                        <input
-                          type="checkbox"
-                          checked={feature.selected}
-                          onChange={(e) =>
-                            onToggleFeature(
-                              feature.key,
-                              e.target.checked,
-                            )
-                          }
-                        />
-                        <span className="onboarding-setup-toggle__label">{feature.labelHe}</span>
-                      </label>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-          </div>
-        )
+      {hasAdjustableOptions && !showAdjustments && (
+        <button
+          type="button"
+          className="btn btn-ghost onboarding-alt-action"
+          onClick={() => setShowAdjustments(true)}
+        >
+          {AUTOMATION_SETUP_ADJUST_PROMPT_HE}
+        </button>
+      )}
+
+      {hasAdjustableOptions && showAdjustments && (
+        <section className="onboarding-setup-features">
+          <h2 className="onboarding-setup-features__title">אפשר לכוונן</h2>
+          <p className="onboarding-setup-features__hint">
+            אפשר לכבות אפשרויות שלא רלוונטיות כרגע
+          </p>
+          <ul className="onboarding-setup-feature-toggles">
+            {optionalFeatures.map((feature) => (
+              <li key={feature.key}>
+                <label className="onboarding-setup-toggle">
+                  <input
+                    type="checkbox"
+                    checked={feature.selected}
+                    onChange={(e) => onToggleFeature(feature.key, e.target.checked)}
+                  />
+                  <span className="onboarding-setup-toggle__label">{feature.labelHe}</span>
+                </label>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       <p className="onboarding-setup-bridge onboarding-setup-bridge--muted">
-        {BUSINESS_SETUP_FIELDS_BRIDGE_HE}
+        {AUTOMATION_SETUP_FIELDS_BRIDGE_HE}
       </p>
 
       <div className="onboarding-actions onboarding-actions--split">
@@ -113,7 +114,7 @@ export function OnboardingStepBusinessSetup({
           חזרה
         </button>
         <button type="submit" className="btn btn-primary onboarding-cta-inline">
-          המשך
+          נראה טוב, המשך
         </button>
       </div>
     </form>

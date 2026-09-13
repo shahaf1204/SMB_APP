@@ -804,3 +804,126 @@
   color: var(--color-text-muted);
   font-size: 0.8125rem;
 }
+
+.onboarding-setup-prepared-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.onboarding-setup-prepared-list li {
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+}
+
+/* Contextual supporting-model prompts */
+.onboarding-contextual-prompt {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: var(--space-4, 16px);
+}
+
+.onboarding-contextual-prompt__question {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.onboarding-contextual-prompt__value {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.onboarding-contextual-prompt__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-block-start: 0.25rem;
+}
+
+.onboarding-contextual-prompt__more {
+  align-self: flex-start;
+}
+
+/* Field preview — also saving summary */
+.onboarding-field-also-saving {
+  padding: var(--space-3, 12px) var(--space-4, 16px);
+}
+
+.onboarding-field-also-saving__title {
+  margin: 0 0 0.35rem;
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+
+.onboarding-field-also-saving__list {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+/* Ready-to-work final screen */
+.onboarding-ready {
+  text-align: center;
+  padding: var(--space-5, 20px) var(--space-4, 16px);
+}
+
+.onboarding-ready__title {
+  margin: 0 0 0.35rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.onboarding-ready__subtitle {
+  margin: 0 0 0.75rem;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.onboarding-ready__business-name {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 650;
+}
+
+.onboarding-ready__business-type {
+  margin: 0.15rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.onboarding-ready-value-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.onboarding-ready-value-list li {
+  position: relative;
+  padding-inline-start: 1.25rem;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+}
+
+.onboarding-ready-value-list li::before {
+  content: '✓';
+  position: absolute;
+  inset-inline-start: 0;
+  color: var(--color-primary);
+  font-weight: 700;
+}

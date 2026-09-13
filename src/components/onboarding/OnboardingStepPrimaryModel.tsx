@@ -161,7 +161,7 @@ export function OnboardingStepPrimaryModel({
             className="btn btn-ghost onboarding-alt-action"
             onClick={handleShowAlternative}
           >
-            אני רוצה לבחור דרך עבודה אחרת
+            העסק שלי עובד אחרת
           </button>
           <button type="button" className="btn btn-ghost" onClick={onBack}>
             → חזרה
@@ -198,7 +198,7 @@ export function OnboardingStepPrimaryModel({
             className="btn btn-ghost onboarding-alt-action"
             onClick={handleShowAlternative}
           >
-            אני עובדת אחרת
+            העסק שלי עובד אחרת
           </button>
         </div>
       </div>
@@ -225,14 +225,14 @@ export function OnboardingStepPrimaryModel({
         </div>
         <div className="onboarding-actions onboarding-actions--recommendation">
           <button type="submit" className="btn btn-primary onboarding-cta-inline">
-            המשך עם ההמלצה
+            להמשיך עם ההמלצה
           </button>
           <button
             type="button"
             className="btn btn-ghost onboarding-alt-action"
             onClick={handleShowAlternative}
           >
-            אני עובדת אחרת
+            העסק שלי עובד אחרת
           </button>
           <button type="button" className="btn btn-ghost" onClick={onBack}>
             → חזרה

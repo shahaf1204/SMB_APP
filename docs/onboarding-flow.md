@@ -5,18 +5,58 @@
 
 ---
 
+## Automation-first principle (Phase 2C)
+
+```
+Tell us → We understand → We prepare → You review exceptions → Start working
+```
+
+The product prepares a strong recommended setup. Customization is secondary and behind progressive disclosure.
+
+| Principle | Behavior |
+|-----------|----------|
+| Primary model | Recommendation-first; full picker only via "העסק שלי עובד אחרת" |
+| Additional models | Contextual yes/no questions; full catalog via "העסק שלי עובד בצורה נוספת" |
+| Workspace setup | "הכנו לך סביבת עבודה…" — prepared highlights, not a capability checklist |
+| Fields | Preview-first with recommended fields pre-selected; editor via "רוצה לשנות את הפרטים?" |
+| Final screen | Value + model-aware first action — not technical setup metadata |
+
+Architecture contracts (Phase 2A–2B.1) unchanged. Phase 2C is UX/presentation only.
+
+---
+
 ## Steps
 
 | Step | Title | Persists to draft |
 |------|-------|-------------------|
 | 1 | בואו נכיר את העסק שלך | name, business type |
 | 2 | Recommended working style **or** manual picker | primary model + confirmation source |
-| 3 | האם יש עוד צורות עבודה? | additional models (explicit opt-in only) |
-| 4 | התאמנו את סביבת העבודה לעסק שלך | setup feature selections (`setupDisabledFeatures`) |
-| 5 | התאמנו לך קטגוריות התחלה | category customization |
-| 6 | העסק שלך מוכן | review → finish |
+| 3 | Contextual supporting-model question(s) | additional models (explicit opt-in only) |
+| 4 | הכנו לך סביבת עבודה שמתאימה לעסק שלך | setup feature selections (`setupDisabledFeatures`) |
+| 5 | כך ייראה הטופס שלך | field preview + optional customization |
+| 6 | העסק שלך מוכן | value summary → finish |
 
 Progress indicator: `N מתוך 6`
+
+### Step 3 — contextual supporting models (Phase 2C)
+
+**Config:** `src/config/supportingModelPresentationConfig.ts`
+
+- Business Type + Primary Model → zero or more contextual prompts (question + value explanation)
+- User answers: **כן, להוסיף** / **לא עכשיו**
+- Full model catalog: progressive disclosure via **"העסק שלי עובד בצורה נוספת"**
+- Hybrid primary: full picker (unchanged)
+- No contextual prompt when recommendation has no meaningful additional model (e.g. birthday + event)
+
+### Step 5 — field preview-first (Phase 2C)
+
+**Presentation:** `src/lib/onboarding/fieldPreviewPresentation.ts` (reuses category template recommendations)
+
+- Default: form preview + **"נשמור גם:"** summary of enabled recommended fields
+- Primary CTA: **"נראה טוב"**
+- Customization: **"רוצה לשנות את הפרטים?"** → toggles, add field, reorder
+- New business: recommended fields pre-selected via existing `applyDefaultEnabledToDrafts`
+- Edit mode: existing selections preserved; opens customization if user previously changed fields
 
 ### Step 4 — Recommended Business Setup (Phase 2B)
 
@@ -24,11 +64,12 @@ Progress indicator: `N מתוך 6`
 
 **Internal architecture:** Uses effective capability recommendations + `StoredBusinessCapabilityProfile` — the word "capability" never appears in UI.
 
-**User sees:**
+**User sees (Phase 2C):**
 
-1. **Workspace summary** — business-language adaptation headline (e.g. beauty → "תורים וטיפולים יהיו במרכז…")
-2. **Active features** — only effective/exposable behavior, translated labels (chips / optional toggles)
-3. **Bridge to fields** — "בשלב הבא נתאים יחד אילו פרטים נשמרים בכל פעילות"
+1. **Prepared workspace headline** — "הכנו לך סביבת עבודה שמתאימה לעסק שלך"
+2. **Prepared highlights** — business-language prose (e.g. event → date, client, location, payment tracking)
+3. **Optional adjustments** — only when visible optional features exist; behind "העסק שלי עובד קצת אחרת"
+4. **Bridge to fields** — "בשלב הבא תראי איך ייראה הטופס שלך"
 
 **Rules:**
 
@@ -52,8 +93,8 @@ Progress indicator: `N מתוך 6`
 ```
 Business Type
   → Recommended working style (one card + "המשך עם ההמלצה")
-  → OR "אני עובדת אחרת" → working-style picker (6 models, no hybrid)
-  → Additional models
+  → OR "העסק שלי עובד אחרת" → working-style picker (6 models, no hybrid)
+  → Contextual supporting-model questions
 ```
 
 **Config:** `src/config/businessTypeRecommendationConfig.ts` — maps each onboarding preset to either a **direct** recommendation or a **guided clarification** (coach, consultant, freelance).
