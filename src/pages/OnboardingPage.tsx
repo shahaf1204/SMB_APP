@@ -286,7 +286,9 @@ export function OnboardingPage() {
           presetId={draft.presetId}
           customType={draft.customType}
           onNameChange={(name) => persist({ ...draft, name })}
-          onModeChange={(mode) => persist({ ...draft, mode })}
+          onModeChange={(mode) =>
+            persist(applyBusinessTypeChangeToDraft(draft, draft.presetId, mode))
+          }
           onPresetChange={(presetId) => {
             persist(
               applyBusinessTypeChangeToDraft(

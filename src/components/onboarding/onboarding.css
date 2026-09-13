@@ -927,3 +927,10 @@
   color: var(--color-primary);
   font-weight: 700;
 }
+
+.onboarding-override-notice {
+  margin-block: 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius-md, 8px);
+  background: color-mix(in srgb, var(--color-primary) 6%, var(--color-surface));
+}

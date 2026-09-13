@@ -9,8 +9,9 @@ import { getOperatingModelDefinition, HYBRID_OPERATING_MODEL } from '../../confi
 import type { PrimaryModelSelectionSource } from '../../types/onboarding';
 import type { OperatingModel } from '../../types/workspace';
 import {
+  primaryModelOverrideNoticeHe,
   shouldShowClarification,
-  shouldShowConfirmedRecommendation,
+  shouldShowConfirmedPrimarySelection,
   shouldShowRecommendationFirst,
 } from '../../lib/onboarding/primaryModelDraft';
 import { OperatingModelSelectCard } from './OperatingModelSelectCard';
@@ -83,11 +84,21 @@ export function OnboardingStepPrimaryModel({
     return NEW_USER_ONBOARDING_PICKER_OPTIONS;
   }, [allowLegacyHybridInPicker]);
 
-  const showConfirmed = shouldShowConfirmedRecommendation(
+  const showConfirmed = shouldShowConfirmedPrimarySelection(
     primaryModelConfirmed,
     primaryModelSource,
     showAlternativePicker,
   );
+  const overrideNotice =
+    showConfirmed && primaryModelSource === 'manual'
+      ? primaryModelOverrideNoticeHe({
+          mode,
+          presetId,
+          primaryModel,
+          primaryModelSource,
+          clarificationChoiceId,
+        })
+      : undefined;
   const showClarification = shouldShowClarification(
     resolved,
     clarificationChoiceId,
@@ -149,9 +160,14 @@ export function OnboardingStepPrimaryModel({
             locked
             onSelect={() => {}}
             expandable={false}
-            confirmedBadge="נבחר ✓"
+            confirmedBadge={
+              primaryModelSource === 'manual' ? 'בחירה שלך ✓' : 'נבחר ✓'
+            }
           />
         </div>
+        {overrideNotice && (
+          <p className="field-hint onboarding-override-notice">{overrideNotice}</p>
+        )}
         <div className="onboarding-actions onboarding-actions--recommendation">
           <button type="submit" className="btn btn-primary onboarding-cta-inline">
             המשך

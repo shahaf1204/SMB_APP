@@ -115,6 +115,15 @@ Business Type
 
 Changing business type before confirmation updates the recommendation/clarification. Manual choices are never overwritten by preset changes.
 
+**Business type / mode change invalidation (Phase 2C fix):**
+
+| `primaryModelSource` | On identity change |
+|----------------------|-------------------|
+| `recommended` or `none` | Recompute primary from new business type; auto-keep confirmation when previously recommendation-confirmed |
+| `manual` (user override) | Preserve primary; show override notice if stale vs new recommendation |
+
+Also resets: `clarificationChoiceId`, recommendation-derived `additionalModels`, `categories`, `setupDisabledFeatures`. Business name preserved. Edit-mode existing business unchanged until explicit save.
+
 **Custom / `__other__` business types:** No guessed recommendation — falls back to plain-language picker (`ספרי לנו איך רוב העבודה שלך מתנהלת`).
 
 **User-facing copy:** Working styles (e.g. "תורים ופגישות") — not internal terms like "Operating Model".

@@ -198,7 +198,9 @@ export function OnboardingShowcasePage() {
           presetId={draft.presetId}
           customType={draft.customType}
           onNameChange={(name) => setDraft({ ...draft, name })}
-          onModeChange={(mode) => setDraft({ ...draft, mode })}
+          onModeChange={(mode) =>
+            setDraft(applyBusinessTypeChangeToDraft(draft, draft.presetId, mode))
+          }
           onPresetChange={(presetId) =>
             setDraft(
               applyBusinessTypeChangeToDraft(
