@@ -42,7 +42,16 @@ Progress indicator: `N מתוך 6`
 
 **Config:** `src/config/supportingModelPresentationConfig.ts`
 
-- Business Type + Primary Model → zero or more contextual prompts (question + value explanation)
+**Architecture split (Phase 1 vs supporting):**
+
+| Layer | Source | Step |
+|-------|--------|------|
+| Recommended **primary** | `businessTypeRecommendationConfig.ts` | 2 only |
+| Recommended **supporting** | `supportingModelPresentationConfig.ts` rules + **selected** primary | 3 only |
+
+Step 3 must **not** use `recommendedAdditional` from the business-type policy when the user chose a different primary — supporting badges/prompts come only from contextual rules for the current primary.
+
+- Business Type + **selected** Primary Model → zero or more contextual prompts (question + value explanation)
 - User answers: **כן, להוסיף** / **לא עכשיו**
 - Full model catalog: progressive disclosure via **"העסק שלי עובד בצורה נוספת"**
 - Hybrid primary: full picker (unchanged)

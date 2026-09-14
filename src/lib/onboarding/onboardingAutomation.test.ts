@@ -52,6 +52,16 @@ describe('supporting model contextual flow', () => {
     expect(prompts[0].targetModel).toBe('project');
   });
 
+  it('Photographer + Package override does not recommend Project on step 3', () => {
+    expect(
+      resolveSupportingModelPrompts({
+        mode: 'list',
+        presetId: 'photographer',
+        primaryModel: 'package',
+      }),
+    ).toEqual([]);
+  });
+
   it('unrelated supporting model is not suggested for birthday + event', () => {
     const prompts = resolveSupportingModelPrompts({
       mode: 'list',

@@ -1,8 +1,5 @@
 import type { RecommendableOperatingModel } from './businessTypeRecommendationConfig';
-import {
-  isRecommendedAdditionalModel,
-  resolveEffectiveOperatingRecommendation,
-} from './businessTypeRecommendationConfig';
+import { resolveEffectiveOperatingRecommendation } from './businessTypeRecommendationConfig';
 import type { OperatingModel } from '../types/workspace';
 
 export interface SupportingModelPrompt {
@@ -24,8 +21,8 @@ interface SupportingModelPromptRule {
 }
 
 /**
- * Contextual supporting-model prompts — Business Type + Primary Model.
- * Only shown when aligned with effective operating recommendation.
+ * Contextual supporting-model rules — independent from primary recommendation.
+ * Primary recommendation lives on step 2 only (businessTypeRecommendationConfig).
  */
 const SUPPORTING_MODEL_PROMPT_RULES: SupportingModelPromptRule[] = [
   {
@@ -112,51 +109,111 @@ export interface SupportingModelPromptInput {
   primaryModel: OperatingModel;
 }
 
-export function resolveSupportingModelPrompts(
+function resolvePresetId(input: SupportingModelPromptInput): string | undefined {
+  if (input.mode === 'custom' || input.presetId === '__other__') return undefined;
+  return input.presetId;
+}
+
+/** Business-type recommended primary — must never be suggested as supporting. */
+function resolveConfiguredRecommendedPrimary(
   input: SupportingModelPromptInput,
-): SupportingModelPrompt[] {
-  if (input.primaryModel === 'hybrid') return [];
-
-  const primary = input.primaryModel as RecommendableOperatingModel;
-  const presetId =
-    input.mode === 'custom' || input.presetId === '__other__'
-      ? undefined
-      : input.presetId;
-
+): RecommendableOperatingModel | undefined {
   const effective = resolveEffectiveOperatingRecommendation(
     input.mode,
     input.presetId,
     input.clarificationChoiceId,
   );
-  if (effective.kind !== 'recommended') return [];
+  if (effective.kind !== 'recommended') return undefined;
+  return effective.recommendation.recommendedPrimary;
+}
 
-  const recommendation = effective.recommendation;
+function matchingSupportingRules(input: SupportingModelPromptInput): SupportingModelPromptRule[] {
+  if (input.primaryModel === 'hybrid') return [];
 
-  const candidates = SUPPORTING_MODEL_PROMPT_RULES.filter(
-    (rule) =>
-      rule.primaryOperatingModel === primary &&
-      (rule.businessTypePresetId === undefined || rule.businessTypePresetId === presetId),
+  const primary = input.primaryModel as RecommendableOperatingModel;
+  const presetId = resolvePresetId(input);
+  const configuredPrimary = resolveConfiguredRecommendedPrimary(input);
+  const effective = resolveEffectiveOperatingRecommendation(
+    input.mode,
+    input.presetId,
+    input.clarificationChoiceId,
   );
 
-  const seen = new Set<RecommendableOperatingModel>();
-  const prompts: SupportingModelPrompt[] = [];
-
-  for (const rule of candidates) {
-    if (seen.has(rule.targetModel)) continue;
-    if (!isRecommendedAdditionalModel(recommendation, rule.targetModel)) {
-      continue;
+  return SUPPORTING_MODEL_PROMPT_RULES.filter((rule) => {
+    if (rule.primaryOperatingModel !== primary) return false;
+    if (rule.businessTypePresetId !== undefined && rule.businessTypePresetId !== presetId) {
+      return false;
     }
+    if (rule.targetModel === primary) return false;
+    if (configuredPrimary && rule.targetModel === configuredPrimary) return false;
+
+    if (rule.businessTypePresetId === undefined) {
+      if (effective.kind !== 'recommended') return false;
+      const rec = effective.recommendation;
+      if (primary !== rec.recommendedPrimary) return false;
+      if (!rec.recommendedAdditional?.includes(rule.targetModel)) return false;
+    }
+
+    return true;
+  });
+}
+
+/**
+ * Supporting models for step 3 — ONLY from contextual rules + selected primary.
+ * Does NOT use businessTypeRecommendationConfig.recommendedAdditional.
+ */
+export function resolveRecommendedSupportingModels(
+  input: SupportingModelPromptInput,
+): RecommendableOperatingModel[] {
+  const seen = new Set<RecommendableOperatingModel>();
+  const models: RecommendableOperatingModel[] = [];
+
+  for (const rule of matchingSupportingRules(input)) {
+    if (seen.has(rule.targetModel)) continue;
     seen.add(rule.targetModel);
-    prompts.push({
+    models.push(rule.targetModel);
+  }
+
+  return models;
+}
+
+export function resolveSupportingModelPrompts(
+  input: SupportingModelPromptInput,
+): SupportingModelPrompt[] {
+  const seen = new Set<RecommendableOperatingModel>();
+
+  return matchingSupportingRules(input)
+    .filter((rule) => {
+      if (seen.has(rule.targetModel)) return false;
+      seen.add(rule.targetModel);
+      return true;
+    })
+    .map((rule) => ({
       targetModel: rule.targetModel,
       questionHe: rule.questionHe,
       valueExplanationHe: rule.valueExplanationHe,
       acceptLabelHe: rule.acceptLabelHe ?? DEFAULT_ACCEPT,
       declineLabelHe: rule.declineLabelHe ?? DEFAULT_DECLINE,
-    });
-  }
+    }));
+}
 
-  return prompts;
+export function isContextuallyRecommendedSupportingModel(
+  input: SupportingModelPromptInput,
+  model: OperatingModel,
+): boolean {
+  if (model === 'hybrid') return false;
+  return resolveRecommendedSupportingModels(input).includes(
+    model as RecommendableOperatingModel,
+  );
+}
+
+export function supportingModelHintHe(
+  input: SupportingModelPromptInput,
+  model: OperatingModel,
+): string | undefined {
+  if (model === 'hybrid') return undefined;
+  const rule = matchingSupportingRules(input).find((r) => r.targetModel === model);
+  return rule?.valueExplanationHe;
 }
 
 /** Whether step 3 should default to contextual questions (not full catalog). */

@@ -1,15 +1,11 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
 import {
+  isContextuallyRecommendedSupportingModel,
   resolveSupportingModelPrompts,
   shouldUseContextualSupportingModelFlow,
+  supportingModelHintHe,
 } from '../../config/supportingModelPresentationConfig';
-import {
-  getAdditionalModelHintHe,
-  isRecommendedAdditionalModel,
-  resolveEffectiveOperatingRecommendation,
-  WORKING_STYLE_LABELS_HE,
-  type BusinessTypeOperatingRecommendation,
-} from '../../config/businessTypeRecommendationConfig';
+import { WORKING_STYLE_LABELS_HE } from '../../config/businessTypeRecommendationConfig';
 import {
   getOperatingModelDefinition,
   OPERATING_MODEL_ADDITIONAL_OPTIONS,
@@ -17,15 +13,6 @@ import {
 } from '../../config/operatingModelConfig';
 import type { OperatingModel } from '../../types/workspace';
 import { OperatingModelSelectCard } from './OperatingModelSelectCard';
-
-function resolveAdditionalHint(
-  recommendation: BusinessTypeOperatingRecommendation | undefined,
-  model: OperatingModel,
-): string | undefined {
-  if (!recommendation || model === 'hybrid') return undefined;
-  if (!isRecommendedAdditionalModel(recommendation, model)) return undefined;
-  return getAdditionalModelHintHe(recommendation, model);
-}
 
 export function OnboardingStepAdditionalModels({
   mode,
@@ -49,12 +36,16 @@ export function OnboardingStepAdditionalModels({
   onSubmit: () => void;
 }) {
   const primaryDef = getOperatingModelDefinition(primaryModel);
-  const resolved = resolveEffectiveOperatingRecommendation(mode, presetId, clarificationChoiceId);
-  const recommendation =
-    resolved.kind === 'recommended' ? resolved.recommendation : undefined;
 
-  const promptInput = { mode, presetId, clarificationChoiceId, primaryModel };
-  const contextualPrompts = resolveSupportingModelPrompts(promptInput);
+  const promptInput = useMemo(
+    () => ({ mode, presetId, clarificationChoiceId, primaryModel }),
+    [clarificationChoiceId, mode, presetId, primaryModel],
+  );
+
+  const contextualPrompts = useMemo(
+    () => resolveSupportingModelPrompts(promptInput),
+    [promptInput],
+  );
   const useContextualFlow = shouldUseContextualSupportingModelFlow(promptInput);
 
   const [showFullPicker, setShowFullPicker] = useState(
@@ -121,8 +112,8 @@ export function OnboardingStepAdditionalModels({
 
         <div className="onboarding-model-grid onboarding-model-grid--compact">
           {additionalOptions.map((opt) => {
-            const recommended = isRecommendedAdditionalModel(recommendation, opt.id);
-            const hint = resolveAdditionalHint(recommendation, opt.id);
+            const recommended = isContextuallyRecommendedSupportingModel(promptInput, opt.id);
+            const hint = supportingModelHintHe(promptInput, opt.id);
             const title =
               opt.id === 'hybrid' ? opt.titleHe : WORKING_STYLE_LABELS_HE[opt.id];
 
