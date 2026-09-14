@@ -13,10 +13,24 @@ import { getSupabase } from '../lib/supabase';
 import { PasswordInput } from '../components/PasswordInput';
 import { useAutoLoginFromRememberMe } from '../hooks/useAutoLoginFromRememberMe';
 import { useStoreHydration } from '../hooks/useStoreHydration';
+import {
+  isPasswordRecoveryPending,
+  isPasswordRecoveryUrl,
+  markPasswordRecoveryPending,
+} from '../lib/passwordRecoveryFlow';
 import { clearRememberMe, loadRememberMe, saveRememberMe } from '../lib/rememberMe';
 import { useAppStore } from '../store/useAppStore';
 
 type AuthMode = 'login' | 'register' | 'forgot' | 'reset';
+
+function resolveInitialAuthMode(searchParams: URLSearchParams): AuthMode {
+  if (isPasswordRecoveryUrl()) return 'reset';
+  if (searchParams.get('recovery') === 'pending') return 'reset';
+  if (searchParams.get('register') === '1' || searchParams.get('mode') === 'register') {
+    return 'register';
+  }
+  return 'login';
+}
 
 function navigateAfterAuth(navigate: ReturnType<typeof useNavigate>) {
   const { business, events } = useAppStore.getState();
@@ -36,7 +50,7 @@ export function AuthPage() {
   const remembered = loadRememberMe();
   const cloudEnabled = isSupabaseConfigured();
 
-  const [mode, setMode] = useState<AuthMode>('login');
+  const [mode, setMode] = useState<AuthMode>(() => resolveInitialAuthMode(searchParams));
   const [displayName, setDisplayName] = useState(remembered?.displayName ?? '');
   const [email, setEmail] = useState(remembered?.email ?? '');
   const [password, setPassword] = useState('');
@@ -48,6 +62,7 @@ export function AuthPage() {
 
   useEffect(() => {
     if (!autoLoginReady || !user || mode === 'reset' || mode === 'forgot') return;
+    if (isPasswordRecoveryPending()) return;
     navigateAfterAuth(navigate);
   }, [autoLoginReady, user, navigate, mode]);
 
@@ -70,8 +85,8 @@ export function AuthPage() {
   useEffect(() => {
     if (!cloudEnabled) return;
 
-    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-    if (hashParams.get('type') === 'recovery') {
+    if (isPasswordRecoveryUrl()) {
+      markPasswordRecoveryPending();
       setMode('reset');
       setError(null);
       setInfo(null);
@@ -82,6 +97,7 @@ export function AuthPage() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
+        markPasswordRecoveryPending();
         setMode('reset');
         setError(null);
         setInfo(null);
@@ -460,7 +476,11 @@ export function AuthPage() {
             checked={rememberMe}
             onChange={(e) => setRememberMe(e.target.checked)}
           />
-          <span>זכור אותי — כניסה אוטומטית בפעם הבאה</span>
+          <span>
+            {cloudEnabled
+              ? 'זכור אותי — שמירת אימייל והישארות מחובר/ת במכשיר'
+              : 'זכור אותי — כניסה אוטומטית בפעם הבאה'}
+          </span>
         </label>
 
         <button type="submit" className="btn btn-primary" disabled={!hydrated || busy}>

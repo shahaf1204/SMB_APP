@@ -1,20 +1,41 @@
 import { hydrateUserFromCloud } from './cloudSync';
+import {
+  isPasswordRecoveryPending,
+  isPasswordRecoveryUrl,
+  markPasswordRecoveryPending,
+} from './passwordRecoveryFlow';
 import { getSupabase, isSupabaseConfigured } from './supabase';
 import { useAppStore } from '../store/useAppStore';
-
-function isPasswordRecoveryUrl(): boolean {
-  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-  return hashParams.get('type') === 'recovery';
-}
 
 function sessionDisplayName(email: string, metadata?: Record<string, unknown>): string {
   const fromMeta = (metadata?.display_name as string | undefined)?.trim();
   return fromMeta || email.split('@')[0];
 }
 
+/** Apply recovery session from URL so updateUser({ password }) works — stay on /auth. */
+export async function tryApplyPasswordRecoverySession(): Promise<boolean> {
+  if (!isSupabaseConfigured() || !isPasswordRecoveryPending()) return false;
+
+  markPasswordRecoveryPending();
+  const supabase = getSupabase();
+  const { data } = await supabase.auth.getSession();
+  const sessionUser = data.session?.user;
+  if (!sessionUser?.email) return false;
+
+  const email = sessionUser.email.toLowerCase();
+  const displayName = sessionDisplayName(email, sessionUser.user_metadata);
+  const current = useAppStore.getState().user;
+  if (current?.email?.toLowerCase() === email && current.id === sessionUser.id) {
+    return true;
+  }
+
+  await hydrateUserFromCloud(sessionUser.id, email, displayName);
+  return true;
+}
+
 /** Restore Supabase auth session into the app store (stay signed in). */
 export async function tryRestoreSupabaseSession(): Promise<boolean> {
-  if (!isSupabaseConfigured() || isPasswordRecoveryUrl()) return false;
+  if (!isSupabaseConfigured() || isPasswordRecoveryPending()) return false;
 
   const supabase = getSupabase();
   let session = (await supabase.auth.getSession()).data.session;
@@ -50,10 +71,17 @@ export function registerSupabaseAuthListener(): void {
   supabase.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_OUT') return;
 
+    if (event === 'PASSWORD_RECOVERY') {
+      markPasswordRecoveryPending();
+    }
+
     if (
       session?.user?.email &&
       (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION')
     ) {
+      if (isPasswordRecoveryUrl()) {
+        markPasswordRecoveryPending();
+      }
       const email = session.user.email.toLowerCase();
       const displayName = sessionDisplayName(email, session.user.user_metadata);
       const current = useAppStore.getState().user;

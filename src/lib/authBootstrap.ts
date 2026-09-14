@@ -1,6 +1,11 @@
-import { registerSupabaseAuthListener, tryRestoreSupabaseSession } from './authSession';
+import {
+  registerSupabaseAuthListener,
+  tryApplyPasswordRecoverySession,
+  tryRestoreSupabaseSession,
+} from './authSession';
+import { isPasswordRecoveryPending } from './passwordRecoveryFlow';
 import { loadRememberMe } from './rememberMe';
-import { isSupabaseConfigured } from './supabase';
+import { getSupabase, isSupabaseConfigured } from './supabase';
 import { useAppStore } from '../store/useAppStore';
 
 let bootstrapPromise: Promise<void> | null = null;
@@ -16,12 +21,18 @@ export function ensureAuthBootstrap(): Promise<void> {
 async function runAuthBootstrap(): Promise<void> {
   registerSupabaseAuthListener();
 
-  const state = useAppStore.getState();
-  if (state.user?.email) return;
-
   if (isSupabaseConfigured()) {
     try {
+      if (isPasswordRecoveryPending()) {
+        await tryApplyPasswordRecoverySession();
+        return;
+      }
       if (await tryRestoreSupabaseSession()) return;
+
+      const { data } = await getSupabase().auth.getSession();
+      if (!data.session && useAppStore.getState().user) {
+        useAppStore.getState().logout();
+      }
     } catch (e) {
       console.error('session restore failed', e);
     }

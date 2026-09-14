@@ -1,5 +1,6 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAutoLoginFromRememberMe } from '../hooks/useAutoLoginFromRememberMe';
+import { isPasswordRecoveryPending } from '../lib/passwordRecoveryFlow';
 import { useAppStore } from '../store/useAppStore';
 import { LoadingScreen } from './LoadingScreen';
 
@@ -7,10 +8,12 @@ export function RequireGuest() {
   const ready = useAutoLoginFromRememberMe();
   const user = useAppStore((s) => s.user);
   const business = useAppStore((s) => s.business);
+  const location = useLocation();
+  const recoveryFlow = location.pathname === '/auth' && isPasswordRecoveryPending();
 
   if (!ready) return <LoadingScreen />;
-  if (user && business) return <Navigate to="/dashboard" replace />;
-  if (user) return <Navigate to="/onboarding" replace />;
+  if (user && !recoveryFlow && business) return <Navigate to="/dashboard" replace />;
+  if (user && !recoveryFlow) return <Navigate to="/onboarding" replace />;
   return <Outlet />;
 }
 
