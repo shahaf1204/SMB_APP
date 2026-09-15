@@ -4,17 +4,24 @@ import {
   resolveBusinessTypeOperatingRecommendation,
   resolveEffectiveOperatingRecommendation,
   WORKING_STYLE_LABELS_HE,
+  type RecommendableOperatingModel,
 } from '../../config/businessTypeRecommendationConfig';
 import { getOperatingModelDefinition, HYBRID_OPERATING_MODEL } from '../../config/operatingModelConfig';
 import type { PrimaryModelSelectionSource } from '../../types/onboarding';
 import type { OperatingModel } from '../../types/workspace';
 import {
-  primaryModelOverrideNoticeHe,
-  shouldShowClarification,
-  shouldShowConfirmedPrimarySelection,
-  shouldShowRecommendationFirst,
-} from '../../lib/onboarding/primaryModelDraft';
+  defaultShowAlternativePicker,
+  resolvePrimaryStepPresentation,
+} from '../../lib/onboarding/primaryStepPresentation';
 import { OperatingModelSelectCard } from './OperatingModelSelectCard';
+
+const RECOMMENDED_FOR_YOU_BADGE = 'מומלץ עבורך';
+const YOUR_CHOICE_BADGE = 'הבחירה שלך ✓';
+
+function primaryModelTitleHe(model: OperatingModel): string {
+  if (model === 'hybrid') return getOperatingModelDefinition(model).titleHe;
+  return WORKING_STYLE_LABELS_HE[model as RecommendableOperatingModel];
+}
 
 export function OnboardingStepPrimaryModel({
   mode,
@@ -36,7 +43,6 @@ export function OnboardingStepPrimaryModel({
   primaryModelConfirmed: boolean;
   primaryModelSource: PrimaryModelSelectionSource;
   clarificationChoiceId?: string;
-  /** Edit mode only — existing hybrid primary may remain selectable */
   allowLegacyHybridInPicker?: boolean;
   onAcceptRecommendation: (model: OperatingModel) => void;
   onSelectManual: (model: OperatingModel) => void;
@@ -47,8 +53,8 @@ export function OnboardingStepPrimaryModel({
   const resolved = resolveBusinessTypeOperatingRecommendation(mode, presetId);
   const effective = resolveEffectiveOperatingRecommendation(mode, presetId, clarificationChoiceId);
 
-  const [showAlternativePicker, setShowAlternativePicker] = useState(
-    primaryModelSource === 'manual' || resolved.kind === 'fallback',
+  const [showAlternativePicker, setShowAlternativePicker] = useState(() =>
+    defaultShowAlternativePicker(mode, presetId, primaryModelSource),
   );
   const [pickerSelection, setPickerSelection] = useState<OperatingModel | null>(
     primaryModelSource === 'manual' ? primaryModel : null,
@@ -65,17 +71,25 @@ export function OnboardingStepPrimaryModel({
   }, [resolved, clarificationChoiceId]);
 
   useEffect(() => {
-    if (resolved.kind === 'fallback') {
-      setShowAlternativePicker(true);
-      return;
-    }
+    setShowAlternativePicker(defaultShowAlternativePicker(mode, presetId, primaryModelSource));
     if (primaryModelSource === 'manual') {
-      setShowAlternativePicker(true);
-      return;
+      setPickerSelection(primaryModel);
+    } else {
+      setPickerSelection(null);
     }
-    setShowAlternativePicker(false);
-    setPickerSelection(null);
-  }, [recommendationKey, resolved.kind, primaryModelSource]);
+  }, [recommendationKey, mode, presetId, primaryModelSource, primaryModel]);
+
+  const presentation = resolvePrimaryStepPresentation({
+    mode,
+    presetId,
+    clarificationChoiceId,
+    selectedPrimaryModel: primaryModel,
+    primaryModelSource,
+    primaryModelConfirmed,
+    showAlternativePicker,
+  });
+
+  const recommendedPrimary = presentation.recommendedPrimaryModel;
 
   const pickerOptions = useMemo(() => {
     if (allowLegacyHybridInPicker) {
@@ -83,35 +97,6 @@ export function OnboardingStepPrimaryModel({
     }
     return NEW_USER_ONBOARDING_PICKER_OPTIONS;
   }, [allowLegacyHybridInPicker]);
-
-  const showConfirmed = shouldShowConfirmedPrimarySelection(
-    primaryModelConfirmed,
-    primaryModelSource,
-    showAlternativePicker,
-  );
-  const overrideNotice =
-    showConfirmed && primaryModelSource === 'manual'
-      ? primaryModelOverrideNoticeHe({
-          mode,
-          presetId,
-          primaryModel,
-          primaryModelSource,
-          clarificationChoiceId,
-        })
-      : undefined;
-  const showClarification = shouldShowClarification(
-    resolved,
-    clarificationChoiceId,
-    primaryModelSource,
-    showAlternativePicker,
-    primaryModelConfirmed,
-  );
-  const showRecommendation = shouldShowRecommendationFirst(
-    effective,
-    primaryModelSource,
-    showAlternativePicker,
-    primaryModelConfirmed,
-  );
 
   const handleAccept = (e: FormEvent) => {
     e.preventDefault();
@@ -141,12 +126,82 @@ export function OnboardingStepPrimaryModel({
     }
   };
 
-  if (showConfirmed) {
+  const handleSwitchToRecommendation = (e: FormEvent) => {
+    e.preventDefault();
+    if (!recommendedPrimary) return;
+    onAcceptRecommendation(recommendedPrimary);
+  };
+
+  if (presentation.view === 'dual_recommended_selected' && recommendedPrimary) {
+    const recommendedDef = getOperatingModelDefinition(recommendedPrimary);
+    const selectedDef = getOperatingModelDefinition(primaryModel);
+    const recommendedTitle = primaryModelTitleHe(recommendedPrimary);
+    const selectedTitle = primaryModelTitleHe(primaryModel);
+    const explanationHe =
+      effective.kind === 'recommended' ? effective.recommendation.explanationHe : recommendedDef.descriptionHe;
+
+    return (
+      <form onSubmit={handleConfirmedContinue} className="onboarding-panel">
+        <div className="onboarding-primary-dual">
+          <OperatingModelSelectCard
+            modelId={recommendedPrimary}
+            icon={recommendedDef.icon}
+            title={recommendedTitle}
+            description={explanationHe}
+            selected={primaryModel === recommendedPrimary}
+            locked
+            onSelect={() => {}}
+            expandable={false}
+            badge={RECOMMENDED_FOR_YOU_BADGE}
+          />
+          <OperatingModelSelectCard
+            modelId={primaryModel}
+            icon={selectedDef.icon}
+            title={selectedTitle}
+            description={selectedDef.descriptionHe}
+            selected
+            locked
+            onSelect={() => {}}
+            expandable={false}
+            confirmedBadge={YOUR_CHOICE_BADGE}
+          />
+        </div>
+        <div className="onboarding-actions onboarding-actions--recommendation">
+          <button type="submit" className="btn btn-primary onboarding-cta-inline">
+            המשך
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary onboarding-cta-inline"
+            onClick={(e) => void handleSwitchToRecommendation(e)}
+          >
+            להמשיך עם ההמלצה
+          </button>
+          <button
+            type="button"
+            className="btn btn-ghost onboarding-alt-action"
+            onClick={handleShowAlternative}
+          >
+            העסק שלי עובד אחרת
+          </button>
+          <button type="button" className="btn btn-ghost" onClick={onBack}>
+            → חזרה
+          </button>
+        </div>
+      </form>
+    );
+  }
+
+  if (presentation.view === 'confirmed_single') {
     const modelDef = getOperatingModelDefinition(primaryModel);
     const title =
       primaryModel === 'hybrid'
         ? modelDef.titleHe
         : WORKING_STYLE_LABELS_HE[primaryModel as keyof typeof WORKING_STYLE_LABELS_HE];
+    const showRecommendedBadge =
+      recommendedPrimary !== null &&
+      primaryModel === recommendedPrimary &&
+      primaryModelSource === 'recommended';
 
     return (
       <form onSubmit={handleConfirmedContinue} className="onboarding-panel">
@@ -155,19 +210,19 @@ export function OnboardingStepPrimaryModel({
             modelId={primaryModel}
             icon={modelDef.icon}
             title={title}
-            description={modelDef.descriptionHe}
+            description={
+              effective.kind === 'recommended' && showRecommendedBadge
+                ? effective.recommendation.explanationHe
+                : modelDef.descriptionHe
+            }
             selected
             locked
             onSelect={() => {}}
             expandable={false}
-            confirmedBadge={
-              primaryModelSource === 'manual' ? 'בחירה שלך ✓' : 'נבחר ✓'
-            }
+            badge={showRecommendedBadge ? RECOMMENDED_FOR_YOU_BADGE : undefined}
+            confirmedBadge={showRecommendedBadge ? 'נבחר ✓' : 'נבחר ✓'}
           />
         </div>
-        {overrideNotice && (
-          <p className="field-hint onboarding-override-notice">{overrideNotice}</p>
-        )}
         <div className="onboarding-actions onboarding-actions--recommendation">
           <button type="submit" className="btn btn-primary onboarding-cta-inline">
             המשך
@@ -187,7 +242,7 @@ export function OnboardingStepPrimaryModel({
     );
   }
 
-  if (showClarification && resolved.kind === 'clarification') {
+  if (presentation.view === 'clarification' && resolved.kind === 'clarification') {
     return (
       <div className="onboarding-panel">
         <p className="onboarding-clarification-question">{resolved.clarification.questionHe}</p>
@@ -221,22 +276,23 @@ export function OnboardingStepPrimaryModel({
     );
   }
 
-  if (showRecommendation && effective.kind === 'recommended') {
-    const { recommendedPrimary, explanationHe } = effective.recommendation;
-    const modelDef = getOperatingModelDefinition(recommendedPrimary);
+  if (presentation.view === 'recommendation_first' && effective.kind === 'recommended') {
+    const { recommendedPrimary: recPrimary, explanationHe } = effective.recommendation;
+    const modelDef = getOperatingModelDefinition(recPrimary);
 
     return (
       <form onSubmit={handleAccept} className="onboarding-panel">
         <div className="onboarding-recommendation">
           <OperatingModelSelectCard
-            modelId={recommendedPrimary}
+            modelId={recPrimary}
             icon={modelDef.icon}
-            title={WORKING_STYLE_LABELS_HE[recommendedPrimary]}
+            title={primaryModelTitleHe(recPrimary)}
             description={explanationHe}
             selected
             locked
             onSelect={() => {}}
             expandable={false}
+            badge={RECOMMENDED_FOR_YOU_BADGE}
           />
         </div>
         <div className="onboarding-actions onboarding-actions--recommendation">
@@ -260,6 +316,25 @@ export function OnboardingStepPrimaryModel({
 
   return (
     <form onSubmit={handlePickerSubmit} className="onboarding-panel">
+      {recommendedPrimary && (
+        <div className="onboarding-recommendation onboarding-recommendation--hint">
+          <OperatingModelSelectCard
+            modelId={recommendedPrimary}
+            icon={getOperatingModelDefinition(recommendedPrimary).icon}
+            title={primaryModelTitleHe(recommendedPrimary)}
+            description={
+              effective.kind === 'recommended'
+                ? effective.recommendation.explanationHe
+                : getOperatingModelDefinition(recommendedPrimary).descriptionHe
+            }
+            selected={false}
+            locked
+            onSelect={() => {}}
+            expandable={false}
+            badge={RECOMMENDED_FOR_YOU_BADGE}
+          />
+        </div>
+      )}
       <div className="onboarding-model-grid">
         {pickerOptions.map((opt) => (
           <OperatingModelSelectCard
@@ -275,6 +350,9 @@ export function OnboardingStepPrimaryModel({
             selected={pickerSelection === opt.id}
             onSelect={() => setPickerSelection(opt.id)}
             expandable={opt.id !== 'hybrid'}
+            confirmedBadge={
+              pickerSelection === opt.id && opt.id === primaryModel ? YOUR_CHOICE_BADGE : undefined
+            }
           />
         ))}
       </div>
@@ -285,7 +363,9 @@ export function OnboardingStepPrimaryModel({
           onClick={
             primaryModelConfirmed && primaryModelSource === 'recommended'
               ? handleCancelAlternative
-              : onBack
+              : recommendedPrimary
+                ? handleCancelAlternative
+                : onBack
           }
         >
           → חזרה

@@ -79,7 +79,7 @@ function enabledModels(primary: OperatingModel, additional: OperatingModel[]): O
 
 function resolveStep2Titles(draft: OnboardingDraft): { title: string; subtitle: string } {
   const resolved = resolveBusinessTypeOperatingRecommendation(draft.mode, draft.presetId);
-  if (resolved.kind === 'fallback' || draft.primaryModelSource === 'manual') {
+  if (resolved.kind === 'fallback') {
     return {
       title: 'ספרי לנו איך רוב העבודה שלך מתנהלת',
       subtitle:
