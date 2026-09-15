@@ -9,9 +9,29 @@ import {
 import { createDefaultDraft } from './draftStorage';
 import {
   defaultShowAlternativePicker,
+  hasManualPrimaryOverride,
+  isFollowingRecommendation,
   resolvePrimaryStepPresentation,
+  resolvePrimaryStepPrimaryCtaKind,
   resolveRecommendedPrimaryModel,
+  shouldRenderDualPrimaryCards,
 } from './primaryStepPresentation';
+
+function presentationForDraft(
+  draft: ReturnType<typeof createDefaultDraft>,
+  showAlternativePicker?: boolean,
+) {
+  return resolvePrimaryStepPresentation({
+    mode: draft.mode,
+    presetId: draft.presetId,
+    selectedPrimaryModel: draft.primaryModel,
+    primaryModelSource: draft.primaryModelSource,
+    primaryModelConfirmed: draft.primaryModelConfirmed,
+    showAlternativePicker:
+      showAlternativePicker ??
+      defaultShowAlternativePicker(draft.mode, draft.presetId, draft.primaryModelSource),
+  });
+}
 
 describe('Step 2 presentation — runtime wiring', () => {
   it('TEST 1: Fresh Photographer — Event recommended on step 2', () => {
@@ -20,21 +40,12 @@ describe('Step 2 presentation — runtime wiring', () => {
 
     expect(resolveRecommendedPrimaryModel('list', 'photographer')).toBe('event');
 
-    const presentation = resolvePrimaryStepPresentation({
-      mode: draft.mode,
-      presetId: draft.presetId,
-      selectedPrimaryModel: draft.primaryModel,
-      primaryModelSource: draft.primaryModelSource,
-      primaryModelConfirmed: draft.primaryModelConfirmed,
-      showAlternativePicker: defaultShowAlternativePicker(
-        draft.mode,
-        draft.presetId,
-        draft.primaryModelSource,
-      ),
-    });
+    const presentation = presentationForDraft(draft);
 
     expect(presentation.view).toBe('recommendation_first');
     expect(presentation.recommendedPrimaryModel).toBe('event');
+    expect(shouldRenderDualPrimaryCards(presentation)).toBe(false);
+    expect(resolvePrimaryStepPrimaryCtaKind(presentation)).toBe('single_continue');
   });
 
   it('TEST 2: Photographer manual Package — dual recommended + selected', () => {
@@ -42,18 +53,45 @@ describe('Step 2 presentation — runtime wiring', () => {
     draft = applyBusinessTypeChangeToDraft(draft, 'photographer', 'list');
     draft = selectManualPrimaryModel(draft, 'package');
 
-    const presentation = resolvePrimaryStepPresentation({
-      mode: draft.mode,
-      presetId: draft.presetId,
-      selectedPrimaryModel: draft.primaryModel,
-      primaryModelSource: draft.primaryModelSource,
-      primaryModelConfirmed: draft.primaryModelConfirmed,
-      showAlternativePicker: false,
-    });
+    const presentation = presentationForDraft(draft, false);
 
     expect(presentation.view).toBe('dual_recommended_selected');
+    expect(presentation.hasManualOverride).toBe(true);
     expect(presentation.recommendedPrimaryModel).toBe('event');
     expect(presentation.selectedPrimaryModel).toBe('package');
+    expect(shouldRenderDualPrimaryCards(presentation)).toBe(true);
+    expect(resolvePrimaryStepPrimaryCtaKind(presentation)).toBe('continue_with_my_choice');
+  });
+
+  it('Birthday + Event recommended + Event selected — one card state only', () => {
+    let draft = createDefaultDraft();
+    draft = applyBusinessTypeChangeToDraft(draft, 'birthday', 'list');
+    draft = selectManualPrimaryModel(draft, 'event');
+
+    const presentation = presentationForDraft(draft);
+
+    expect(presentation.recommendedPrimaryModel).toBe('event');
+    expect(presentation.selectedPrimaryModel).toBe('event');
+    expect(isFollowingRecommendation(draft.primaryModel, 'event')).toBe(true);
+    expect(hasManualPrimaryOverride(draft.primaryModelSource, draft.primaryModel, 'event')).toBe(
+      false,
+    );
+    expect(presentation.view).toBe('confirmed_single');
+    expect(shouldRenderDualPrimaryCards(presentation)).toBe(false);
+    expect(presentation.isFollowingRecommendation).toBe(true);
+    expect(presentation.hasManualOverride).toBe(false);
+  });
+
+  it('Matching recommendation — single continue CTA, no override dual view', () => {
+    let draft = createDefaultDraft();
+    draft = applyBusinessTypeChangeToDraft(draft, 'birthday', 'list');
+    draft = acceptRecommendedPrimaryModel(draft, 'event');
+
+    const presentation = presentationForDraft(draft, false);
+
+    expect(presentation.isFollowingRecommendation).toBe(true);
+    expect(shouldRenderDualPrimaryCards(presentation)).toBe(false);
+    expect(resolvePrimaryStepPrimaryCtaKind(presentation)).toBe('single_continue');
   });
 
   it('TEST 3: Photographer → Birthday after manual override — new recommendation visible', () => {
@@ -67,20 +105,10 @@ describe('Step 2 presentation — runtime wiring', () => {
     expect(draft.primaryModel).toBe('package');
     expect(draft.primaryModelSource).toBe('manual');
 
-    const presentation = resolvePrimaryStepPresentation({
-      mode: draft.mode,
-      presetId: draft.presetId,
-      selectedPrimaryModel: draft.primaryModel,
-      primaryModelSource: draft.primaryModelSource,
-      primaryModelConfirmed: draft.primaryModelConfirmed,
-      showAlternativePicker: defaultShowAlternativePicker(
-        draft.mode,
-        draft.presetId,
-        draft.primaryModelSource,
-      ),
-    });
+    const presentation = presentationForDraft(draft);
 
     expect(presentation.view).toBe('dual_recommended_selected');
+    expect(presentation.hasManualOverride).toBe(true);
     expect(presentation.recommendedPrimaryModel).toBe('event');
     expect(presentation.selectedPrimaryModel).toBe('package');
   });
@@ -95,17 +123,26 @@ describe('Step 2 presentation — runtime wiring', () => {
     expect(draft.primaryModel).toBe('appointment');
     expect(draft.primaryModelSource).toBe('recommended');
 
-    const presentation = resolvePrimaryStepPresentation({
-      mode: draft.mode,
-      presetId: draft.presetId,
-      selectedPrimaryModel: draft.primaryModel,
-      primaryModelSource: draft.primaryModelSource,
-      primaryModelConfirmed: draft.primaryModelConfirmed,
-      showAlternativePicker: false,
-    });
+    const presentation = presentationForDraft(draft, false);
 
     expect(presentation.recommendedPrimaryModel).toBe('appointment');
     expect(presentation.view).toBe('confirmed_single');
+    expect(presentation.isFollowingRecommendation).toBe(true);
+  });
+
+  it('Switching back to recommendation — returns to one-card following state', () => {
+    let draft = createDefaultDraft();
+    draft = applyBusinessTypeChangeToDraft(draft, 'photographer', 'list');
+    draft = selectManualPrimaryModel(draft, 'package');
+    draft = acceptRecommendedPrimaryModel(draft, 'event');
+
+    const presentation = presentationForDraft(draft, false);
+
+    expect(presentation.view).toBe('confirmed_single');
+    expect(presentation.isFollowingRecommendation).toBe(true);
+    expect(presentation.hasManualOverride).toBe(false);
+    expect(shouldRenderDualPrimaryCards(presentation)).toBe(false);
+    expect(resolvePrimaryStepPrimaryCtaKind(presentation)).toBe('single_continue');
   });
 
   it('TEST 5: Hebrew dropdown labels resolve to expected preset IDs', () => {
@@ -128,7 +165,6 @@ describe('Step 2 presentation — runtime wiring', () => {
     let draft = createDefaultDraft();
     draft = applyBusinessTypeChangeToDraft(draft, 'photographer', 'list');
     draft = selectManualPrimaryModel(draft, 'package');
-    // Same shape as saveOnboardingDraft → loadOnboardingDraft (manual + confirmed survives normalize)
     const rehydrated = JSON.parse(JSON.stringify(draft)) as typeof draft;
     expect(rehydrated.primaryModel).toBe('package');
     expect(rehydrated.primaryModelSource).toBe('manual');
@@ -136,19 +172,9 @@ describe('Step 2 presentation — runtime wiring', () => {
     const next = applyBusinessTypeChangeToDraft(rehydrated, 'beauty', 'list');
     expect(resolveRecommendedPrimaryModel('list', next.presetId)).toBe('appointment');
     expect(next.primaryModel).toBe('package');
-    expect(
-      resolvePrimaryStepPresentation({
-        mode: next.mode,
-        presetId: next.presetId,
-        selectedPrimaryModel: next.primaryModel,
-        primaryModelSource: next.primaryModelSource,
-        primaryModelConfirmed: next.primaryModelConfirmed,
-        showAlternativePicker: defaultShowAlternativePicker(
-          next.mode,
-          next.presetId,
-          next.primaryModelSource,
-        ),
-      }).view,
-    ).toBe('dual_recommended_selected');
+
+    const presentation = presentationForDraft(next);
+    expect(presentation.view).toBe('dual_recommended_selected');
+    expect(presentation.hasManualOverride).toBe(true);
   });
 });

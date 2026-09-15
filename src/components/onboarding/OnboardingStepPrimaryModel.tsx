@@ -16,6 +16,7 @@ import {
 import { OperatingModelSelectCard } from './OperatingModelSelectCard';
 
 const RECOMMENDED_FOR_YOU_BADGE = 'מומלץ עבורך';
+const RECOMMENDED_FOR_YOU_WITH_CHECK = 'מומלץ עבורך ✓';
 const YOUR_CHOICE_BADGE = 'הבחירה שלך ✓';
 
 function primaryModelTitleHe(model: OperatingModel): string {
@@ -90,6 +91,8 @@ export function OnboardingStepPrimaryModel({
   });
 
   const recommendedPrimary = presentation.recommendedPrimaryModel;
+  const isFollowingRecommendation = presentation.isFollowingRecommendation;
+  const hasManualOverride = presentation.hasManualOverride;
 
   const pickerOptions = useMemo(() => {
     if (allowLegacyHybridInPicker) {
@@ -132,7 +135,7 @@ export function OnboardingStepPrimaryModel({
     onAcceptRecommendation(recommendedPrimary);
   };
 
-  if (presentation.view === 'dual_recommended_selected' && recommendedPrimary) {
+  if (presentation.view === 'dual_recommended_selected' && recommendedPrimary && hasManualOverride) {
     const recommendedDef = getOperatingModelDefinition(recommendedPrimary);
     const selectedDef = getOperatingModelDefinition(primaryModel);
     const recommendedTitle = primaryModelTitleHe(recommendedPrimary);
@@ -168,14 +171,14 @@ export function OnboardingStepPrimaryModel({
         </div>
         <div className="onboarding-actions onboarding-actions--recommendation">
           <button type="submit" className="btn btn-primary onboarding-cta-inline">
-            המשך
+            להמשיך עם הבחירה שלי
           </button>
           <button
             type="button"
             className="btn btn-secondary onboarding-cta-inline"
             onClick={(e) => void handleSwitchToRecommendation(e)}
           >
-            להמשיך עם ההמלצה
+            לעבור להמלצה
           </button>
           <button
             type="button"
@@ -198,10 +201,7 @@ export function OnboardingStepPrimaryModel({
       primaryModel === 'hybrid'
         ? modelDef.titleHe
         : WORKING_STYLE_LABELS_HE[primaryModel as keyof typeof WORKING_STYLE_LABELS_HE];
-    const showRecommendedBadge =
-      recommendedPrimary !== null &&
-      primaryModel === recommendedPrimary &&
-      primaryModelSource === 'recommended';
+    const showMatchingRecommendationBadge = isFollowingRecommendation;
 
     return (
       <form onSubmit={handleConfirmedContinue} className="onboarding-panel">
@@ -211,7 +211,7 @@ export function OnboardingStepPrimaryModel({
             icon={modelDef.icon}
             title={title}
             description={
-              effective.kind === 'recommended' && showRecommendedBadge
+              effective.kind === 'recommended' && showMatchingRecommendationBadge
                 ? effective.recommendation.explanationHe
                 : modelDef.descriptionHe
             }
@@ -219,8 +219,12 @@ export function OnboardingStepPrimaryModel({
             locked
             onSelect={() => {}}
             expandable={false}
-            badge={showRecommendedBadge ? RECOMMENDED_FOR_YOU_BADGE : undefined}
-            confirmedBadge={showRecommendedBadge ? 'נבחר ✓' : 'נבחר ✓'}
+            badge={
+              showMatchingRecommendationBadge ? RECOMMENDED_FOR_YOU_WITH_CHECK : undefined
+            }
+            confirmedBadge={
+              showMatchingRecommendationBadge ? undefined : 'נבחר ✓'
+            }
           />
         </div>
         <div className="onboarding-actions onboarding-actions--recommendation">
@@ -292,12 +296,12 @@ export function OnboardingStepPrimaryModel({
             locked
             onSelect={() => {}}
             expandable={false}
-            badge={RECOMMENDED_FOR_YOU_BADGE}
+            badge={RECOMMENDED_FOR_YOU_WITH_CHECK}
           />
         </div>
         <div className="onboarding-actions onboarding-actions--recommendation">
           <button type="submit" className="btn btn-primary onboarding-cta-inline">
-            להמשיך עם ההמלצה
+            המשך
           </button>
           <button
             type="button"

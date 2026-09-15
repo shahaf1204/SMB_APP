@@ -32,6 +32,29 @@ export interface PrimaryStepPresentation {
   recommendedPrimaryModel: OperatingModel | null;
   selectedPrimaryModel: OperatingModel;
   recommendedExplanationHe: string | null;
+  isFollowingRecommendation: boolean;
+  hasManualOverride: boolean;
+}
+
+export function isFollowingRecommendation(
+  selectedPrimaryModel: OperatingModel,
+  recommendedPrimaryModel: OperatingModel | null,
+): boolean {
+  return (
+    recommendedPrimaryModel !== null && selectedPrimaryModel === recommendedPrimaryModel
+  );
+}
+
+export function hasManualPrimaryOverride(
+  primaryModelSource: PrimaryModelSelectionSource,
+  selectedPrimaryModel: OperatingModel,
+  recommendedPrimaryModel: OperatingModel | null,
+): boolean {
+  return (
+    primaryModelSource === 'manual' &&
+    recommendedPrimaryModel !== null &&
+    selectedPrimaryModel !== recommendedPrimaryModel
+  );
 }
 
 export function resolveRecommendedPrimaryModel(
@@ -67,6 +90,24 @@ export function resolvePrimaryStepPresentation(
   const recommendedExplanationHe =
     effective.kind === 'recommended' ? effective.recommendation.explanationHe : null;
 
+  const following = isFollowingRecommendation(
+    input.selectedPrimaryModel,
+    recommendedPrimaryModel,
+  );
+  const manualOverride = hasManualPrimaryOverride(
+    input.primaryModelSource,
+    input.selectedPrimaryModel,
+    recommendedPrimaryModel,
+  );
+
+  const baseFields = {
+    recommendedPrimaryModel,
+    selectedPrimaryModel: input.selectedPrimaryModel,
+    recommendedExplanationHe,
+    isFollowingRecommendation: following,
+    hasManualOverride: manualOverride,
+  };
+
   const showClarification = shouldShowClarification(
     resolved,
     input.clarificationChoiceId,
@@ -78,23 +119,16 @@ export function resolvePrimaryStepPresentation(
   if (showClarification && resolved.kind === 'clarification') {
     return {
       view: 'clarification',
-      recommendedPrimaryModel,
-      selectedPrimaryModel: input.selectedPrimaryModel,
-      recommendedExplanationHe,
+      ...baseFields,
     };
   }
 
-  const showDual =
-    recommendedPrimaryModel !== null &&
-    input.primaryModelSource === 'manual' &&
-    !input.showAlternativePicker;
+  const showDual = manualOverride && !input.showAlternativePicker;
 
   if (showDual) {
     return {
       view: 'dual_recommended_selected',
-      recommendedPrimaryModel,
-      selectedPrimaryModel: input.selectedPrimaryModel,
-      recommendedExplanationHe,
+      ...baseFields,
     };
   }
 
@@ -107,9 +141,7 @@ export function resolvePrimaryStepPresentation(
   if (showConfirmed) {
     return {
       view: 'confirmed_single',
-      recommendedPrimaryModel,
-      selectedPrimaryModel: input.selectedPrimaryModel,
-      recommendedExplanationHe,
+      ...baseFields,
     };
   }
 
@@ -123,18 +155,37 @@ export function resolvePrimaryStepPresentation(
   if (showRecommendation && effective.kind === 'recommended') {
     return {
       view: 'recommendation_first',
-      recommendedPrimaryModel,
-      selectedPrimaryModel: input.selectedPrimaryModel,
-      recommendedExplanationHe,
+      ...baseFields,
     };
   }
 
   return {
     view: 'full_picker',
-    recommendedPrimaryModel,
-    selectedPrimaryModel: input.selectedPrimaryModel,
-    recommendedExplanationHe,
+    ...baseFields,
   };
+}
+
+/** Step 2 shows two primary cards only when recommendation and manual selection differ. */
+export function shouldRenderDualPrimaryCards(
+  presentation: PrimaryStepPresentation,
+): boolean {
+  return presentation.view === 'dual_recommended_selected' && presentation.hasManualOverride;
+}
+
+/** Primary continue action — one CTA when following recommendation, distinct override CTA when not. */
+export function resolvePrimaryStepPrimaryCtaKind(
+  presentation: PrimaryStepPresentation,
+): 'single_continue' | 'continue_with_my_choice' | 'other' {
+  if (shouldRenderDualPrimaryCards(presentation)) {
+    return 'continue_with_my_choice';
+  }
+  if (
+    presentation.view === 'recommendation_first' ||
+    (presentation.view === 'confirmed_single' && presentation.isFollowingRecommendation)
+  ) {
+    return 'single_continue';
+  }
+  return 'other';
 }
 
 /** Default alternative-picker visibility for step 2 mount / business type change. */
