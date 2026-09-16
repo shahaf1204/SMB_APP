@@ -1,5 +1,7 @@
 import { getSupabaseAdminOptional } from '../../core/supabase.server';
+import { isExternalEventProcessingStale } from './externalEventProcessing.policy';
 import type {
+  ExternalEventProcessingClaim,
   ExternalEventProcessingStatus,
   ExternalEventRecord,
   ReceiveExternalEventInput,
@@ -21,6 +23,7 @@ interface ExternalEventRow {
   error: string | null;
   raw_payload: unknown;
   received_at: string;
+  processing_claimed_at: string | null;
 }
 
 function rowToRecord(row: ExternalEventRow): ExternalEventRecord {
@@ -39,6 +42,7 @@ function rowToRecord(row: ExternalEventRow): ExternalEventRecord {
     error: row.error,
     rawPayload: row.raw_payload,
     receivedAt: row.received_at,
+    processingClaimedAt: row.processing_claimed_at ?? null,
   };
 }
 
@@ -55,6 +59,58 @@ function useMemoryStore(): boolean {
 
 export function resetExternalEventMemoryStoreForTests(): void {
   memoryEvents.clear();
+}
+
+/** Test-only: backdate processing lease for stale reclaim scenarios. */
+export function setExternalEventProcessingClaimedAtForTests(
+  eventId: string,
+  processingClaimedAt: string,
+): void {
+  if (!useMemoryStore()) {
+    throw new Error('setExternalEventProcessingClaimedAtForTests requires memory store');
+  }
+  for (const [key, event] of memoryEvents.entries()) {
+    if (event.id !== eventId) continue;
+    memoryEvents.set(key, { ...event, processingClaimedAt });
+    return;
+  }
+  throw new Error(`External event not found: ${eventId}`);
+}
+
+/**
+ * Receive (idempotent) then claim processing rights.
+ * Processed events are skipped; failed events may be retried on Meta redelivery.
+ */
+export async function claimExternalEventForProcessing(
+  input: ReceiveExternalEventInput,
+): Promise<ExternalEventProcessingClaim> {
+  const received = await receiveExternalEvent(input);
+  const event = received.event;
+
+  if (received.outcome === 'created') {
+    const processing = await markExternalEventProcessing(event.id);
+    return { action: 'process', event: processing, reason: 'created' };
+  }
+
+  if (event.processingStatus === 'processed') {
+    return { action: 'skip', event, reason: 'already_processed' };
+  }
+
+  if (event.processingStatus === 'processing') {
+    if (isExternalEventProcessingStale(event)) {
+      const processing = await markExternalEventProcessing(event.id);
+      return { action: 'process', event: processing, reason: 'retry_stale_processing' };
+    }
+    return { action: 'skip', event, reason: 'in_progress' };
+  }
+
+  if (event.processingStatus === 'failed') {
+    const processing = await markExternalEventProcessing(event.id);
+    return { action: 'process', event: processing, reason: 'retry_failed' };
+  }
+
+  const processing = await markExternalEventProcessing(event.id);
+  return { action: 'process', event: processing, reason: 'resume_received' };
 }
 
 export async function receiveExternalEvent(
@@ -90,6 +146,7 @@ async function receiveExternalEventMemory(
     error: null,
     rawPayload: input.rawPayload ?? {},
     receivedAt: new Date().toISOString(),
+    processingClaimedAt: null,
   };
   memoryEvents.set(key, event);
   return { outcome: 'created', event };
@@ -165,16 +222,22 @@ export async function getExternalEventById(id: string): Promise<ExternalEventRec
 }
 
 export async function markExternalEventProcessing(id: string): Promise<ExternalEventRecord> {
+  const claimedAt = new Date().toISOString();
   return updateExternalEventStatus(id, {
     processingStatus: 'processing',
     processed: false,
     clearError: true,
+    processingClaimedAt: claimedAt,
   });
 }
 
 export async function markExternalEventProcessed(
   id: string,
-  patch?: { leadId?: string | null; businessId?: string | null },
+  patch?: {
+    leadId?: string | null;
+    businessId?: string | null;
+    connectionId?: string | null;
+  },
 ): Promise<ExternalEventRecord> {
   const now = new Date().toISOString();
   return updateExternalEventStatus(id, {
@@ -208,6 +271,8 @@ async function updateExternalEventStatus(
     error?: string | null;
     leadId?: string | null;
     businessId?: string | null;
+    connectionId?: string | null;
+    processingClaimedAt?: string | null;
     clearError?: boolean;
   },
 ): Promise<ExternalEventRecord> {
@@ -222,6 +287,12 @@ async function updateExternalEventStatus(
         error: update.clearError ? null : (update.error ?? event.error),
         leadId: update.leadId !== undefined ? update.leadId : event.leadId,
         businessId: update.businessId !== undefined ? update.businessId : event.businessId,
+        connectionId:
+          update.connectionId !== undefined ? update.connectionId : event.connectionId,
+        processingClaimedAt:
+          update.processingClaimedAt !== undefined
+            ? update.processingClaimedAt
+            : event.processingClaimedAt,
       };
       memoryEvents.set(key, next);
       return next;
@@ -243,6 +314,10 @@ async function updateExternalEventStatus(
   else if (update.error !== undefined) patch.error = update.error;
   if (update.leadId !== undefined) patch.lead_id = update.leadId;
   if (update.businessId !== undefined) patch.business_id = update.businessId;
+  if (update.connectionId !== undefined) patch.connection_id = update.connectionId;
+  if (update.processingClaimedAt !== undefined) {
+    patch.processing_claimed_at = update.processingClaimedAt;
+  }
 
   const { data, error } = await supabase
     .from('integration_webhook_events')

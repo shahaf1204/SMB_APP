@@ -10,34 +10,14 @@ import {
   markWebhookProcessed,
   webhookEventLog,
 } from '../../src/server/integrations/finance/integrationCredentials.store';
-import { processMetaLeadgenWebhook } from '../../src/server/integrations/leads/metaLead.service';
-
-interface MetaWebhookEntry {
-  id?: string;
-  changes?: Array<{
-    field?: string;
-    value?: {
-      leadgen_id?: string;
-      page_id?: string;
-      form_id?: string;
-    };
-  }>;
-}
-
-interface MetaWebhookBody {
-  object?: string;
-  entry?: MetaWebhookEntry[];
-}
-
+import {
+  META_LEADGEN_LEGACY_POST_ERROR,
+  META_LEADGEN_LEGACY_POST_STATUS,
+} from '../../src/server/integrations/leads/metaWebhook.routing';
 function slugParts(req: VercelRequest): string[] {
   const slug = req.query.slug;
   if (!slug) return [];
   return Array.isArray(slug) ? slug.map(String) : [String(slug)];
-}
-
-function queryParam(value: string | string[] | undefined): string {
-  if (Array.isArray(value)) return value[0] ?? '';
-  return value ?? '';
 }
 
 async function handleFormsWebhook(_req: VercelRequest, res: VercelResponse): Promise<void> {
@@ -47,52 +27,14 @@ async function handleFormsWebhook(_req: VercelRequest, res: VercelResponse): Pro
   });
 }
 
-async function handleMetaLeadgen(req: VercelRequest, res: VercelResponse): Promise<void> {
+async function handleMetaLeadgenLegacy(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (req.method === 'GET') {
-    const mode = queryParam(req.query['hub.mode']);
-    const token = queryParam(req.query['hub.verify_token']);
-    const challenge = queryParam(req.query['hub.challenge']);
-    const verifyToken = process.env.META_WEBHOOK_VERIFY_TOKEN ?? '';
-
-    if (mode === 'subscribe' && token && verifyToken && token === verifyToken && challenge) {
-      res.status(200).setHeader('Content-Type', 'text/plain').send(challenge);
-      return;
-    }
-    res.status(403).send('Forbidden');
+    res.status(307).setHeader('Location', '/api/webhooks/meta/leadgen').end();
     return;
   }
-
-  if (req.method !== 'POST') {
-    res.status(405).send('Method not allowed');
-    return;
-  }
-
-  const body = req.body as MetaWebhookBody | undefined;
-  if (!body || typeof body !== 'object') {
-    res.status(400).json({ error: 'Bad request' });
-    return;
-  }
-
-  const results: string[] = [];
-  for (const entry of body.entry ?? []) {
-    for (const change of entry.changes ?? []) {
-      if (change.field !== 'leadgen') continue;
-      const leadgenId = change.value?.leadgen_id;
-      const pageId = change.value?.page_id;
-      const formId = change.value?.form_id;
-      if (!leadgenId || !pageId) continue;
-
-      try {
-        const result = await processMetaLeadgenWebhook(leadgenId, pageId, formId);
-        results.push(result.ok ? 'ok' : result.reason ?? 'error');
-      } catch (e) {
-        console.error('leadgen processing failed', e);
-        results.push('error');
-      }
-    }
-  }
-
-  res.status(200).json({ received: true, results });
+  res.status(META_LEADGEN_LEGACY_POST_STATUS).json({
+    error: META_LEADGEN_LEGACY_POST_ERROR,
+  });
 }
 
 async function handleIntegrationWebhook(
@@ -203,7 +145,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   }
 
   if (parts[0] === 'meta' && parts[1] === 'leadgen') {
-    await handleMetaLeadgen(req, res);
+    await handleMetaLeadgenLegacy(req, res);
     return;
   }
 

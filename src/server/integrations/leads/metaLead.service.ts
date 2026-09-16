@@ -1,4 +1,3 @@
-import { decryptMetaAccessToken } from '../../core/integrationSecrets.server';
 import { getMetaGraphVersion, getSupabaseAdmin } from '../../core/supabase.server';
 
 export interface MetaLeadField {
@@ -84,12 +83,6 @@ export async function findMetaConnectionByPageId(pageId: string) {
   return data;
 }
 
-export type LeadSourceFromMeta = 'facebook' | 'instagram';
-
-export function inferSourceFromMeta(_payload: unknown): LeadSourceFromMeta {
-  return 'facebook';
-}
-
 export interface CreateLeadFromExternalInput {
   businessId: string;
   userId: string;
@@ -171,45 +164,24 @@ export async function createLeadFromExternalSourceDb(
   return { id: data.id as string, created: true };
 }
 
+/** @deprecated Use processMetaLeadgenChange via api/webhooks/meta/leadgen (3A.2+). */
 export async function processMetaLeadgenWebhook(
   leadgenId: string,
   pageId: string,
   formId?: string,
 ): Promise<{ ok: boolean; reason?: string }> {
-  const connection = await findMetaConnectionByPageId(pageId);
-  if (!connection?.access_token_encrypted) {
-    return { ok: false, reason: 'page_not_connected' };
+  const { processMetaLeadgenChange } = await import('./metaLead.processor');
+  const result = await processMetaLeadgenChange(
+    {
+      leadgenId,
+      pageId,
+      formId,
+      rawChange: { field: 'leadgen', value: { leadgen_id: leadgenId, page_id: pageId, form_id: formId } },
+    },
+    new Date().toISOString(),
+  );
+  if (result.kind === 'success' || result.kind === 'skipped') {
+    return { ok: true };
   }
-
-  const token = decryptMetaAccessToken(connection.access_token_encrypted as string);
-  const metaLead = await fetchMetaLead(leadgenId, token);
-  if (!metaLead) {
-    return { ok: false, reason: 'graph_fetch_failed' };
-  }
-
-  const parsed = parseMetaLeadFields(metaLead.field_data);
-  const source = inferSourceFromMeta(metaLead);
-
-  await createLeadFromExternalSourceDb({
-    businessId: connection.business_id as string,
-    userId: connection.user_id as string,
-    fullName: parsed.fullName,
-    phone: parsed.phone,
-    email: parsed.email || undefined,
-    source,
-    serviceInterest: parsed.serviceInterest || undefined,
-    externalProvider: 'meta',
-    externalLeadId: leadgenId,
-    externalFormId: formId ?? metaLead.form_id,
-    externalPageId: pageId,
-    externalPageName: connection.page_name as string,
-    externalCampaignId: metaLead.campaign_id,
-    externalCampaignName: metaLead.campaign_name,
-    externalAdId: metaLead.ad_id,
-    externalAdName: metaLead.ad_name,
-    formAnswers: parsed.formAnswers,
-    rawPayload: metaLead,
-  });
-
-  return { ok: true };
+  return { ok: false, reason: result.reason };
 }

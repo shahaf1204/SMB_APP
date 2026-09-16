@@ -5,6 +5,9 @@ import type {
   FormActivityNotification,
 } from './externalForms';
 import type { BusinessWorkspaceConfig } from './workspace';
+import type { LeadSourceChannel } from './leadSourceChannel';
+
+export type { LeadSourceChannel } from './leadSourceChannel';
 
 export type ValueType = 'text' | 'number' | 'date' | 'duration';
 export type MetricRole = 'revenue' | 'expense' | 'neutral';
@@ -68,17 +71,6 @@ export type LeadStatus =
   | 'proposal_sent'
   | 'closed'
   | 'not_relevant';
-
-export type LeadSourceChannel =
-  | 'facebook'
-  | 'instagram'
-  | 'website'
-  | 'whatsapp'
-  | 'tiktok'
-  | 'google'
-  | 'referral'
-  | 'repeat'
-  | 'other';
 
 export type LeadExternalProvider = 'meta' | 'website' | 'whatsapp' | 'manual' | 'sheet';
 

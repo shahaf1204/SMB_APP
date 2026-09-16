@@ -4,13 +4,16 @@ import {
   META_LEAD_PROVIDER,
   metaLeadExternalEventId,
 } from './externalEvent.constants';
+import { EXTERNAL_EVENT_STALE_PROCESSING_MS } from './externalEvent.constants';
 import {
+  claimExternalEventForProcessing,
   getExternalEventById,
   markExternalEventFailed,
   markExternalEventProcessed,
   markExternalEventProcessing,
   receiveExternalEvent,
   resetExternalEventMemoryStoreForTests,
+  setExternalEventProcessingClaimedAtForTests,
 } from './externalEvent.store';
 
 describe('External event store (memory — DB uniqueness contract)', () => {
@@ -97,6 +100,72 @@ describe('External event store (memory — DB uniqueness contract)', () => {
     expect(failed.processingStatus).toBe('failed');
     expect(failed.error).toBe('graph_fetch_failed');
     expect(failed.processed).toBe(false);
+  });
+
+  it('failed ExternalEvent can be reclaimed for retry (same row)', async () => {
+    const input = {
+      provider: META_LEAD_PROVIDER,
+      externalEventId: 'leadgen-retry',
+      eventType: META_LEADGEN_EVENT_TYPE,
+    };
+
+    const first = await claimExternalEventForProcessing(input);
+    expect(first.action).toBe('process');
+    await markExternalEventFailed(first.event.id, 'graph_down');
+
+    const second = await claimExternalEventForProcessing(input);
+    expect(second.action).toBe('process');
+    expect(second.reason).toBe('retry_failed');
+    expect(second.event.id).toBe(first.event.id);
+  });
+
+  it('processed duplicate skips processing', async () => {
+    const input = {
+      provider: META_LEAD_PROVIDER,
+      externalEventId: 'leadgen-done-dup',
+      eventType: META_LEADGEN_EVENT_TYPE,
+    };
+
+    const first = await claimExternalEventForProcessing(input);
+    await markExternalEventProcessed(first.event.id, { leadId: 'lead-uuid' });
+
+    const second = await claimExternalEventForProcessing(input);
+    expect(second.action).toBe('skip');
+    expect(second.reason).toBe('already_processed');
+  });
+
+  it('A. recent processing event is not reclaimed (in_progress skip)', async () => {
+    const input = {
+      provider: META_LEAD_PROVIDER,
+      externalEventId: 'leadgen-in-flight',
+      eventType: META_LEADGEN_EVENT_TYPE,
+    };
+
+    const first = await claimExternalEventForProcessing(input);
+    expect(first.action).toBe('process');
+
+    const second = await claimExternalEventForProcessing(input);
+    expect(second.action).toBe('skip');
+    expect(second.reason).toBe('in_progress');
+  });
+
+  it('B/C. stale processing event is reclaimed on same row', async () => {
+    const input = {
+      provider: META_LEAD_PROVIDER,
+      externalEventId: 'leadgen-stale',
+      eventType: META_LEADGEN_EVENT_TYPE,
+    };
+
+    const first = await claimExternalEventForProcessing(input);
+    const staleAt = new Date(
+      Date.now() - EXTERNAL_EVENT_STALE_PROCESSING_MS - 60_000,
+    ).toISOString();
+    setExternalEventProcessingClaimedAtForTests(first.event.id, staleAt);
+
+    const second = await claimExternalEventForProcessing(input);
+    expect(second.action).toBe('process');
+    expect(second.reason).toBe('retry_stale_processing');
+    expect(second.event.id).toBe(first.event.id);
   });
 
   it('retrieves event by id', async () => {

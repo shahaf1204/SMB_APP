@@ -24,6 +24,8 @@ export interface ExternalEventRecord {
   error: string | null;
   rawPayload: unknown;
   receivedAt: string;
+  /** Set when entering `processing` — used for stale lease reclaim. */
+  processingClaimedAt: string | null;
 }
 
 export interface ReceiveExternalEventInput {
@@ -38,3 +40,12 @@ export interface ReceiveExternalEventInput {
 export type ReceiveExternalEventResult =
   | { outcome: 'created'; event: ExternalEventRecord }
   | { outcome: 'duplicate'; event: ExternalEventRecord };
+
+/** Whether a duplicate webhook delivery should run domain processing again. */
+export type ExternalEventProcessingClaim =
+  | {
+      action: 'process';
+      event: ExternalEventRecord;
+      reason: 'created' | 'retry_failed' | 'resume_received' | 'retry_stale_processing';
+    }
+  | { action: 'skip'; event: ExternalEventRecord; reason: 'already_processed' | 'in_progress' };

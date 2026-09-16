@@ -463,3 +463,38 @@ Client-safe `MetaConnection` includes `connectionStatus` (`disconnected` | `conn
 - Key: **`INTEGRATION_ENCRYPTION_KEY`** (server environment only — documented in `.env.example`).
 - Legacy rows may remain **base64**; decrypt supports **v1:** prefixed ciphertext and legacy base64 for read compatibility.
 - Finance API keys continue to use the legacy base64 helper in `supabase.server.ts` until a future finance phase.
+
+### Phase 3A.2 — Meta webhook pipeline (implemented)
+
+**Webhook delivery ≠ Lead.** A Meta POST only proves something happened; domain state changes only after provider processing.
+
+```
+POST /api/webhooks/meta/leadgen  (bodyParser: false — raw bytes)
+  → X-Hub-Signature-256 verify (META_APP_SECRET)
+  → parse leadgen changes (ignore unrelated fields)
+  → claimExternalEventForProcessing (integration_webhook_events)
+       • new row → process
+       • processed → skip (duplicate delivery)
+       • failed → retry same row (Meta redelivery)
+       • processing + lease expired (`EXTERNAL_EVENT_STALE_PROCESSING_MS`, 15m) → reclaim same row
+       • processing + lease fresh → skip (concurrent delivery; see limitation below)
+  → resolve meta_connections by page_id (never trust webhook business id)
+  → Graph fetch lead → normalizeMetaLeadFromGraph
+  → createLeadFromExternalSourceDb (crm_leads idempotent)
+  → mark ExternalEvent processed + last_lead_received_at
+```
+
+| Failure | HTTP | Meta retry |
+|---------|------|------------|
+| Bad/missing signature | 401/403 | No |
+| Unknown/inactive page | 200 (event failed) | No |
+| Graph 5xx / transient | 503 | Yes |
+| Success / skip duplicate | 200 | No |
+
+Legacy catch-all route `/api/webhooks/meta/leadgen` via `[[...slug]]` redirects GET and returns **410** for POST — use dedicated `api/webhooks/meta/leadgen.ts` (`metaWebhook.routing.ts` contract).
+
+**Batch HTTP:** `resolveMetaLeadgenBatchHttpStatus` — any per-change `retryable` result → **503**; otherwise **200** (including non-retryable failures and skipped duplicates).
+
+**Platform fallback:** CRM `Lead.source` may be `facebook` when Meta omits platform evidence — compatibility only; raw Meta payload is preserved. Instagram requires explicit Meta `platform`.
+
+**Concurrency (honest limit):** Two deliveries within the stale-processing window while the first invocation is still running may skip the second as `in_progress`. CRM external-id uniqueness still prevents duplicate leads if both runs somehow complete; the lease mainly recovers crashed serverless runs.

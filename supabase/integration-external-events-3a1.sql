@@ -9,7 +9,8 @@ alter table public.integration_webhook_events
   add column if not exists processing_status text not null default 'received'
     check (processing_status in ('received', 'processing', 'processed', 'failed')),
   add column if not exists processed_at timestamptz,
-  add column if not exists error text;
+  add column if not exists error text,
+  add column if not exists processing_claimed_at timestamptz;
 
 create index if not exists integration_webhook_events_status_idx
   on public.integration_webhook_events (provider, processing_status, received_at desc);
