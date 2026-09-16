@@ -3,6 +3,14 @@
  * Flow: Lead → Contact → Customer → Activity
  */
 
+/** Client-safe Meta connection — never includes access tokens. */
+export type MetaConnectionStatus =
+  | 'disconnected'
+  | 'connecting'
+  | 'connected'
+  | 'error'
+  | 'reconnect_required';
+
 export interface MetaConnection {
   id: string;
   ownerId: string;
@@ -10,6 +18,10 @@ export interface MetaConnection {
   pageId: string;
   pageName: string;
   isActive: boolean;
+  connectionStatus: MetaConnectionStatus;
+  lastError?: string;
+  lastLeadReceivedAt?: string;
+  webhookSubscribedAt?: string;
   createdAt: string;
   updatedAt: string;
 }

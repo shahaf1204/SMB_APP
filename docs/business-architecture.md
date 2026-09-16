@@ -417,3 +417,49 @@ Capabilities do not replace Category/field schema. Future configuration may **re
 | Lightweight `StoredBusinessCapabilityProfile` v2 | Full defaults/template editors |
 | Legacy no-profile compatibility | Hybrid removal |
 | Pure resolver tests | Supabase schema migration |
+
+---
+
+## Phase 3A.1 — Integration ingestion foundation (implemented)
+
+Phase 3A.1 adds **durable external-event infrastructure** only. There is **no user-visible behavior change** in this sub-phase.
+
+### Pipeline (conceptual)
+
+```
+Integration Connection   (e.g. meta_connections — OAuth completed in later 3A.x)
+        ↓
+External Event           (integration_webhook_events — durable, idempotent)
+        ↓
+Provider normalizer      (Meta: later 3A.2+)
+        ↓
+Domain interpretation  (e.g. create/update Lead — later 3A.2+)
+        ↓
+Domain state             (crm_leads, activities, …)
+        ↓
+Attention                (later 3A.6)
+```
+
+### External Event rules
+
+| Rule | Detail |
+|------|--------|
+| **Not a domain object** | An External Event is ingestion/audit infrastructure. It does **not** represent a Lead, Event, or Payment in the product model. |
+| **No domain side effects** | Receiving or storing an External Event does **not** create Leads, Activities, or financial facts. |
+| **Idempotency** | Unique `(provider, external_event_id)`. Meta Lead Ads: `provider = meta`, `external_event_id = leadgen_id`. |
+| **Processing states** | `received` → `processing` → `processed` or `failed`. |
+| **Processors** | Provider-specific webhook/OAuth code (3A.2+) interprets events and writes domain state. |
+
+**Code:** `src/server/integrations/externalEvents/`  
+**Schema:** `integration_webhook_events` (+ `supabase/integration-external-events-3a1.sql` migration)
+
+### Meta connection status (schema/types only in 3A.1)
+
+Client-safe `MetaConnection` includes `connectionStatus` (`disconnected` | `connecting` | `connected` | `error` | `reconnect_required`), optional `lastError`, `lastLeadReceivedAt`, `webhookSubscribedAt`. **Access tokens are never exposed to the client.**
+
+### Meta token protection (server-only)
+
+- New writes (Phase 3A.3+) use **AES-256-GCM** via `encryptIntegrationSecret` / `decryptIntegrationSecret` (`src/server/core/integrationSecrets.server.ts`).
+- Key: **`INTEGRATION_ENCRYPTION_KEY`** (server environment only — documented in `.env.example`).
+- Legacy rows may remain **base64**; decrypt supports **v1:** prefixed ciphertext and legacy base64 for read compatibility.
+- Finance API keys continue to use the legacy base64 helper in `supabase.server.ts` until a future finance phase.

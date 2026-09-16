@@ -1,8 +1,5 @@
-import {
-  decryptToken,
-  getMetaGraphVersion,
-  getSupabaseAdmin,
-} from '../../core/supabase.server';
+import { decryptMetaAccessToken } from '../../core/integrationSecrets.server';
+import { getMetaGraphVersion, getSupabaseAdmin } from '../../core/supabase.server';
 
 export interface MetaLeadField {
   name: string;
@@ -184,7 +181,7 @@ export async function processMetaLeadgenWebhook(
     return { ok: false, reason: 'page_not_connected' };
   }
 
-  const token = decryptToken(connection.access_token_encrypted as string);
+  const token = decryptMetaAccessToken(connection.access_token_encrypted as string);
   const metaLead = await fetchMetaLead(leadgenId, token);
   if (!metaLead) {
     return { ok: false, reason: 'graph_fetch_failed' };

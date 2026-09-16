@@ -1,10 +1,44 @@
-import type { MetaConnection } from '../../types/crm';
+import type { MetaConnection, MetaConnectionStatus } from '../../types/crm';
 import { getSupabase, isSupabaseConfigured } from '../supabase';
 
 export function getMetaWebhookUrl(): string {
   if (typeof window === 'undefined') return '';
   return `${window.location.origin}/api/webhooks/meta/leadgen`;
 }
+
+function normalizeConnectionStatus(raw: unknown): MetaConnectionStatus {
+  const allowed: MetaConnectionStatus[] = [
+    'disconnected',
+    'connecting',
+    'connected',
+    'error',
+    'reconnect_required',
+  ];
+  if (typeof raw === 'string' && (allowed as string[]).includes(raw)) {
+    return raw as MetaConnectionStatus;
+  }
+  return 'disconnected';
+}
+
+function mapMetaConnectionRow(data: Record<string, unknown>): MetaConnection {
+  return {
+    id: data.id as string,
+    ownerId: data.user_id as string,
+    businessId: data.business_id as string,
+    pageId: data.page_id as string,
+    pageName: data.page_name as string,
+    isActive: Boolean(data.is_active),
+    connectionStatus: normalizeConnectionStatus(data.connection_status),
+    lastError: (data.last_error as string | null) ?? undefined,
+    lastLeadReceivedAt: (data.last_lead_received_at as string | null) ?? undefined,
+    webhookSubscribedAt: (data.webhook_subscribed_at as string | null) ?? undefined,
+    createdAt: data.created_at as string,
+    updatedAt: data.updated_at as string,
+  };
+}
+
+const META_CONNECTION_PUBLIC_COLUMNS =
+  'id, user_id, business_id, page_id, page_name, is_active, connection_status, last_error, last_lead_received_at, webhook_subscribed_at, created_at, updated_at';
 
 export async function fetchMetaConnection(
   userId: string,
@@ -13,7 +47,7 @@ export async function fetchMetaConnection(
   if (!isSupabaseConfigured()) return null;
   const { data, error } = await getSupabase()
     .from('meta_connections')
-    .select('id, user_id, business_id, page_id, page_name, is_active, created_at, updated_at')
+    .select(META_CONNECTION_PUBLIC_COLUMNS)
     .eq('user_id', userId)
     .eq('business_id', businessId)
     .order('created_at', { ascending: false })
@@ -22,16 +56,7 @@ export async function fetchMetaConnection(
 
   if (error || !data) return null;
 
-  return {
-    id: data.id,
-    ownerId: data.user_id,
-    businessId: data.business_id,
-    pageId: data.page_id,
-    pageName: data.page_name,
-    isActive: data.is_active,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
-  };
+  return mapMetaConnectionRow(data as Record<string, unknown>);
 }
 
 export async function saveMetaConnectionPending(
@@ -55,21 +80,12 @@ export async function saveMetaConnectionPending(
       },
       { onConflict: 'page_id' },
     )
-    .select('id, user_id, business_id, page_id, page_name, is_active, created_at, updated_at')
+    .select(META_CONNECTION_PUBLIC_COLUMNS)
     .single();
 
   if (error || !data) return null;
 
-  return {
-    id: data.id,
-    ownerId: data.user_id,
-    businessId: data.business_id,
-    pageId: data.page_id,
-    pageName: data.page_name,
-    isActive: data.is_active,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
-  };
+  return mapMetaConnectionRow(data as Record<string, unknown>);
 }
 
 export async function disconnectMetaConnection(connectionId: string): Promise<boolean> {
