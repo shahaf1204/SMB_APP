@@ -3,20 +3,36 @@ import type {
   MetaOAuthAttemptPagesResponse,
   MetaOAuthSelectPageResponse,
 } from '../../types/metaOAuth.client';
+import { mapMetaOAuthErrorToUserMessage } from './metaOAuthUserMessages';
+
+export class MetaOAuthClientError extends Error {
+  readonly code: string;
+
+  constructor(code: string, userMessage?: string) {
+    super(userMessage ?? mapMetaOAuthErrorToUserMessage(code));
+    this.name = 'MetaOAuthClientError';
+    this.code = code;
+  }
+}
 
 async function authHeaders(): Promise<HeadersInit> {
   if (!isSupabaseConfigured()) {
-    throw new Error('Supabase is not configured');
+    throw new MetaOAuthClientError('configuration_error');
   }
   const { data } = await getSupabase().auth.getSession();
   const token = data.session?.access_token;
   if (!token) {
-    throw new Error('not_authenticated');
+    throw new MetaOAuthClientError('not_authenticated');
   }
   return {
     Authorization: `Bearer ${token}`,
     'Content-Type': 'application/json',
   };
+}
+
+function parseApiError(json: { error?: string; message?: string }, fallback: string): MetaOAuthClientError {
+  const code = json.error?.trim() || fallback;
+  return new MetaOAuthClientError(code);
 }
 
 export async function startMetaOAuth(businessId: string): Promise<string> {
@@ -26,9 +42,9 @@ export async function startMetaOAuth(businessId: string): Promise<string> {
     headers,
     body: JSON.stringify({ businessId }),
   });
-  const json = (await res.json()) as { authorizationUrl?: string; error?: string };
+  const json = (await res.json()) as { authorizationUrl?: string; error?: string; message?: string };
   if (!res.ok || !json.authorizationUrl) {
-    throw new Error(json.error ?? 'oauth_start_failed');
+    throw parseApiError(json, 'oauth_start_failed');
   }
   return json.authorizationUrl;
 }
@@ -42,9 +58,9 @@ export async function fetchMetaOAuthPageCandidates(
   const res = await fetch(`/api/integrations/meta/oauth/attempt?${params.toString()}`, {
     headers,
   });
-  const json = (await res.json()) as MetaOAuthAttemptPagesResponse & { error?: string };
+  const json = (await res.json()) as MetaOAuthAttemptPagesResponse & { error?: string; message?: string };
   if (!res.ok) {
-    throw new Error(json.error ?? 'attempt_load_failed');
+    throw parseApiError(json, 'attempt_load_failed');
   }
   return json;
 }
@@ -62,7 +78,7 @@ export async function submitMetaOAuthPageSelection(input: {
   });
   const json = (await res.json()) as MetaOAuthSelectPageResponse & { error?: string; message?: string };
   if (!res.ok) {
-    throw new Error(json.message ?? json.error ?? 'page_selection_failed');
+    throw parseApiError(json, 'page_selection_failed');
   }
   return json;
 }

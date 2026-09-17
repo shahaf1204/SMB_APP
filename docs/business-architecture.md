@@ -457,6 +457,17 @@ Attention                (later 3A.6)
 
 Client-safe `MetaConnection` includes `connectionStatus` (`disconnected` | `connecting` | `connected` | `error` | `reconnect_required`), optional `lastError`, `lastLeadReceivedAt`, `webhookSubscribedAt`. **Access tokens are never exposed to the client.**
 
+### Phase 3A.4 — Meta connection product UX (client security model)
+
+Product UI must not expose technical integration vocabulary (OAuth, webhook, Graph API, tokens). That is separate from **which identifiers may exist in the browser** for authorized flows.
+
+| Category | Examples | Rule |
+|----------|----------|------|
+| **Client-safe identifiers** | Meta **Page ID** (Page selection `value`, server-validated choice), **OAuth attempt ID**, **business ID** where the session already owns the business | May appear in React state, form values, API request bodies, and `sessionStorage` attempt recovery — Page ID is **not** treated as a secret. |
+| **Server-only / secret** | User access token, Page access token, `META_APP_SECRET`, `INTEGRATION_ENCRYPTION_KEY`, encrypted OAuth Page payload, raw Graph responses that include credentials | Must never reach React props for display, Zustand, `localStorage`, rendered HTML, or user-visible error text. |
+
+UX rule: show **Page name** (and status copy), not Page ID in labels — without removing Page ID from the selection control.
+
 ### Meta token protection (server-only)
 
 - New writes (Phase 3A.3+) use **AES-256-GCM** via `encryptIntegrationSecret` / `decryptIntegrationSecret` (`src/server/core/integrationSecrets.server.ts`).

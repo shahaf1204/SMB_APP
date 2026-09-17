@@ -31,7 +31,6 @@ export function SourcesLeadsPage() {
           <MetaConnectionCard
             connection={metaConnection}
             loading={metaLoading}
-            userId={user.id}
             businessId={business.id}
             onUpdated={() => void refreshMeta()}
           />

@@ -2950,6 +2950,9 @@ a {
 /* CRM / Leads */
 .crm-meta-card {
   margin-bottom: 1rem;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 .crm-meta-card--connected {
@@ -3003,6 +3006,106 @@ a {
   background: var(--color-bg-subtle);
   padding: 0.2rem 0.4rem;
   border-radius: 6px;
+}
+
+.crm-meta-cta {
+  width: 100%;
+  max-width: 100%;
+}
+
+.crm-meta-cta--spaced {
+  margin-bottom: 0.5rem;
+}
+
+.crm-meta-cta--destructive {
+  color: var(--color-error);
+}
+
+.crm-meta-desc--compact {
+  margin-bottom: 0.5rem;
+  font-size: 0.8125rem;
+}
+
+.crm-meta-desc--muted {
+  color: var(--color-text-muted, var(--color-text-secondary));
+  font-size: 0.78rem;
+}
+
+.crm-meta-status-pill {
+  display: inline-block;
+  margin: 0 0 0.5rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: var(--color-bg-subtle);
+  color: var(--color-text-secondary);
+}
+
+.crm-meta-status-pill--connected {
+  background: var(--color-success-soft);
+  color: var(--color-success, #047857);
+}
+
+.crm-meta-error {
+  margin: 0 0 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-error);
+  background: color-mix(in srgb, var(--color-error) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-error) 25%, transparent);
+}
+
+.crm-meta-page-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  max-width: 100%;
+}
+
+.crm-meta-page-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--color-border-light);
+  border-radius: 12px;
+  cursor: pointer;
+  background: var(--color-bg);
+  min-width: 0;
+}
+
+.crm-meta-page-option--selected {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 6%, var(--color-bg));
+}
+
+.crm-meta-page-option__name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.crm-meta-details {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+}
+
+.crm-meta-details dt {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.15rem;
+}
+
+.crm-meta-details dd {
+  margin: 0 0 0.65rem;
+  color: var(--color-text);
+  overflow-wrap: anywhere;
 }
 
 .crm-stats-row {
