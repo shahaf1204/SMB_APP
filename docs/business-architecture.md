@@ -9,6 +9,7 @@
 |----------|------|
 | [design-system.md](design-system.md) | Product/UX authority (Product Foundation) |
 | [operating-models.md](operating-models.md) | Operating-model-specific behavior |
+| `src/types/productLayers.ts` | Future entitlement + lead-intake contracts (no runtime) |
 | [activity-form-schema.md](activity-form-schema.md) | **Fields** layer (form presentation) |
 | [business-coach.md](business-coach.md) | Coach rules (future **interpret** layer) |
 
@@ -23,6 +24,52 @@
 > The available data defines what the product may **confidently show**.
 
 These three must not be collapsed into one configuration object.
+
+A fourth axis — **account entitlements** (future subscription) — must stay separate from business configuration and capabilities. See [Product layers & entitlements](#product-layers--entitlements-future-safe).
+
+---
+
+## Product layers & entitlements (future-safe)
+
+Documented in [Product Foundation — Two value layers](design-system.md#two-value-layers-core-vs-automation).
+
+| Layer | Question it answers |
+|-------|---------------------|
+| **Core business management** | Can the owner run the business manually inside the app? |
+| **Automation & connected business** | Can external systems and automation reduce manual work? |
+
+### Capability vs entitlement (must stay separate)
+
+| Concept | Scope | Question | Current home |
+|---------|--------|----------|--------------|
+| **Capability** | Business behavior within operating models | Does *this business* use / need this behavior (e.g. event time, package expiration)? | `StoredBusinessCapabilityProfile`, registry — **not** billing |
+| **Entitlement** | Account / subscription (future) | Is *this account* allowed to turn on a product feature (e.g. Meta sync, customer messaging)? | **Not implemented** — contract: `AccountEntitlementContract` in `productLayers.ts` |
+
+**Do not** repurpose `capabilityProfile` as a paywall. **Do not** add pricing or plan fields to capability registry entries. **Do not** gate existing core behavior on a future plan in advance of billing.
+
+Illustrative feature keys (packaging examples only): `manual_activity_management`, `dashboard`, `manual_crm` → core-eligible; `meta_lead_sync`, `external_form_auto_intake`, `invoice_provider_sync`, `payment_provider_sync`, `automatic_missing_information_followup`, `customer_messaging` → automation-eligible. Exact plans and limits TBD.
+
+### Future entitlement stack (conceptual)
+
+```
+User / Business owner
+        ↓
+Account (billing subject — future)
+        ↓
+Subscription / plan (future — not implemented)
+        ↓
+Entitlements (ProductFeatureEntitlementKey)
+        ↓
+Product feature access (integrations, automation modules)
+
+Parallel track (unchanged):
+
+Business Type → Operating Models → Business configuration
+        → Capabilities (behavior) + Fields + Defaults
+        → “Is this feature relevant for this business?”
+```
+
+Runtime today: **entitlement checks always pass** for core; automation features remain optional by **configuration** (e.g. Meta connection), not by subscription.
 
 ---
 
@@ -542,3 +589,136 @@ Legacy catch-all route `/api/webhooks/meta/leadgen` via `[[...slug]]` redirects 
 **Platform fallback:** CRM `Lead.source` may be `facebook` when Meta omits platform evidence — compatibility only; raw Meta payload is preserved. Instagram requires explicit Meta `platform`.
 
 **Concurrency (honest limit):** Two deliveries within the stale-processing window while the first invocation is still running may skip the second as `in_progress`. CRM external-id uniqueness still prevents duplicate leads if both runs somehow complete; the lease mainly recovers crashed serverless runs.
+
+---
+
+## Lead intake & review lifecycle (target)
+
+Customer communication and missing-information automation are **explicit product targets**, not optional afterthoughts. They are **not implemented** in this document’s phase — only architecture direction.
+
+### Intake ≠ Activity
+
+| Object | Role |
+|--------|------|
+| **Lead** | Intake record — external or manual — requires review and optional completion before conversion |
+| **Activity** (Event, Engagement, …) | Operational reality on calendar/dashboard/workspace |
+
+**Phase 3A.5 and later must not treat “new lead” as “new activity.”** Realtime arrival UX (3A.5) surfaces intake; conversion remains an explicit owner action after review.
+
+### Target lifecycle (refinable in 3A.5)
+
+Contract vocabulary: `LeadIntakeLifecycleState` in `src/types/productLayers.ts`.
+
+```
+External source (Meta, Google Forms, external forms, future providers)
+        ↓
+ExternalEvent (durable ingestion)
+        ↓
+Provider normalizer
+        ↓
+Normalized Lead (crm_leads / client Lead)
+        ↓
+Completeness vs business/activity requirements
+        ↓
+[needs_information] → request missing fields from customer (future channels)
+        ↓
+Customer completes / responds → update same lead
+        ↓
+[ready_for_review] → business owner reviews
+        ↓
+[approved] → explicit convert
+        ↓
+Business Activity + calendar/dashboard
+```
+
+Rejected leads remain intake records (`rejected`) — not silent deletes.
+
+### Missing information (future)
+
+Required fields for review should eventually be **derived** from target activity type, operating model, enabled capabilities, and field schema — **not** hardcoded only for Meta.
+
+Example: Meta provides name, phone, event date; business requires event time, location, participant count → system detects gaps → automated or semi-automated customer completion → lead updated → then **ready_for_review**.
+
+Owner should not repeat predictable phone calls to collect standard fields.
+
+### Customer communication (target architecture)
+
+| Piece | Direction |
+|-------|-----------|
+| **Channels** | Secure completion link first-class; later WhatsApp, SMS, email where supported — `CustomerCommunicationChannel` |
+| **Scope** | Information completion on an **existing lead**, idempotent updates, audit trail |
+| **Long-term** | Two-way conversation with lead/customer from inside the app where providers allow |
+| **Not in scope now** | No messaging providers, no automated sends, no WhatsApp implementation |
+
+Tie-in to Attention (future): incomplete customer response may surface as awareness/action — separate from 3A.5 lead arrival UX.
+
+### Phase 3A.5 forward-compatibility requirements
+
+3A.5 (realtime lead arrival) **must preserve**:
+
+- Lead as intake object distinct from Activity
+- Room for lifecycle states beyond `new` (e.g. `needs_information`, `ready_for_review`, `approved`, `rejected`, `converted`)
+- No automatic conversion to Event/Engagement on webhook/sync alone
+- No assumption that every incoming lead is owner-ready
+- Extensibility for completeness checks tied to business configuration later
+
+Current `LeadStatus` in `src/types/models.ts` (`in_progress`, `contacted`, `proposal_sent`, …) reflects a **sales funnel** — expect migration or parallel “intake status” over time; do not entrench “new lead → activity” in 3A.5.
+
+---
+
+## Integration architecture direction (provider-neutral)
+
+### Lead sources (converging pipeline)
+
+Provider-specific **connection + webhook/OAuth** at the edge; shared interior:
+
+```
+Meta │ Google Forms │ App external forms │ future lead providers
+        ↓
+Integration connection (per provider)
+        ↓
+ExternalEvent (integration_webhook_events)
+        ↓
+Provider adapter / normalizer
+        ↓
+Normalized Lead + provenance
+        ↓
+Lead intake & review lifecycle (above)
+        ↓
+Approved conversion → Activity
+```
+
+Meta (3A.2–3A.4) is the first full path; external forms and sheet flows partially exist — consolidation toward one intake semantics over time.
+
+### Financial providers (adapter boundary)
+
+Invoice/accounting and payment providers stay **provider-specific adapters** feeding normalized internal concepts (`FinancialFact`, coverage, reconciliation — future):
+
+```
+Morning │ Green Invoice │ iCount │ future invoice APIs
+Payment providers (future)
+        ↓
+Provider adapter (auth, API quirks)
+        ↓
+Normalized financial semantics (received, expected, expense, …)
+        ↓
+Dashboard / finance visibility / reconciliation
+```
+
+Do not build new providers in architecture-only phases; document direction only.
+
+---
+
+## Architecture alignment notes
+
+| Area | Status |
+|------|--------|
+| ExternalEvent vs Lead vs Activity | Aligned — pipeline docs match implementation intent |
+| Capability profile vs entitlement | Aligned if kept separate — **risk** if future code conflates “enabled capability” with “paid feature” |
+| `LeadStatus` sales states vs intake lifecycle | **Gap / debt** — migrate or add parallel field in lead phases |
+| Meta creates lead without auto-activity | Aligned today |
+| Customer messaging | **Not started** — documented as target |
+
+No Supabase migration required for this architecture update.
+
+*Last updated: Product layers, entitlements boundary, lead intake lifecycle, integration direction, 3A.5 compatibility.*

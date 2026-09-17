@@ -7,6 +7,7 @@
  *
  * Product/UX authority: docs/design-system.md (Product Foundation).
  * Operating-model behavior: docs/operating-models.md.
+ * Future entitlements / lead intake (not capabilities): src/types/productLayers.ts.
  */
 
 import type { OperatingModel } from './workspace';

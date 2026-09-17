@@ -50,6 +50,21 @@ The owner should spend less time managing the system and more time running the a
 
 The product should continuously reduce the amount of information the owner must remember, enter manually, search for, reconcile, or move between systems.
 
+### Two value layers (Core vs Automation)
+
+The finished product has two conceptual value layers. They guide packaging, roadmap, and architecture — **not** current runtime paywalls (none exist yet).
+
+| Layer | Owner promise | Examples (non-exhaustive) |
+|-------|---------------|---------------------------|
+| **Core business management** | *"I manage my business in the app."* | Manual activities (Events, Appointments, Packages, Journeys, Projects, Recurring per operating model), customers/CRM, dashboard, calendar/schedule, operational tracking, basic financial visibility, core workflows in this document |
+| **Automation & connected business** | *"The app also does work for me."* | Automatic lead ingestion (Meta, Google Forms, external forms, future sources), invoice/accounting provider sync (Morning, Green Invoice, …), payment integrations, external data sync, missing-information detection on incoming leads, automated customer information-completion, supported messaging channels (e.g. WhatsApp) and eventually two-way customer communication from the app |
+
+**Core** must remain a complete, useful SMB product **without** external integrations.
+
+**Automation** adds connected systems and reliable automation on top — never a requirement to run the business manually inside the app.
+
+Architecture detail (capabilities vs subscription entitlements, lead lifecycle, integrations): **`docs/business-architecture.md`** — § [Product layers & entitlements](business-architecture.md#product-layers--entitlements-future-safe), § [Lead intake lifecycle](business-architecture.md#lead-intake--review-lifecycle-target).
+
 ### Core Problem
 
 Running a small service business creates constant cognitive and administrative load.
@@ -2246,4 +2261,4 @@ Production create/edit forms use **`resolveActivityFormSchema()`** — one resol
 
 ---
 
-*Last updated: Product Foundation section; field configuration redesign; shared activity form schema.*
+*Last updated: Product Foundation — Core vs Automation value layers; field configuration redesign; shared activity form schema.*
