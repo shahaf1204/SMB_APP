@@ -721,4 +721,27 @@ Do not build new providers in architecture-only phases; document direction only.
 
 No Supabase migration required for this architecture update.
 
-*Last updated: Product layers, entitlements boundary, lead intake lifecycle, integration direction, 3A.5 compatibility.*
+---
+
+## Phase 3A.5 — Universal lead intake & review (implemented)
+
+- Separate **`intakeStatus`** on `Lead` / `crm_leads` — distinct from sales **`status`** (`LeadStatus`).
+- **Completeness** via `evaluateLeadCompleteness()` — extensible; event/appointment models add date/time/location requirements when honestly derivable.
+- **Unresolved** intake (`new`, `needs_information`, `ready_for_review`) drives persistent banner — not cleared by view/open.
+- **Approve / reject** intake only — no Activity conversion (Phase 3A.6).
+- Migration: `supabase/crm-lead-intake-3a5.sql` — NULL `intake_status` = legacy grandfathered (no false alerts).
+- **Review vs conversion completeness (3A.5.1):** `readyForReview` uses `review_blocking` fields only; schedule gaps are `conversion_blocking` (Phase 3A.6).
+
+### Phase 3A.6 prerequisite — external forms intake alignment
+
+**Current debt:** Google Forms / external-form automation (`processSubmission.ts`) creates **Events** directly, bypassing `crm_leads` intake/review.
+
+**Required in 3A.6:** One coherent policy with Meta:
+
+```
+external source → normalized Lead → intake/review → approved → convert → Activity
+```
+
+Do **not** permanently preserve Event-first external forms alongside Lead-first Meta. 3A.6 must choose/implement migration (e.g. submission → Lead + optional deferred conversion, or replace auto-Event with intake-first).
+
+*Last updated: Phase 3A.5.1 review/conversion completeness; 3A.6 external-forms debt.*

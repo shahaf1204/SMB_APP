@@ -2955,6 +2955,124 @@ a {
   box-sizing: border-box;
 }
 
+.lead-intake-attention {
+  margin: 0.75rem 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-primary) 10%, var(--color-bg));
+  border: 1px solid color-mix(in srgb, var(--color-primary) 28%, transparent);
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.lead-intake-attention--inline {
+  margin: 0 0 1rem;
+}
+
+.lead-intake-attention__inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.lead-intake-attention__title {
+  margin: 0;
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+
+.lead-intake-attention__hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.lead-intake-attention__cta {
+  align-self: flex-start;
+  margin-top: 0.25rem;
+}
+
+.crm-intake-badge {
+  display: inline-block;
+  margin: 0 0 0.5rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--color-warning, #d97706) 15%, transparent);
+  color: var(--color-text);
+}
+
+.crm-lead-card--intake {
+  border-color: color-mix(in srgb, var(--color-primary) 35%, var(--color-border-light));
+}
+
+.lead-intake-review {
+  margin-top: 1rem;
+}
+
+.lead-intake-review__status {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+}
+
+.lead-intake-review__grid {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+@media (min-width: 480px) {
+  .lead-intake-review__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.lead-intake-review__subtitle {
+  margin: 0 0 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+}
+
+.lead-intake-review__block {
+  margin: 0.75rem 0;
+}
+
+.lead-intake-review__missing-title {
+  margin: 0 0 0.35rem;
+  font-weight: 600;
+  color: var(--color-error);
+}
+
+.lead-intake-review__missing-list {
+  margin: 0 0 0.5rem;
+  padding-inline-start: 1.1rem;
+}
+
+.lead-intake-review__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.lead-intake-review__reject {
+  color: var(--color-error);
+}
+
+.lead-intake-review__future {
+  margin-top: 0.35rem;
+  opacity: 0.85;
+}
+
+.lead-intake-review__ready {
+  margin: 0;
+  color: var(--color-success, #047857);
+  font-weight: 600;
+}
+
 .crm-meta-card--connected {
   background: var(--color-success-soft);
   border-color: #6ee7b7;

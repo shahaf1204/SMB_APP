@@ -20,6 +20,20 @@ export function normalizeLeadStatus(status: string | undefined): LeadStatus {
   return allowed.includes(status as LeadStatus) ? (status as LeadStatus) : 'new';
 }
 
+function normalizeCompletenessSnapshot(lead: Lead): Lead['completenessSnapshot'] {
+  const snap = lead.completenessSnapshot;
+  if (!snap) return undefined;
+  return {
+    ...snap,
+    missingReviewFieldKeys: snap.missingReviewFieldKeys ?? [],
+    missingConversionFieldKeys: snap.missingConversionFieldKeys ?? [],
+    requirements: (snap.requirements ?? []).map((r) => ({
+      ...r,
+      purpose: r.purpose ?? (r.requiredForReview ? 'review_blocking' : 'conversion_blocking'),
+    })),
+  };
+}
+
 export function normalizeLead(lead: Lead): Lead {
   return {
     ...lead,
@@ -29,6 +43,7 @@ export function normalizeLead(lead: Lead): Lead {
     formAnswers: lead.formAnswers ?? [],
     notes: lead.notes ?? '',
     phone: lead.phone ?? '',
+    completenessSnapshot: normalizeCompletenessSnapshot(lead),
   };
 }
 

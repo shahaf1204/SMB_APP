@@ -11,7 +11,12 @@ import { suggestWorkModelsFromPreset, normalizeBusiness } from '../lib/workModel
 import { buildWorkspaceConfig, normalizeBusinessWorkspace, syncWorkModelsFromWorkspace } from '../lib/workspace';
 import { cloudSignOut } from '../lib/cloudSync';
 import { normalizeLeads } from '../lib/crm/leadNormalize';
-import { pushLeadStatusToCloud } from '../lib/crm/leadsSync';
+import { pushLeadPatchToCloud, pushLeadStatusToCloud } from '../lib/crm/leadsSync';
+import {
+  appendIntakeHistory,
+  applyIntakeEvaluation,
+  shouldPushLeadToCloud,
+} from '../lib/crm/leadIntake';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { clearAppStorage, safeJsonStorage, STORAGE_KEY } from '../lib/safeStorage';
 import {
@@ -169,6 +174,8 @@ interface AppActions {
   upsertCloudLead: (lead: Lead, isNew: boolean) => void;
   updateLead: (id: string, patch: Partial<Lead>) => void;
   setLeadStatus: (id: string, status: LeadStatus, note?: string) => void;
+  approveLeadIntake: (id: string) => void;
+  rejectLeadIntake: (id: string) => void;
   linkLeadToEvent: (leadId: string, eventId: string) => void;
   createInvoice: (params: {
     clientName: string;
@@ -979,14 +986,26 @@ export const useAppStore = create<Store>()(
 
       updateLead: (id, patch) => {
         const now = new Date().toISOString();
+        const business = get().business;
         set({
-          leads: get().leads.map((l) =>
-            l.id === id ? { ...l, ...patch, updatedAt: now } : l,
-          ),
+          leads: get().leads.map((l) => {
+            if (l.id !== id) return l;
+            let merged = { ...l, ...patch, updatedAt: now };
+            if (merged.intakeStatus && merged.intakeStatus !== 'approved' && merged.intakeStatus !== 'rejected' && merged.intakeStatus !== 'converted') {
+              const evalResult = applyIntakeEvaluation(merged, business?.workspace?.primaryOperatingModel);
+              merged = {
+                ...merged,
+                intakeStatus: evalResult.intakeStatus,
+                completenessSnapshot: evalResult.completenessSnapshot,
+                intakeUpdatedAt: evalResult.intakeUpdatedAt,
+              };
+            }
+            return merged;
+          }),
         });
         const updated = get().leads.find((l) => l.id === id);
-        if (updated?.externalProvider === 'meta' && updated.externalLeadId) {
-          void pushLeadStatusToCloud(id, updated.status, updated.statusHistory, updated);
+        if (updated && shouldPushLeadToCloud(updated)) {
+          void pushLeadPatchToCloud(id, updated);
         }
       },
 
@@ -1000,8 +1019,50 @@ export const useAppStore = create<Store>()(
           }),
         });
         const updated = get().leads.find((l) => l.id === id);
-        if (updated?.externalProvider === 'meta') {
+        if (updated && shouldPushLeadToCloud(updated)) {
           void pushLeadStatusToCloud(id, status, updated.statusHistory, updated);
+        }
+      },
+
+      approveLeadIntake: (id) => {
+        const now = new Date().toISOString();
+        set({
+          leads: get().leads.map((l) => {
+            if (l.id !== id) return l;
+            const intakeStatus = 'approved' as const;
+            return {
+              ...l,
+              intakeStatus,
+              intakeStatusHistory: appendIntakeHistory(l, intakeStatus, 'owner_approved'),
+              intakeUpdatedAt: now,
+              updatedAt: now,
+            };
+          }),
+        });
+        const updated = get().leads.find((l) => l.id === id);
+        if (updated && shouldPushLeadToCloud(updated)) {
+          void pushLeadPatchToCloud(id, updated);
+        }
+      },
+
+      rejectLeadIntake: (id) => {
+        const now = new Date().toISOString();
+        set({
+          leads: get().leads.map((l) => {
+            if (l.id !== id) return l;
+            const intakeStatus = 'rejected' as const;
+            return {
+              ...l,
+              intakeStatus,
+              intakeStatusHistory: appendIntakeHistory(l, intakeStatus, 'owner_rejected'),
+              intakeUpdatedAt: now,
+              updatedAt: now,
+            };
+          }),
+        });
+        const updated = get().leads.find((l) => l.id === id);
+        if (updated && shouldPushLeadToCloud(updated)) {
+          void pushLeadPatchToCloud(id, updated);
         }
       },
 

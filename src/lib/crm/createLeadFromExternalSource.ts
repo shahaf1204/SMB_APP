@@ -5,6 +5,8 @@ import type {
   LeadSourceChannel,
   LeadStatus,
 } from '../../types/models';
+import type { OperatingModel } from '../../types/operatingModel';
+import { initialIntakeForExternalLead } from './leadIntake';
 
 export interface ExternalLeadPayload {
   businessId: string;
@@ -42,6 +44,7 @@ function buildLeadId(): string {
 export function createLeadFromExternalSource(
   payload: ExternalLeadPayload,
   existingLeads: Lead[],
+  options?: { primaryOperatingModel?: OperatingModel },
 ): CreateLeadResult {
   const now = new Date().toISOString();
 
@@ -61,7 +64,7 @@ export function createLeadFromExternalSource(
     }
   }
 
-  const lead: Lead = {
+  const base: Lead = {
     id: buildLeadId(),
     businessId: payload.businessId,
     userId: payload.userId,
@@ -86,6 +89,15 @@ export function createLeadFromExternalSource(
     statusHistory: [{ status: 'new', at: now }],
     createdAt: payload.createdAt ?? now,
     updatedAt: now,
+  };
+
+  const intake = initialIntakeForExternalLead(base, options?.primaryOperatingModel);
+  const lead: Lead = {
+    ...base,
+    intakeStatus: intake.intakeStatus,
+    completenessSnapshot: intake.completenessSnapshot,
+    intakeUpdatedAt: intake.intakeUpdatedAt,
+    intakeStatusHistory: [{ status: intake.intakeStatus, at: intake.intakeUpdatedAt, note: 'lead_received' }],
   };
 
   return { lead, created: true };

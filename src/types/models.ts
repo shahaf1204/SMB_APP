@@ -6,8 +6,12 @@ import type {
 } from './externalForms';
 import type { BusinessWorkspaceConfig } from './workspace';
 import type { LeadSourceChannel } from './leadSourceChannel';
+import type { LeadCompletenessSnapshot } from './leadCompleteness';
+import type { LeadIntakeStatus, LeadIntakeStatusHistoryEntry } from './leadIntake';
 
 export type { LeadSourceChannel } from './leadSourceChannel';
+export type { LeadCompletenessSnapshot, LeadCompletenessRequirementPurpose } from './leadCompleteness';
+export type { LeadIntakeStatus, LeadIntakeStatusHistoryEntry } from './leadIntake';
 
 export type ValueType = 'text' | 'number' | 'date' | 'duration';
 export type MetricRole = 'revenue' | 'expense' | 'neutral';
@@ -190,6 +194,11 @@ export interface Lead {
   source: LeadSourceChannel;
   notes: string;
   status: LeadStatus;
+  /** Intake/review — undefined = legacy manual/local lead (no intake alert). */
+  intakeStatus?: LeadIntakeStatus;
+  intakeStatusHistory?: LeadIntakeStatusHistoryEntry[];
+  completenessSnapshot?: LeadCompletenessSnapshot;
+  intakeUpdatedAt?: string;
   createdAt: string;
   updatedAt?: string;
   serviceInterest?: string;

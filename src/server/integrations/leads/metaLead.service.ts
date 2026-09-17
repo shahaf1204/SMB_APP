@@ -108,6 +108,7 @@ export interface CreateLeadFromExternalInput {
 
 export async function createLeadFromExternalSourceDb(
   input: CreateLeadFromExternalInput,
+  options?: { primaryOperatingModel?: import('../../../types/operatingModel').OperatingModel },
 ): Promise<{ id: string; created: boolean }> {
   const supabase = getSupabaseAdmin();
   const now = new Date().toISOString();
@@ -132,6 +133,19 @@ export async function createLeadFromExternalSourceDb(
     }
   }
 
+  const { buildInitialIntakeDbFields } = await import('./leadIntakePersist.server');
+  const intakeFields = buildInitialIntakeDbFields(
+    {
+      name: input.fullName,
+      phone: input.phone,
+      email: input.email,
+      serviceInterest: input.serviceInterest,
+      formAnswers: input.formAnswers,
+      notes: input.notes ?? '',
+    },
+    options?.primaryOperatingModel,
+  );
+
   const row = {
     user_id: input.userId,
     business_id: input.businessId,
@@ -155,6 +169,10 @@ export async function createLeadFromExternalSourceDb(
     form_answers: input.formAnswers ?? [],
     status_history: [{ status: 'new', at: now }],
     raw_payload: input.rawPayload ?? null,
+    intake_status: intakeFields.intake_status,
+    intake_status_history: intakeFields.intake_status_history,
+    completeness_snapshot: intakeFields.completeness_snapshot,
+    intake_updated_at: intakeFields.intake_updated_at,
     created_at: now,
     updated_at: now,
   };

@@ -31,6 +31,10 @@ interface CrmLeadRow {
   converted_to_project_id: string | null;
   converted_to_class_id: string | null;
   converted_to_customer_id: string | null;
+  intake_status: string | null;
+  intake_status_history: Lead['intakeStatusHistory'];
+  completeness_snapshot: Lead['completenessSnapshot'];
+  intake_updated_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -64,6 +68,10 @@ function rowToLead(row: CrmLeadRow): Lead {
     convertedToProjectId: row.converted_to_project_id ?? undefined,
     convertedToClassId: row.converted_to_class_id ?? undefined,
     convertedToCustomerId: row.converted_to_customer_id ?? undefined,
+    intakeStatus: (row.intake_status as Lead['intakeStatus']) ?? undefined,
+    intakeStatusHistory: row.intake_status_history ?? [],
+    completenessSnapshot: row.completeness_snapshot ?? undefined,
+    intakeUpdatedAt: row.intake_updated_at ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -91,22 +99,39 @@ export async function pushLeadStatusToCloud(
   statusHistory: Lead['statusHistory'],
   patch: Partial<Lead>,
 ): Promise<void> {
+  await pushLeadPatchToCloud(leadId, {
+    status,
+    statusHistory,
+    ...patch,
+  });
+}
+
+export async function pushLeadPatchToCloud(
+  leadId: string,
+  patch: Partial<Lead> & { status?: LeadStatus; statusHistory?: Lead['statusHistory'] },
+): Promise<void> {
   if (!isSupabaseConfigured()) return;
-  await getSupabase()
-    .from('crm_leads')
-    .update({
-      status,
-      status_history: statusHistory ?? [],
-      notes: patch.notes,
-      service_interest: patch.serviceInterest ?? null,
-      converted_to_event_id: patch.convertedToEventId ?? null,
-      converted_to_card_id: patch.convertedToCardId ?? null,
-      converted_to_project_id: patch.convertedToProjectId ?? null,
-      converted_to_class_id: patch.convertedToClassId ?? null,
-      converted_to_customer_id: patch.convertedToCustomerId ?? null,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', leadId);
+  const body: Record<string, unknown> = {
+    updated_at: new Date().toISOString(),
+  };
+  if (patch.status != null) body.status = patch.status;
+  if (patch.statusHistory != null) body.status_history = patch.statusHistory;
+  if (patch.notes !== undefined) body.notes = patch.notes;
+  if (patch.serviceInterest !== undefined) body.service_interest = patch.serviceInterest ?? null;
+  if (patch.convertedToEventId !== undefined) body.converted_to_event_id = patch.convertedToEventId ?? null;
+  if (patch.convertedToCardId !== undefined) body.converted_to_card_id = patch.convertedToCardId ?? null;
+  if (patch.convertedToProjectId !== undefined) body.converted_to_project_id = patch.convertedToProjectId ?? null;
+  if (patch.convertedToClassId !== undefined) body.converted_to_class_id = patch.convertedToClassId ?? null;
+  if (patch.convertedToCustomerId !== undefined) body.converted_to_customer_id = patch.convertedToCustomerId ?? null;
+  if (patch.intakeStatus !== undefined) body.intake_status = patch.intakeStatus ?? null;
+  if (patch.intakeStatusHistory !== undefined) body.intake_status_history = patch.intakeStatusHistory ?? [];
+  if (patch.completenessSnapshot !== undefined) body.completeness_snapshot = patch.completenessSnapshot ?? null;
+  if (patch.intakeUpdatedAt !== undefined) body.intake_updated_at = patch.intakeUpdatedAt ?? null;
+  if (patch.phone !== undefined) body.phone = patch.phone ?? '';
+  if (patch.email !== undefined) body.email = patch.email ?? null;
+  if (patch.name !== undefined) body.full_name = patch.name;
+
+  await getSupabase().from('crm_leads').update(body).eq('id', leadId);
 }
 
 /** ממזג לידים מהענן ל-store המקומי */

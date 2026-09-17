@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
 import { LeadCard } from '../components/crm/LeadCard';
 import { ManualLeadForm } from '../components/crm/ManualLeadForm';
@@ -10,6 +10,7 @@ import {
   STAT_CARD_STATUSES,
   type LeadFilter,
 } from '../lib/crm/constants';
+import { isUnresolvedIntakeLead } from '../lib/crm/leadIntake';
 import { importDemoMetaLead } from '../lib/crm/leadsSync';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { useCrmSync } from '../hooks/useCrmSync';
@@ -21,18 +22,25 @@ export function LeadsPage() {
   const leads = useAppStore((s) => s.leads);
   const addLead = useAppStore((s) => s.addLead);
   const { metaConnection, metaLoading, syncLeads } = useCrmSync();
+  const [searchParams] = useSearchParams();
+  const intakeFilter = searchParams.get('intake') === 'unresolved';
   const [filter, setFilter] = useState<LeadFilter>('all');
 
   const isConnected = Boolean(metaConnection?.isActive);
+  const unresolvedCount = useMemo(() => leads.filter(isUnresolvedIntakeLead).length, [leads]);
   const cloudReady = isSupabaseConfigured();
 
   const filtered = useMemo(() => {
-    if (filter === 'all') return leads;
-    if (filter === 'in_progress') {
-      return leads.filter((l) => l.status === 'in_progress' || l.status === 'contacted');
+    let list = leads;
+    if (intakeFilter) {
+      list = list.filter(isUnresolvedIntakeLead);
     }
-    return leads.filter((l) => l.status === filter);
-  }, [leads, filter]);
+    if (filter === 'all') return list;
+    if (filter === 'in_progress') {
+      return list.filter((l) => l.status === 'in_progress' || l.status === 'contacted');
+    }
+    return list.filter((l) => l.status === filter);
+  }, [leads, filter, intakeFilter]);
 
   const showNoSourceEmpty =
     !metaLoading && !isConnected && leads.length === 0 && !cloudReady;
@@ -65,6 +73,21 @@ export function LeadsPage() {
         </section>
 
         <ManualLeadForm />
+
+        {unresolvedCount > 0 && (
+          <section className="card lead-intake-attention lead-intake-attention--inline">
+            <p className="lead-intake-attention__title">
+              {unresolvedCount === 1
+                ? 'ליד חדש שמחכה לטיפול'
+                : `${unresolvedCount} לידים חדשים שמחכים לטיפול`}
+            </p>
+            {!intakeFilter && (
+              <Link to="/leads?intake=unresolved" className="form-notification-link">
+                הצג רק לידים שדורשים טיפול בקליטה
+              </Link>
+            )}
+          </section>
+        )}
 
         {leads.length > 0 && (
           <>

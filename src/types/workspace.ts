@@ -1,16 +1,9 @@
 import type { LucideIcon } from 'lucide-react';
 import type { ActivityPresentationType } from '../components/business/ActivityCard';
 import type { StoredBusinessCapabilityProfile } from './businessArchitecture';
+import type { OperatingModel } from './operatingModel';
 
-/** How the business delivers service — distinct from industry businessType */
-export type OperatingModel =
-  | 'event'
-  | 'appointment'
-  | 'journey'
-  | 'package'
-  | 'recurring'
-  | 'project'
-  | 'hybrid';
+export type { OperatingModel };
 
 export interface WorkspaceTerminology {
   activitySingular: string;

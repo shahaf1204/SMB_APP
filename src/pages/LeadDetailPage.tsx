@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
+import { LeadIntakeReviewPanel } from '../components/crm/LeadIntakeReviewPanel';
 import { LeadContactActions } from '../components/LeadContactActions';
 import { CRM_SOURCE_LABELS, LEAD_STATUS_LABELS } from '../lib/crm/constants';
+import { participatesInIntakeWorkflow } from '../lib/crm/leadIntake';
 import { formatDate } from '../lib/finance';
 import { isModelEnabled } from '../lib/workspace/creationModels';
 import { useAppStore } from '../store/useAppStore';
@@ -23,12 +25,15 @@ export function LeadDetailPage() {
   const business = useAppStore((s) => s.business);
   const lead = useAppStore((s) => s.leads.find((l) => l.id === id));
   const setLeadStatus = useAppStore((s) => s.setLeadStatus);
+  const approveLeadIntake = useAppStore((s) => s.approveLeadIntake);
+  const rejectLeadIntake = useAppStore((s) => s.rejectLeadIntake);
   const updateLead = useAppStore((s) => s.updateLead);
   const addTask = useAppStore((s) => s.addTask);
   const createEngagement = useAppStore((s) => s.createEngagement);
   const [notes, setNotes] = useState(lead?.notes ?? '');
 
   const statusHistory = useMemo(() => lead?.statusHistory ?? [], [lead]);
+  const showIntakeReview = lead ? participatesInIntakeWorkflow(lead) : false;
 
   if (!lead) {
     return (
@@ -102,40 +107,52 @@ export function LeadDetailPage() {
         </Link>
         <h1 className="page-title">{lead.name}</h1>
         <span className={`crm-status-badge crm-status-${lead.status}`}>
-          {LEAD_STATUS_LABELS[lead.status]}
+          מכירה: {LEAD_STATUS_LABELS[lead.status]}
         </span>
 
-        <section className="card" style={{ marginTop: '1rem' }}>
-          <h2 className="crm-section-title">פרטי קשר</h2>
-          {lead.phone && <p>📞 {lead.phone}</p>}
-          {lead.email && <p>✉️ {lead.email}</p>}
-          <LeadContactActions name={lead.name} phone={lead.phone} email={lead.email} />
-        </section>
+        {showIntakeReview && (
+          <LeadIntakeReviewPanel
+            lead={lead}
+            onApprove={() => approveLeadIntake(lead.id)}
+            onReject={() => rejectLeadIntake(lead.id)}
+          />
+        )}
 
-        <section className="card" style={{ marginTop: '1rem' }}>
-          <h2 className="crm-section-title">מקור</h2>
-          <p>{CRM_SOURCE_LABELS[lead.source] ?? lead.source}</p>
-          {lead.externalCampaignName && <p>קמפיין: {lead.externalCampaignName}</p>}
-          {lead.externalFormName && <p>טופס: {lead.externalFormName}</p>}
-          {lead.externalPageName && <p>עמוד: {lead.externalPageName}</p>}
-          <p className="crm-lead-date">נכנס: {formatDate(lead.createdAt.slice(0, 10))}</p>
-        </section>
+        {!showIntakeReview && (
+          <>
+            <section className="card" style={{ marginTop: '1rem' }}>
+              <h2 className="crm-section-title">פרטי קשר</h2>
+              {lead.phone && <p>📞 {lead.phone}</p>}
+              {lead.email && <p>✉️ {lead.email}</p>}
+              <LeadContactActions name={lead.name} phone={lead.phone} email={lead.email} />
+            </section>
 
-        {lead.formAnswers && lead.formAnswers.length > 0 && (
-          <section className="card" style={{ marginTop: '1rem' }}>
-            <h2 className="crm-section-title">תשובות הטופס</h2>
-            <ul className="crm-form-answers">
-              {lead.formAnswers.map((a, i) => (
-                <li key={i}>
-                  <strong>{a.field}:</strong> {a.value}
-                </li>
-              ))}
-            </ul>
-          </section>
+            <section className="card" style={{ marginTop: '1rem' }}>
+              <h2 className="crm-section-title">מקור</h2>
+              <p>{CRM_SOURCE_LABELS[lead.source] ?? lead.source}</p>
+              {lead.externalCampaignName && <p>קמפיין: {lead.externalCampaignName}</p>}
+              {lead.externalFormName && <p>טופס: {lead.externalFormName}</p>}
+              {lead.externalPageName && <p>עמוד: {lead.externalPageName}</p>}
+              <p className="crm-lead-date">נכנס: {formatDate(lead.createdAt.slice(0, 10))}</p>
+            </section>
+
+            {lead.formAnswers && lead.formAnswers.length > 0 && (
+              <section className="card" style={{ marginTop: '1rem' }}>
+                <h2 className="crm-section-title">תשובות הטופס</h2>
+                <ul className="crm-form-answers">
+                  {lead.formAnswers.map((a, i) => (
+                    <li key={i}>
+                      <strong>{a.field}:</strong> {a.value}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+          </>
         )}
 
         <section className="card" style={{ marginTop: '1rem' }}>
-          <h2 className="crm-section-title">סטטוס</h2>
+          <h2 className="crm-section-title">סטטוס מכירה / מעקב</h2>
           <div className="field">
             <label htmlFor="lead-status">שינוי סטטוס</label>
             <select

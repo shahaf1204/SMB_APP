@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 import { CRM_SOURCE_LABELS, LEAD_STATUS_LABELS } from '../../lib/crm/constants';
+import { isUnresolvedIntakeLead } from '../../lib/crm/leadIntake';
+import { LEAD_INTAKE_STATUS_LABELS } from '../../lib/crm/leadIntakeLabels';
 import { formatDate } from '../../lib/finance';
 import type { Lead } from '../../types/models';
 
@@ -10,13 +12,19 @@ interface LeadCardProps {
 export function LeadCard({ lead }: LeadCardProps) {
   const sourceLabel = CRM_SOURCE_LABELS[lead.source] ?? lead.source;
   const statusLabel = LEAD_STATUS_LABELS[lead.status] ?? lead.status;
+  const intakeUnresolved = isUnresolvedIntakeLead(lead);
 
   return (
-    <article className="card crm-lead-card">
+    <article className={`card crm-lead-card${intakeUnresolved ? ' crm-lead-card--intake' : ''}`}>
       <div className="crm-lead-card-head">
         <h3 className="crm-lead-name">{lead.name}</h3>
         <span className={`crm-status-badge crm-status-${lead.status}`}>{statusLabel}</span>
       </div>
+      {intakeUnresolved && lead.intakeStatus && (
+        <span className="crm-intake-badge" role="status">
+          {LEAD_INTAKE_STATUS_LABELS[lead.intakeStatus]} · דורש טיפול
+        </span>
+      )}
       {lead.phone && <p className="crm-lead-line">📞 {lead.phone}</p>}
       {lead.email && <p className="crm-lead-line">✉️ {lead.email}</p>}
       <p className="crm-lead-meta">

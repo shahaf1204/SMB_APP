@@ -6,6 +6,7 @@ import { useCloudPullOnFocus } from '../hooks/useCloudPullOnFocus';
 import { useCrmSync } from '../hooks/useCrmSync';
 import { useIntegrationSync } from '../hooks/useIntegrationSync';
 import { FormNotificationBanner } from './externalForms/FormNotificationBanner';
+import { LeadIntakeAttentionBanner } from './crm/LeadIntakeAttentionBanner';
 import { useLeadSheetAutoSync } from '../hooks/useLeadSheetAutoSync';
 import { runEventReminderCheck } from '../lib/eventReminders';
 import { useAppStore } from '../store/useAppStore';
@@ -45,6 +46,7 @@ export function BusinessLayout() {
     <>
       <AutoSaveIndicator />
       <FormNotificationBanner />
+      <LeadIntakeAttentionBanner />
       {showSearch && (
         <div className="app-global-search-bar">
           <GlobalSearch />
