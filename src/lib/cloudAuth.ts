@@ -2,6 +2,7 @@ import {
   cloudSignOut,
   hydrateUserFromCloud,
 } from './cloudSync';
+import { clearPasswordRecoveryPending } from './passwordRecoveryFlow';
 import { getSupabase, isSupabaseConfigured } from './supabase';
 
 export type CloudAuthResult =
@@ -9,6 +10,9 @@ export type CloudAuthResult =
   | { ok: false; message: string };
 
 function authErrorMessage(message: string): string {
+  if (message.toLowerCase().includes('email rate limit exceeded')) {
+    return 'נשלחו יותר מדי בקשות לאיפוס סיסמה. נסי/ה שוב בעוד כמה דקות, או פנה/י למנהל המערכת.';
+  }
   if (message.includes('Invalid login credentials')) {
     return 'אימייל או סיסמה שגויים';
   }
@@ -130,7 +134,7 @@ export async function cloudRequestPasswordReset(email: string): Promise<CloudAut
   }
 
   const { error } = await getSupabase().auth.resetPasswordForEmail(trimmedEmail, {
-    redirectTo: `${window.location.origin}/auth`,
+    redirectTo: `${window.location.origin}/auth?recovery=pending`,
   });
 
   if (error) {
@@ -164,6 +168,7 @@ export async function cloudUpdatePassword(password: string): Promise<CloudAuthRe
 
   try {
     await hydrateUserFromCloud(user.id, trimmedEmail, displayName);
+    clearPasswordRecoveryPending();
     window.history.replaceState({}, '', `${window.location.pathname}${window.location.search}`);
     return { ok: true };
   } catch (e) {

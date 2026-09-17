@@ -9,6 +9,17 @@ create table if not exists public.meta_connections (
   page_name text not null default '',
   access_token_encrypted text,
   token_expires_at timestamptz,
+  connection_status text not null default 'disconnected'
+    check (connection_status in (
+      'disconnected',
+      'connecting',
+      'connected',
+      'error',
+      'reconnect_required'
+    )),
+  last_error text,
+  last_lead_received_at timestamptz,
+  webhook_subscribed_at timestamptz,
   is_active boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

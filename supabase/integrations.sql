@@ -57,7 +57,15 @@ create table if not exists public.integration_webhook_events (
   external_event_id text not null,
   business_id text,
   invoice_id text,
+  event_type text,
+  connection_id uuid,
+  lead_id uuid,
+  processing_status text not null default 'received'
+    check (processing_status in ('received', 'processing', 'processed', 'failed')),
   processed boolean not null default false,
+  processed_at timestamptz,
+  error text,
+  processing_claimed_at timestamptz,
   raw_payload jsonb not null default '{}'::jsonb,
   received_at timestamptz not null default now(),
   unique (provider, external_event_id)
