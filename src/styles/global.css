@@ -3073,6 +3073,40 @@ a {
   font-weight: 600;
 }
 
+.lead-conversion-panel {
+  margin-top: 1rem;
+}
+
+.lead-conversion-panel__success {
+  margin: 0 0 0.65rem;
+  font-weight: 700;
+  color: var(--color-success, #047857);
+}
+
+.lead-conversion-form .field {
+  margin-bottom: 0.65rem;
+}
+
+.lead-conversion-panel__missing {
+  margin: 0.75rem 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--color-warning, #d97706) 10%, transparent);
+}
+
+.lead-conversion-panel__missing-title {
+  margin: 0 0 0.35rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.lead-conversion-panel__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
 .crm-meta-card--connected {
   background: var(--color-success-soft);
   border-color: #6ee7b7;

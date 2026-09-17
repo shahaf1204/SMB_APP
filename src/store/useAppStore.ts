@@ -17,6 +17,26 @@ import {
   applyIntakeEvaluation,
   shouldPushLeadToCloud,
 } from '../lib/crm/leadIntake';
+import {
+  buildCategoryInputsForConversion,
+  buildEventFromConversionDraft,
+} from '../lib/crm/leadConversion/leadConversionEvent';
+import { evaluateConversionCompleteness } from '../lib/crm/leadConversion/leadConversionCompleteness';
+import {
+  isLeadAlreadyConverted,
+  isLeadConversionEligible,
+} from '../lib/crm/leadConversion/leadConversionEligibility';
+import { resolveLeadActivityHref } from '../lib/crm/leadConversion/leadConversionHref';
+import { buildFinalizedLeadAfterConversion } from '../lib/crm/leadConversion/leadConversionFinalize';
+import {
+  LEAD_CONVERSION_CREATION_SOURCE,
+  planLeadConversion,
+} from '../lib/crm/leadConversion/leadConversionProvenance';
+import type {
+  LeadConversionDraft,
+  LeadConversionResult,
+  LeadConversionTargetModel,
+} from '../lib/crm/leadConversion/types';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { clearAppStorage, safeJsonStorage, STORAGE_KEY } from '../lib/safeStorage';
 import {
@@ -176,6 +196,11 @@ interface AppActions {
   setLeadStatus: (id: string, status: LeadStatus, note?: string) => void;
   approveLeadIntake: (id: string) => void;
   rejectLeadIntake: (id: string) => void;
+  convertApprovedLead: (input: {
+    leadId: string;
+    target: LeadConversionTargetModel;
+    draft: LeadConversionDraft;
+  }) => LeadConversionResult;
   linkLeadToEvent: (leadId: string, eventId: string) => void;
   createInvoice: (params: {
     clientName: string;
@@ -363,6 +388,8 @@ const initialState: AppState = {
   formNotifications: [],
   monthlyExpenses: [],
 };
+
+const leadConversionInFlight = new Set<string>();
 
 export const useAppStore = create<Store>()(
   persist(
@@ -1063,6 +1090,142 @@ export const useAppStore = create<Store>()(
         const updated = get().leads.find((l) => l.id === id);
         if (updated && shouldPushLeadToCloud(updated)) {
           void pushLeadPatchToCloud(id, updated);
+        }
+      },
+
+      convertApprovedLead: ({ leadId, target, draft }) => {
+        const business = get().business;
+        const user = get().user;
+        if (!business || !user) {
+          return { ok: false, errorMessage: 'יש להתחבר ולבחור עסק לפני המרה.' };
+        }
+
+        const lead = get().leads.find((l) => l.id === leadId);
+        if (!lead) {
+          return { ok: false, errorMessage: 'הליד לא נמצא.' };
+        }
+
+        if (isLeadAlreadyConverted(lead)) {
+          return {
+            ok: true,
+            alreadyConverted: true,
+            activityId: lead.convertedToEventId ?? lead.convertedToCardId,
+            activityHref: resolveLeadActivityHref(lead),
+          };
+        }
+
+        if (!isLeadConversionEligible(lead)) {
+          return { ok: false, errorMessage: 'רק ליד מאושר ניתן להמרה.' };
+        }
+
+        if (leadConversionInFlight.has(leadId)) {
+          return {
+            ok: false,
+            errorMessage: 'ההמרה כבר מתבצעת — נא להמתין רגע.',
+          };
+        }
+
+        const completeness = evaluateConversionCompleteness(draft, target, {
+          business,
+          categories: get().categories,
+        });
+        if (!completeness.readyToConfirm) {
+          return { ok: false, errorMessage: 'יש להשלים את הפרטים החסרים לפני האישור.' };
+        }
+
+        leadConversionInFlight.add(leadId);
+        try {
+          const plan = planLeadConversion(
+            leadId,
+            target,
+            get().events,
+            get().engagements ?? [],
+          );
+          const effectiveTarget = plan.effectiveTarget;
+          let activityId = plan.existingActivityId ?? '';
+
+          if (plan.mode === 'create_new') {
+            if (effectiveTarget === 'event' || effectiveTarget === 'appointment') {
+              const eventPartial = buildEventFromConversionDraft(
+                draft,
+                business.id,
+                user.id,
+                leadId,
+                effectiveTarget,
+              );
+              const categoryInputs = buildCategoryInputsForConversion(get().categories, draft);
+              const values = buildEventValuesFromInputs(
+                '',
+                business.id,
+                user.id,
+                get().categories,
+                categoryInputs,
+                [],
+              );
+              activityId = get().addEvent(eventPartial, values);
+              if (!activityId) throw new Error('יצירת אירוע נכשלה');
+            } else {
+              const startDate =
+                draft.activityDate?.trim() || new Date().toISOString().slice(0, 10);
+              const kind =
+                effectiveTarget === 'package'
+                  ? 'session_pack'
+                  : effectiveTarget === 'recurring'
+                    ? 'recurring_group'
+                    : 'project';
+              activityId = get().createEngagement(
+                {
+                  kind,
+                  title: draft.title.trim(),
+                  clientName: draft.clientName.trim(),
+                  clientPhone: draft.clientPhone,
+                  clientEmail: draft.clientEmail,
+                  startDate,
+                  notes: draft.notes?.trim() ?? '',
+                  sourceLeadId: leadId,
+                  creationSource: LEAD_CONVERSION_CREATION_SOURCE,
+                  conversionTarget: effectiveTarget,
+                },
+                {
+                  operatingModel:
+                    effectiveTarget === 'journey' ? 'journey' : effectiveTarget,
+                },
+              );
+              if (!activityId) throw new Error('יצירת פעילות נכשלה');
+            }
+          }
+
+          const currentLead = get().leads.find((l) => l.id === leadId);
+          if (!currentLead) throw new Error('הליד לא נמצא');
+
+          const finalized = buildFinalizedLeadAfterConversion(
+            currentLead,
+            effectiveTarget,
+            activityId,
+          );
+          set({
+            leads: get().leads.map((l) => (l.id === leadId ? finalized : l)),
+          });
+
+          const updated = get().leads.find((l) => l.id === leadId);
+          if (updated && shouldPushLeadToCloud(updated)) {
+            void pushLeadPatchToCloud(leadId, updated);
+          }
+
+          return {
+            ok: true,
+            activityId,
+            activityHref: resolveLeadActivityHref(finalized),
+            recoveredExistingActivity: plan.mode === 'reuse_existing',
+          };
+        } catch {
+          return {
+            ok: false,
+            errorMessage:
+              'לא הצלחנו להשלים את ההמרה. הליד נשאר מאושר — אפשר לנסות שוב (לא תיווצר פעילות כפולה אם כבר נוצרה).',
+          };
+        } finally {
+          leadConversionInFlight.delete(leadId);
         }
       },
 

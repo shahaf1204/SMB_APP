@@ -138,6 +138,11 @@ export interface Engagement {
   totalValue?: number;
   /** Linked Event for dashboard financial reporting */
   eventId?: string;
+  /** Provenance when created from approved lead conversion (Phase 3A.6) */
+  sourceLeadId?: string;
+  creationSource?: 'manual' | 'external_form' | 'lead_conversion';
+  /** Target model chosen at conversion time (disambiguates journey vs project). */
+  conversionTarget?: 'event' | 'appointment' | 'package' | 'journey' | 'project' | 'recurring';
 }
 
 export interface Milestone {
@@ -333,6 +338,11 @@ export interface Event {
   clientEmail?: string;
   clientPhone?: string;
   source?: 'manual' | 'external_form';
+  /** Provenance when created from approved lead conversion (Phase 3A.6) */
+  sourceLeadId?: string;
+  creationSource?: 'manual' | 'external_form' | 'lead_conversion';
+  /** Target model at conversion (event vs appointment share Event entity). */
+  conversionTarget?: 'event' | 'appointment' | 'package' | 'journey' | 'project' | 'recurring';
   externalFormConnectionId?: string;
   externalSubmissionId?: string;
   externalFormProvider?: string;

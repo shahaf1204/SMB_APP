@@ -125,7 +125,7 @@ export function LeadIntakeReviewPanel({
 
       {lead.intakeStatus === 'approved' && (
         <p className="lead-intake-review__approved" role="status">
-          הליד אושר לבדיקה — המרה לפעילות תתאפשר בשלב הבא.
+          הליד אושר — אפשר להמשיך להוספה לפעילות למטה.
         </p>
       )}
       {lead.intakeStatus === 'rejected' && (

@@ -744,4 +744,44 @@ external source → normalized Lead → intake/review → approved → convert �
 
 Do **not** permanently preserve Event-first external forms alongside Lead-first Meta. 3A.6 must choose/implement migration (e.g. submission → Lead + optional deferred conversion, or replace auto-Event with intake-first).
 
-*Last updated: Phase 3A.5.1 review/conversion completeness; 3A.6 external-forms debt.*
+---
+
+## Phase 3A.6 — Approved lead → activity conversion (implemented)
+
+```
+intakeStatus = approved
+  → owner: "הוספה לפעילות"
+  → conversion preparation (draft + missing conversion fields)
+  → optional target choice when ambiguous
+  → explicit confirm
+  → canonical addEvent / createEngagement
+  → intakeStatus = converted + converted_to_* link
+```
+
+| Rule | Detail |
+|------|--------|
+| **Eligibility** | Only `intakeStatus === 'approved'` with intake workflow; not legacy NULL intake |
+| **Target resolver** | `resolveLeadConversionTarget()` — primary/enabled models + lead signals; owner choice when ambiguous (event+project, appointment+package without package evidence) |
+| **Review vs conversion completeness** | Review unchanged; conversion blocking fields come from **`resolveConversionRequirements()`** → `evaluateConversionCompleteness()` on owner draft (not hard-coded event checklists) |
+| **Requirement resolver** | `resolveConversionRequirements({ business, targetModel, categories })` uses `resolveActivityFormSchema()` where trustworthy; universal **client + title**; scheduling targets require **date** from schema/fallback; **location/time not universally blocking** (e.g. online appointment). Same resolver boundary intended for **3A.7** missing-information UX |
+| **Idempotency (lead link)** | If `converted_to_*` or `intakeStatus === converted` → return existing activity href; no second create |
+| **Idempotency (orphan recovery)** | Before create: **`findConversionActivityByLeadId()`** on Event + Engagement with `sourceLeadId` + `creationSource: lead_conversion` (even if lead patch failed). Retry **reuses** activity and finalizes lead via `buildFinalizedLeadAfterConversion()`. Same-session **in-flight guard** per `leadId` prevents double submit |
+| **Failure** | Partial failure (activity persisted, lead not finalized) → lead stays **approved**; retry is deterministic when provenance exists in local store |
+| **Sales status** | Not auto-changed on conversion (intake separate from funnel `status`) |
+| **Provenance** | Event + Engagement: `sourceLeadId`, `creationSource: lead_conversion`, `conversionTarget` (disambiguates event vs appointment, journey vs project) |
+| **Durability (honest)** | **Same tab/session + browser refresh:** protected when Zustand persist contains the activity. **Not** a distributed transaction — two `set()` steps can race on hard crash between persist flushes. **Cross-device/cloud:** activities are not a shared idempotency store; only local snapshot + optional lead cloud patch — **no cross-device duplicate guarantee** |
+| **External forms** | Adapter `buildLeadPayloadFromExternalForm()`; **default automation still Event-first** — see **3A.6.1** |
+
+### Phase 3A.6.1 — external forms migration (required follow-up)
+
+1. Feature-flag or connection setting: `lead_first_intake` vs legacy `auto_event`.
+2. On submission: create Lead + intake (not Event) when flag on; preserve webhook URLs.
+3. Re-use Meta-equivalent intake → approve → convert path.
+4. Migration window: dual-write or pause auto-event per connection.
+
+### Phase 3A.7 compatibility (not started)
+
+- **`resolveConversionRequirements()`** is the single boundary for which fields are **conversion_blocking** vs optional — customer completion should consume the same resolver output (missing keys + owner-facing labels), not duplicate event/appointment rules in messaging UI.
+- Conversion draft fields remain owner-editable today; 3A.7 may pre-fill or collect gaps without changing intake lifecycle states (`approved` until owner confirms conversion).
+
+*Last updated: Phase 3A.6 + hardening (conversion resolver, provenance idempotency); 3A.6.1 external-forms plan.*

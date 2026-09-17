@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { BottomNav } from '../components/BottomNav';
+import { LeadConversionPanel } from '../components/crm/LeadConversionPanel';
 import { LeadIntakeReviewPanel } from '../components/crm/LeadIntakeReviewPanel';
 import { LeadContactActions } from '../components/LeadContactActions';
 import { CRM_SOURCE_LABELS, LEAD_STATUS_LABELS } from '../lib/crm/constants';
@@ -118,6 +119,10 @@ export function LeadDetailPage() {
           />
         )}
 
+        {showIntakeReview && business && (
+          <LeadConversionPanel lead={lead} business={business} />
+        )}
+
         {!showIntakeReview && (
           <>
             <section className="card" style={{ marginTop: '1rem' }}>
@@ -199,22 +204,23 @@ export function LeadDetailPage() {
             <button type="button" className="btn btn-ghost" onClick={handleTask}>
               יצירת משימה
             </button>
-            {(isModelEnabled(business, 'event') || isModelEnabled(business, 'appointment')) && (
+            {!showIntakeReview && (isModelEnabled(business, 'event') || isModelEnabled(business, 'appointment')) && (
               <button type="button" className="btn btn-ghost" onClick={convertToEvent}>
                 המרה לאירוע
               </button>
             )}
-            {isModelEnabled(business, 'package') && (
+            {!showIntakeReview && isModelEnabled(business, 'package') && (
               <button type="button" className="btn btn-ghost" onClick={convertToPack}>
                 המרה לכרטיסייה
               </button>
             )}
-            {(isModelEnabled(business, 'project') || isModelEnabled(business, 'journey')) && (
+            {!showIntakeReview &&
+              (isModelEnabled(business, 'project') || isModelEnabled(business, 'journey')) && (
               <button type="button" className="btn btn-ghost" onClick={convertToProject}>
                 המרה לליווי
               </button>
             )}
-            {isModelEnabled(business, 'recurring') && (
+            {!showIntakeReview && isModelEnabled(business, 'recurring') && (
               <button type="button" className="btn btn-ghost" onClick={convertToGroup}>
                 המרה לחוג
               </button>
