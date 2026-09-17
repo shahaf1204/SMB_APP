@@ -464,6 +464,39 @@ Client-safe `MetaConnection` includes `connectionStatus` (`disconnected` | `conn
 - Legacy rows may remain **base64**; decrypt supports **v1:** prefixed ciphertext and legacy base64 for read compatibility.
 - Finance API keys continue to use the legacy base64 helper in `supabase.server.ts` until a future finance phase.
 
+### Phase 3A.3.1 — OAuth hardening
+
+- Atomic OAuth state/attempt consume (conditional Supabase updates).
+- Page `page_already_connected` guard before cross-business conflicts.
+- Reconnect: subscribe **before** persisting tokens; failed reconnect must not overwrite healthy `connected` rows.
+- Business auth: `app_snapshots` primary + `meta_connections` / `crm_leads` fallback for snapshot lag.
+- Meta API contract: `docs/meta-api-contract.md` (deployment-verified-required).
+
+### Phase 3A.3 — Meta connection plane (implemented)
+
+**Connection plane** (OAuth, Page token, webhook subscription) is separate from **event ingestion** (3A.2 webhook → ExternalEvent → CRM Lead).
+
+```
+Authenticated business (server-verified)
+  → OAuth state (CSRF, user+business bound)
+  → Meta authorization dialog
+  → /api/integrations/meta/oauth/callback (code exchange, no tokens to browser)
+  → meta_oauth_attempts (encrypted Page tokens, opaque attempt id)
+  → safe Page list to client
+  → Page selection (server validates Page ∈ attempt)
+  → encryptIntegrationSecret (v1) on meta_connections.access_token_encrypted
+  → POST /{page-id}/subscribed_apps (leadgen)
+  → connection_status = connected, webhook_subscribed_at set
+```
+
+| Rule | Behavior |
+|------|----------|
+| One active Page / business | Unique partial index on `business_id` where `is_active` |
+| Reconnect | Upsert same business row, replace token, re-subscribe |
+| Stale OAuth attempt | Blocked if a newer `connected` connection exists after attempt baseline |
+
+Tables: `meta_oauth_states`, `meta_oauth_attempts` (`supabase/meta-oauth-3a3.sql`).
+
 ### Phase 3A.2 — Meta webhook pipeline (implemented)
 
 **Webhook delivery ≠ Lead.** A Meta POST only proves something happened; domain state changes only after provider processing.
