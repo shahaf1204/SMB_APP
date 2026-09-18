@@ -7,6 +7,9 @@ import { logPipelineStage, patchPipelineDebug } from './pipelineDebug';
 export interface PendingSubmissionProcessResult {
   pendingCount: number;
   processedCount: number;
+  /** Lead ids (lead_first) or legacy activity ids (auto_event). */
+  createdResourceIds: string[];
+  /** @deprecated Use createdResourceIds */
   createdActivityIds: string[];
 }
 
@@ -43,7 +46,7 @@ export async function processPendingExternalFormSubmissions(
   });
 
   const ackIds: string[] = [];
-  const createdActivityIds: string[] = [];
+  const createdResourceIds: string[] = [];
 
   for (const item of pending) {
     logPipelineStage('SUBMISSION_PROCESSING_STARTED', {
@@ -51,16 +54,16 @@ export async function processPendingExternalFormSubmissions(
       payload: item.rawPayload,
     });
 
-    const eventId = processSubmission({
+    const resourceId = processSubmission({
       connectionId: item.connectionId,
       rawPayload: item.rawPayload,
       externalSubmissionId: item.externalSubmissionId,
       submissionId: item.id,
     });
-    if (eventId) {
+    if (resourceId) {
       ackIds.push(item.id);
-      createdActivityIds.push(eventId);
-      logPipelineStage('ACTIVITY_CREATED', { lastCreatedActivityId: eventId });
+      createdResourceIds.push(resourceId);
+      logPipelineStage('ACTIVITY_CREATED', { lastCreatedActivityId: resourceId });
     }
   }
 
@@ -68,7 +71,8 @@ export async function processPendingExternalFormSubmissions(
 
   return {
     pendingCount: pending.length,
-    processedCount: createdActivityIds.length,
-    createdActivityIds,
+    processedCount: createdResourceIds.length,
+    createdResourceIds,
+    createdActivityIds: createdResourceIds,
   };
 }

@@ -159,12 +159,19 @@ describe('external form adapter (3A.6 foundation)', () => {
     const payload = buildLeadPayloadFromExternalForm({
       businessId: 'b',
       userId: 'u',
+      submissionId: 'local-1',
       externalSubmissionId: 'sub-1',
       connection: {
         id: 'c1',
         businessId: 'b',
+        ownerId: 'u',
         formName: 'טופס הרשמה',
         provider: 'google_forms',
+        webhookUrl: 'https://example.com/h',
+        secretKey: 'x',
+        activityType: 'event',
+        isActive: true,
+        fieldMapping: [],
         submissionCount: 0,
         createdAt: '',
         updatedAt: '',
@@ -172,6 +179,7 @@ describe('external form adapter (3A.6 foundation)', () => {
       normalized: {
         fields: { clientName: 'ילד', clientPhone: '050', activityTitle: 'חוג' },
         unmapped: {},
+        sourceProvider: 'google_forms',
       },
     });
     expect(payload.fullName).toBe('ילד');

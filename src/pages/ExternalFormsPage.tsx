@@ -142,14 +142,14 @@ function FormConnectionCard({ connection }: { connection: ExternalFormConnection
     setBusy(true);
     setMessage(null);
     const payload = buildFormsAppMockPayload();
-    const eventId = processExternalFormSubmission({
+    const leadOrActivityId = processExternalFormSubmission({
       connectionId: connection.id,
       rawPayload: payload,
     });
     setBusy(false);
     setMessage(
-      eventId
-        ? 'נוצרה פעילות סימולציה מקומית — בדקו במסך פעילויות'
+      leadOrActivityId
+        ? 'נוצר ליד סימולציה — בדקו במסך לידים והתראות'
         : 'הסימולציה נכשלה — בדקו את מיפוי השדות',
     );
   };

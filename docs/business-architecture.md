@@ -770,18 +770,32 @@ intakeStatus = approved
 | **Sales status** | Not auto-changed on conversion (intake separate from funnel `status`) |
 | **Provenance** | Event + Engagement: `sourceLeadId`, `creationSource: lead_conversion`, `conversionTarget` (disambiguates event vs appointment, journey vs project) |
 | **Durability (honest)** | **Same tab/session + browser refresh:** protected when Zustand persist contains the activity. **Not** a distributed transaction — two `set()` steps can race on hard crash between persist flushes. **Cross-device/cloud:** activities are not a shared idempotency store; only local snapshot + optional lead cloud patch — **no cross-device duplicate guarantee** |
-| **External forms** | Adapter `buildLeadPayloadFromExternalForm()`; **default automation still Event-first** — see **3A.6.1** |
+| **External forms** | **3A.6.1:** Lead-first ingest — see section below |
 
-### Phase 3A.6.1 — external forms migration (required follow-up)
+### Phase 3A.6.1 — External Forms → Lead-first intake (implemented)
 
-1. Feature-flag or connection setting: `lead_first_intake` vs legacy `auto_event`.
-2. On submission: create Lead + intake (not Event) when flag on; preserve webhook URLs.
-3. Re-use Meta-equivalent intake → approve → convert path.
-4. Migration window: dual-write or pause auto-event per connection.
+**Canonical path (default):**
+
+```
+webhook / pending poll → normalize → ingestExternalFormLead()
+  → createLeadFromExternalSource + initialIntakeForExternalLead
+  → Attention / Leads UI → approve → Phase 3A.6 conversion → Activity
+```
+
+| Topic | Detail |
+|-------|--------|
+| **Provider-neutral boundary** | `buildLeadPayloadFromExternalForm()` → `ingestExternalFormLead()` (shared with Meta after normalization via `createLeadFromExternalSource`) |
+| **Google Forms** | Same webhook/provider stack as other external forms (`google_forms` provider → normalized payload → Lead-first). No separate Google CRM architecture. Sheet/CSV lead sync remains a separate `sheet` provider path. |
+| **Public URLs** | Unchanged — same `connectionId` + secret webhook contract; successful webhook response preserved. |
+| **Submission mode** | **`lead_first`** canonical — set on new connections; unset/invalid → **`lead_first`**. **`auto_event`** is temporary legacy compatibility only (persisted exact value); **not offered in any UI**; retires when no connections use it. |
+| **Idempotency** | Prefer provider `externalSubmissionId`; else `submission:{connectionId}:{submissionId}`. Server webhook dedup (`dedupKey`) + client `createLeadFromExternalSource` external id + submission row `createdLeadId`. Retries do **not** reset terminal intake. |
+| **Durability** | Local Zustand + optional `pushLeadCreateToCloud` upsert; not cross-device guaranteed without cloud lead row. |
+| **Direct Event creation** | Removed from default path; legacy `auto_event` still uses `prepareActivityFromFormSubmission` + `addEvent`. |
+| **Phase 3A.7** | Form Leads expose same `completenessSnapshot`, `missingReviewFieldKeys`, `missingConversionFieldKeys`, and `formAnswers` as Meta — no separate Google completion engine. |
 
 ### Phase 3A.7 compatibility (not started)
 
 - **`resolveConversionRequirements()`** is the single boundary for which fields are **conversion_blocking** vs optional — customer completion should consume the same resolver output (missing keys + owner-facing labels), not duplicate event/appointment rules in messaging UI.
 - Conversion draft fields remain owner-editable today; 3A.7 may pre-fill or collect gaps without changing intake lifecycle states (`approved` until owner confirms conversion).
 
-*Last updated: Phase 3A.6 + hardening (conversion resolver, provenance idempotency); 3A.6.1 external-forms plan.*
+*Last updated: Phase 3A.6.1 external forms Lead-first intake.*

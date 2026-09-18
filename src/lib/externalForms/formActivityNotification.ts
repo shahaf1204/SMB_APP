@@ -21,6 +21,53 @@ export function detectMissingInboundFields(fields: {
   return missing;
 }
 
+export function buildFormLeadIntakeNotification(params: {
+  id: string;
+  connection: Pick<ExternalFormConnection, 'id' | 'formName' | 'provider'>;
+  leadId: string;
+  normalized: NormalizedFormPayload;
+  createdAt: string;
+  intakeStatus?: 'needs_information' | 'ready_for_review' | 'new';
+}): FormActivityNotification {
+  const clientName =
+    params.normalized.fields.clientName?.trim() ||
+    params.normalized.fields.childName?.trim() ||
+    '';
+  const clientPhone = params.normalized.fields.clientPhone?.trim();
+  const location = params.normalized.fields.location?.trim();
+  const missingFields = detectMissingInboundFields({ clientName, clientPhone, location });
+  const displayName = clientName || 'לקוח חדש';
+  const sourceLabel = EXTERNAL_FORM_PROVIDER_LABELS[params.connection.provider];
+
+  const reviewHint =
+    params.intakeStatus === 'ready_for_review'
+      ? 'מוכן לבדיקה'
+      : params.intakeStatus === 'needs_information'
+        ? 'חסרים פרטים לבדיקה'
+        : 'ליד חדש';
+
+  const message =
+    missingFields.length > 0
+      ? `ליד חדש מ«${params.connection.formName}»: ${displayName} — ${reviewHint}`
+      : `ליד חדש מ«${params.connection.formName}»: ${displayName} — ${reviewHint}`;
+
+  return {
+    id: params.id,
+    message,
+    connectionId: params.connection.id,
+    leadId: params.leadId,
+    createdAt: params.createdAt,
+    read: false,
+    handled: false,
+    sourceLabel,
+    formName: params.connection.formName,
+    clientName: displayName,
+    clientPhone: clientPhone || undefined,
+    missingFields,
+  };
+}
+
+/** @deprecated Legacy auto-event path — retained for submissionMode auto_event only. */
 export function buildFormActivityNotification(params: {
   id: string;
   connection: Pick<ExternalFormConnection, 'id' | 'formName' | 'provider'>;

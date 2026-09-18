@@ -134,6 +134,40 @@ export async function pushLeadPatchToCloud(
   await getSupabase().from('crm_leads').update(body).eq('id', leadId);
 }
 
+/** Insert new external/form lead row (client-created id). Best-effort when Supabase configured. */
+export async function pushLeadCreateToCloud(lead: Lead): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  if (!lead.externalLeadId || !lead.externalProvider) return;
+
+  const now = new Date().toISOString();
+  const row = {
+    id: lead.id,
+    user_id: lead.userId,
+    business_id: lead.businessId,
+    full_name: lead.name,
+    phone: lead.phone ?? '',
+    email: lead.email ?? null,
+    source: lead.source,
+    status: lead.status,
+    service_interest: lead.serviceInterest ?? null,
+    notes: lead.notes ?? '',
+    external_provider: lead.externalProvider,
+    external_lead_id: lead.externalLeadId,
+    external_form_id: lead.externalFormId ?? null,
+    external_form_name: lead.externalFormName ?? null,
+    form_answers: lead.formAnswers ?? [],
+    status_history: lead.statusHistory ?? [{ status: lead.status, at: now }],
+    intake_status: lead.intakeStatus ?? null,
+    intake_status_history: lead.intakeStatusHistory ?? [],
+    completeness_snapshot: lead.completenessSnapshot ?? null,
+    intake_updated_at: lead.intakeUpdatedAt ?? null,
+    created_at: lead.createdAt ?? now,
+    updated_at: lead.updatedAt ?? now,
+  };
+
+  await getSupabase().from('crm_leads').upsert(row, { onConflict: 'id' });
+}
+
 /** ממזג לידים מהענן ל-store המקומי */
 export function mergeCloudLeadsIntoStore(
   cloudLeads: Lead[],

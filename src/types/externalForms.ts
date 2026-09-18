@@ -10,6 +10,12 @@ export type ExternalFormActivityType = 'event' | 'card' | 'program' | 'course';
 
 export type ExternalFormSubmissionStatus = 'received' | 'mapped' | 'created' | 'failed';
 
+/**
+ * Canonical path is `lead_first` (Phase 3A.6.1).
+ * `auto_event` is temporary legacy compatibility only — never assign on new connections or expose in UI.
+ */
+export type ExternalFormSubmissionMode = 'lead_first' | 'auto_event';
+
 export type ExternalFormAppField =
   | 'clientName'
   | 'clientPhone'
@@ -41,6 +47,8 @@ export interface ExternalFormConnection {
   webhookUrl: string;
   secretKey: string;
   activityType: ExternalFormActivityType;
+  /** Omit or `lead_first` for all new connections. Only exact `auto_event` enables legacy Event creation. */
+  submissionMode?: ExternalFormSubmissionMode;
   isActive: boolean;
   fieldMapping: ExternalFormFieldMapping[];
   createdAt: string;
@@ -58,6 +66,7 @@ export interface ExternalFormSubmission {
   rawPayload: unknown;
   normalizedPayload: NormalizedFormPayload;
   createdActivityId?: string;
+  createdLeadId?: string;
   createdClientId?: string;
   status: ExternalFormSubmissionStatus;
   errorMessage?: string;
@@ -78,6 +87,7 @@ export interface FormActivityNotification {
   message: string;
   connectionId: string;
   activityId?: string;
+  leadId?: string;
   createdAt: string;
   read: boolean;
   /** User confirmed they reviewed / followed up */

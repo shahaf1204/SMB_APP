@@ -73,12 +73,21 @@ export function FormNotificationBanner() {
               </ul>
             </div>
           ) : (
-            <p className="inbound-alert-ok">כל הפרטים העיקריים קיימים — אפשר לאשר את האירוע</p>
+            <p className="inbound-alert-ok">כל הפרטים העיקריים קיימים — אפשר לבדוק ולאשר את הליד</p>
           )}
         </div>
 
         <footer className="inbound-alert-actions">
-          {latest.activityId && (
+          {latest.leadId && (
+            <Link
+              to={`/leads/${latest.leadId}`}
+              className="btn btn-primary btn-sm inbound-alert-btn"
+            >
+              <ExternalLink size={16} strokeWidth={2} aria-hidden />
+              פתיחת ליד
+            </Link>
+          )}
+          {!latest.leadId && latest.activityId && (
             <Link
               to={`/events/${latest.activityId}/edit`}
               className="btn btn-primary btn-sm inbound-alert-btn"

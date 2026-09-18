@@ -11,7 +11,7 @@ import { suggestWorkModelsFromPreset, normalizeBusiness } from '../lib/workModel
 import { buildWorkspaceConfig, normalizeBusinessWorkspace, syncWorkModelsFromWorkspace } from '../lib/workspace';
 import { cloudSignOut } from '../lib/cloudSync';
 import { normalizeLeads } from '../lib/crm/leadNormalize';
-import { pushLeadPatchToCloud, pushLeadStatusToCloud } from '../lib/crm/leadsSync';
+import { pushLeadCreateToCloud, pushLeadPatchToCloud, pushLeadStatusToCloud } from '../lib/crm/leadsSync';
 import {
   appendIntakeHistory,
   applyIntakeEvaluation,
@@ -97,7 +97,13 @@ import {
 } from '../lib/externalForms/formAutomationService';
 import { normalizeSubmission } from '../lib/externalForms/connectionWebhook';
 import { registerExternalFormConnection } from '../lib/externalForms/clientApi';
-import { buildFormActivityNotification } from '../lib/externalForms/formActivityNotification';
+import {
+  buildFormActivityNotification,
+  buildFormLeadIntakeNotification,
+} from '../lib/externalForms/formActivityNotification';
+import { ingestExternalFormLead } from '../lib/externalForms/ingestExternalFormSubmission';
+import { resolveStableExternalFormLeadId } from '../lib/externalForms/externalFormLeadAdapter';
+import { isLeadFirstExternalForm } from '../lib/externalForms/submissionMode';
 import { logPipelineStage } from '../lib/externalForms/pipelineDebug';
 import { getExternalFormProvider } from '../formsProviders';
 
@@ -1709,17 +1715,105 @@ export const useAppStore = create<Store>()(
           return null;
         }
 
+        const stableLeadId = resolveStableExternalFormLeadId({
+          connectionId: connection.id,
+          submissionId,
+          externalSubmissionId: normalized.externalSubmissionId ?? params.externalSubmissionId,
+        });
+
         const dup = get().externalFormSubmissions.find(
           (s) =>
             s.connectionId === connection.id &&
             s.status === 'created' &&
             (s.externalSubmissionId === normalized.externalSubmissionId ||
-              (normalized.externalSubmissionId &&
-                s.externalSubmissionId === normalized.externalSubmissionId)),
+              s.id === submissionId ||
+              (s.createdLeadId &&
+                get().leads.some(
+                  (l) =>
+                    l.id === s.createdLeadId &&
+                    l.externalLeadId === stableLeadId,
+                ))),
         );
-        if (dup?.createdActivityId) return dup.createdActivityId;
+        if (dup?.createdLeadId) return dup.createdLeadId;
+        if (dup?.createdActivityId && !isLeadFirstExternalForm(connection)) {
+          return dup.createdActivityId;
+        }
 
         try {
+          if (isLeadFirstExternalForm(connection)) {
+            const { lead, created } = ingestExternalFormLead({
+              connection,
+              normalized,
+              submissionId,
+              businessId: business.id,
+              userId: user.id,
+              existingLeads: get().leads,
+              primaryOperatingModel: business.workspace?.primaryOperatingModel,
+              rawPayload: params.rawPayload,
+              externalSubmissionId: normalized.externalSubmissionId ?? params.externalSubmissionId,
+            });
+
+            logPipelineStage('LEAD_INGESTED', {
+              lastNormalizedFields: normalized.fields as Record<string, string>,
+            });
+
+            set({
+              leads: created
+                ? [lead, ...get().leads]
+                : get().leads.map((l) => (l.id === lead.id ? { ...l, ...lead } : l)),
+            });
+
+            if (created && shouldPushLeadToCloud(lead)) {
+              void pushLeadCreateToCloud(lead);
+            } else if (!created && shouldPushLeadToCloud(lead)) {
+              void pushLeadPatchToCloud(lead.id, lead);
+            }
+
+            const record: ExternalFormSubmission = {
+              id: submissionId,
+              businessId: business.id,
+              connectionId: connection.id,
+              provider: connection.provider,
+              externalSubmissionId: normalized.externalSubmissionId,
+              rawPayload: params.rawPayload,
+              normalizedPayload: normalized,
+              createdLeadId: lead.id,
+              status: 'created',
+              createdAt: now,
+              updatedAt: now,
+            };
+
+            const intakeHint =
+              lead.intakeStatus === 'needs_information' ||
+              lead.intakeStatus === 'ready_for_review'
+                ? lead.intakeStatus
+                : undefined;
+            const notification = buildFormLeadIntakeNotification({
+              id: createId(),
+              connection,
+              leadId: lead.id,
+              normalized,
+              createdAt: now,
+              intakeStatus: intakeHint,
+            });
+
+            set({
+              externalFormSubmissions: [record, ...get().externalFormSubmissions],
+              externalFormConnections: get().externalFormConnections.map((c) =>
+                c.id === connection.id
+                  ? {
+                      ...c,
+                      submissionCount: c.submissionCount + 1,
+                      lastSubmissionAt: now,
+                      updatedAt: now,
+                    }
+                  : c,
+              ),
+              formNotifications: [notification, ...get().formNotifications].slice(0, 20),
+            });
+            return lead.id;
+          }
+
           const { event, values, clientKey } = prepareActivityFromFormSubmission({
             connection,
             submission: {
@@ -1743,34 +1837,6 @@ export const useAppStore = create<Store>()(
           if (!eventId) throw new Error('יצירת פעילות נכשלה');
 
           logPipelineStage('ACTIVITY_CREATED', { lastCreatedActivityId: eventId });
-
-          const phone = normalized.fields.clientPhone?.trim();
-          const email = normalized.fields.clientEmail?.trim();
-          const name = normalized.fields.clientName?.trim();
-          if (name && (phone || email)) {
-            const exists = get().leads.some(
-              (l) =>
-                (phone && l.phone?.replace(/\D/g, '') === phone.replace(/\D/g, '')) ||
-                (email && l.email?.trim().toLowerCase() === email.toLowerCase()),
-            );
-            if (!exists) {
-              get().addLead({
-                name,
-                phone: phone ?? '',
-                email: email ?? '',
-                source: 'website',
-                serviceInterest: connection.formName,
-                notes: 'נוצר מטופס חיצוני',
-                externalProvider: 'website',
-                externalFormId: connection.id,
-                externalFormName: connection.formName,
-                formAnswers: Object.entries(normalized.fields).map(([field, value]) => ({
-                  field,
-                  value: value ?? '',
-                })),
-              });
-            }
-          }
 
           const record: ExternalFormSubmission = {
             id: submissionId,
@@ -1811,7 +1877,7 @@ export const useAppStore = create<Store>()(
           });
           return eventId;
         } catch (e) {
-          const errMsg = e instanceof Error ? e.message : 'Create activity failed';
+          const errMsg = e instanceof Error ? e.message : 'Process submission failed';
           logAutomationError('processSubmission', errMsg);
           logPipelineStage('SUBMISSION_FAILED', {
             error: errMsg,

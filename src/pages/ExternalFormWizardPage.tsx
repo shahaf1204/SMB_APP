@@ -102,6 +102,7 @@ export function ExternalFormWizardPage() {
       webhookUrl,
       secretKey,
       activityType,
+      submissionMode: 'lead_first' as const,
       isActive: false,
       fieldMapping,
       createdAt: new Date().toISOString(),

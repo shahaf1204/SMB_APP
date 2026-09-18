@@ -71,6 +71,7 @@ export function ExternalFormConnectPage() {
     webhookUrl,
     secretKey,
     activityType: 'event' as const,
+    submissionMode: 'lead_first' as const,
     isActive: active,
     fieldMapping: FORMS_APP_SPRINT_MAPPING,
     createdAt: new Date().toISOString(),
