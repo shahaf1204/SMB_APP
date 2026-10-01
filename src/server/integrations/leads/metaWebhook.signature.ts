@@ -1,5 +1,5 @@
 import { timingSafeEqual, createHmac } from 'crypto';
-import { getMetaAppSecret } from '../../core/supabase.server';
+import { getMetaAppSecret } from '../../core/supabase.server.js';
 
 const SIGNATURE_HEADER = 'x-hub-signature-256';
 const PREFIX = 'sha256=';

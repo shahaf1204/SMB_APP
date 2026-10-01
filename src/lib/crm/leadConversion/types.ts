@@ -1,4 +1,4 @@
-import type { OperatingModel } from '../../../types/operatingModel';
+import type { OperatingModel } from '../../../types/operatingModel.js';
 
 /** Operating model used as conversion target (hybrid resolved to concrete targets). */
 export type LeadConversionTargetModel = Exclude<OperatingModel, 'hybrid'>;

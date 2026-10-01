@@ -1,4 +1,4 @@
-import { getMetaGraphVersion, getSupabaseAdmin } from '../../core/supabase.server';
+import { getMetaGraphVersion, getSupabaseAdmin } from '../../core/supabase.server.js';
 
 export interface MetaLeadField {
   name: string;
@@ -108,7 +108,7 @@ export interface CreateLeadFromExternalInput {
 
 export async function createLeadFromExternalSourceDb(
   input: CreateLeadFromExternalInput,
-  options?: { primaryOperatingModel?: import('../../../types/operatingModel').OperatingModel },
+  options?: { primaryOperatingModel?: import('../../../types/operatingModel.js').OperatingModel },
 ): Promise<{ id: string; created: boolean }> {
   const supabase = getSupabaseAdmin();
   const now = new Date().toISOString();
@@ -133,7 +133,7 @@ export async function createLeadFromExternalSourceDb(
     }
   }
 
-  const { buildInitialIntakeDbFields } = await import('./leadIntakePersist.server');
+  const { buildInitialIntakeDbFields } = await import('./leadIntakePersist.server.js');
   const intakeFields = buildInitialIntakeDbFields(
     {
       name: input.fullName,
@@ -188,7 +188,7 @@ export async function processMetaLeadgenWebhook(
   pageId: string,
   formId?: string,
 ): Promise<{ ok: boolean; reason?: string }> {
-  const { processMetaLeadgenChange } = await import('./metaLead.processor');
+  const { processMetaLeadgenChange } = await import('./metaLead.processor.js');
   const result = await processMetaLeadgenChange(
     {
       leadgenId,

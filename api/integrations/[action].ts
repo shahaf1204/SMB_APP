@@ -7,7 +7,7 @@ import {
   simulateWebhook,
   syncConnection,
   testConnection,
-} from '../../src/server/integrations/finance/integration.service';
+} from '../../src/server/integrations/finance/integration.service.js';
 import {
   appendIntegrationLog,
   decryptApiKey,
@@ -15,12 +15,12 @@ import {
   getCredentials,
   getIntegrationLogs,
   storeCredentials,
-} from '../../src/server/integrations/finance/integrationCredentials.store';
+} from '../../src/server/integrations/finance/integrationCredentials.store.js';
 import {
   morningAuthFromStored,
   resolveMorningAuth,
   testMorningAuth,
-} from '../../src/server/integrations/finance/morning.provider';
+} from '../../src/server/integrations/finance/morning.provider.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   const action = String(req.query.action ?? '').trim();

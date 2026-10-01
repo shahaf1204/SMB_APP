@@ -1,10 +1,10 @@
-import { resolveActivityFormSchema } from '../../activityForm/resolveActivityFormSchema';
-import type { ActivityFormFieldPresentation } from '../../activityForm/types';
-import type { Business, Category } from '../../../types/models';
-import type { OperatingModel } from '../../../types/operatingModel';
-import type { LeadConversionDraft } from './types';
-import type { LeadConversionTargetModel } from './types';
-import type { ConversionFieldKey, ConversionFieldRequirement } from './leadConversionCompleteness';
+import { resolveActivityFormSchema } from '../../activityForm/resolveActivityFormSchema.js';
+import type { ActivityFormFieldPresentation } from '../../activityForm/types.js';
+import type { Business, Category } from '../../../types/models.js';
+import type { OperatingModel } from '../../../types/operatingModel.js';
+import type { LeadConversionDraft } from './types.js';
+import type { LeadConversionTargetModel } from './types.js';
+import type { ConversionFieldKey, ConversionFieldRequirement } from './leadConversionCompleteness.js';
 
 export interface ResolveConversionRequirementsInput {
   business: Business;

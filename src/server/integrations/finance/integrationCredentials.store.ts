@@ -1,5 +1,5 @@
-import { encryptToken } from '../../core/supabase.server';
-import type { IntegrationLog } from './financeProvider.interface';
+import { encryptToken } from '../../core/supabase.server.js';
+import type { IntegrationLog } from './financeProvider.interface.js';
 
 export interface StoredCredentials {
   connectionId: string;

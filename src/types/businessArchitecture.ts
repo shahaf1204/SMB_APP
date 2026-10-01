@@ -10,7 +10,7 @@
  * Future entitlements / lead intake (not capabilities): src/types/productLayers.ts.
  */
 
-import type { OperatingModel } from './workspace';
+import type { OperatingModel } from './workspace.js';
 
 // ---------------------------------------------------------------------------
 // A. Business lifecycle

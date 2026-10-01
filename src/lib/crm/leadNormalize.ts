@@ -1,4 +1,4 @@
-import type { Lead, LeadStatus } from '../../types/models';
+import type { Lead, LeadStatus } from '../../types/models.js';
 
 const LEGACY_STATUS: Record<string, LeadStatus> = {
   quoted: 'proposal_sent',

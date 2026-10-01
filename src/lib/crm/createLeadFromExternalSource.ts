@@ -4,9 +4,9 @@ import type {
   LeadFormAnswer,
   LeadSourceChannel,
   LeadStatus,
-} from '../../types/models';
-import type { OperatingModel } from '../../types/operatingModel';
-import { initialIntakeForExternalLead } from './leadIntake';
+} from '../../types/models.js';
+import type { OperatingModel } from '../../types/operatingModel.js';
+import { initialIntakeForExternalLead } from './leadIntake.js';
 
 export interface ExternalLeadPayload {
   businessId: string;

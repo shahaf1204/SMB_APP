@@ -1,5 +1,5 @@
 import type { VercelRequest } from '@vercel/node';
-import { directCreateFromFormsWebhook } from './directCreate';
+import { directCreateFromFormsWebhook } from './directCreate.js';
 
 function queryParam(
   query: Record<string, string | string[] | undefined>,

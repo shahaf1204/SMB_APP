@@ -3,7 +3,7 @@ import type {
   FinanceInvoiceResult,
   FinancePaymentLinkResult,
   FinanceProvider,
-} from './financeProvider.interface';
+} from './financeProvider.interface.js';
 
 function newId(): string {
   return crypto.randomUUID();

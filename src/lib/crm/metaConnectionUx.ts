@@ -1,5 +1,5 @@
-import type { MetaConnection, MetaConnectionStatus } from '../../types/crm';
-import type { MetaOAuthPageCandidate } from '../../types/metaOAuth.client';
+import type { MetaConnection, MetaConnectionStatus } from '../../types/crm.js';
+import type { MetaOAuthPageCandidate } from '../../types/metaOAuth.client.js';
 
 export type MetaConnectionUiPhase =
   | 'loading'

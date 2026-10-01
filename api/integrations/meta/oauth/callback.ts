@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { handleMetaOAuthCallback } from '../../../../src/server/integrations/meta/metaOAuth.service';
+import { handleMetaOAuthCallback } from '../../../../src/server/integrations/meta/metaOAuth.service.js';
 
 function queryParam(value: string | string[] | undefined): string | undefined {
   if (Array.isArray(value)) return value[0];

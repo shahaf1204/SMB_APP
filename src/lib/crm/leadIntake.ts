@@ -1,10 +1,10 @@
-import type { Lead } from '../../types/models';
-import type { LeadIntakeStatus } from '../../types/leadIntake';
-import type { OperatingModel } from '../../types/operatingModel';
+import type { Lead } from '../../types/models.js';
+import type { LeadIntakeStatus } from '../../types/leadIntake.js';
+import type { OperatingModel } from '../../types/operatingModel.js';
 import {
   evaluateLeadCompleteness,
   intakeStatusFromCompleteness,
-} from './leadCompleteness';
+} from './leadCompleteness.js';
 
 export const UNRESOLVED_INTAKE_STATUSES: readonly LeadIntakeStatus[] = [
   'new',

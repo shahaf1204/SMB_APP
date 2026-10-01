@@ -1,11 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { getSupabaseAdminOptional, isSupabaseConfigured } from '../../core/supabase.server';
-import { serverError, serverLog } from '../../core/logger.server';
+import { getSupabaseAdminOptional, isSupabaseConfigured } from '../../core/supabase.server.js';
+import { serverError, serverLog } from '../../core/logger.server.js';
 import type {
   ExternalFormsDebugState,
   QueuedFormSubmission,
   StoredFormConnection,
-} from './externalForms.types';
+} from './externalForms.types.js';
 
 export interface ExternalFormsStore {
   registerConnection(connection: StoredFormConnection): Promise<void>;

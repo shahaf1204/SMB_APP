@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
-import type { ActivityPresentationType } from '../components/business/ActivityCard';
-import type { StoredBusinessCapabilityProfile } from './businessArchitecture';
-import type { OperatingModel } from './operatingModel';
+import type { ActivityPresentationType } from '../components/business/ActivityCard/ActivityCard.js';
+import type { StoredBusinessCapabilityProfile } from './businessArchitecture.js';
+import type { OperatingModel } from './operatingModel.js';
 
 export type { OperatingModel };
 

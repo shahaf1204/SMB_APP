@@ -1,17 +1,17 @@
-import type { IntegrationConnection, IntegrationLog } from './integrations';
+import type { IntegrationConnection, IntegrationLog } from './integrations.js';
 import type {
   ExternalFormConnection,
   ExternalFormSubmission,
   FormActivityNotification,
-} from './externalForms';
-import type { BusinessWorkspaceConfig } from './workspace';
-import type { LeadSourceChannel } from './leadSourceChannel';
-import type { LeadCompletenessSnapshot } from './leadCompleteness';
-import type { LeadIntakeStatus, LeadIntakeStatusHistoryEntry } from './leadIntake';
+} from './externalForms.js';
+import type { BusinessWorkspaceConfig } from './workspace.js';
+import type { LeadSourceChannel } from './leadSourceChannel.js';
+import type { LeadCompletenessSnapshot } from './leadCompleteness.js';
+import type { LeadIntakeStatus, LeadIntakeStatusHistoryEntry } from './leadIntake.js';
 
-export type { LeadSourceChannel } from './leadSourceChannel';
-export type { LeadCompletenessSnapshot, LeadCompletenessRequirementPurpose } from './leadCompleteness';
-export type { LeadIntakeStatus, LeadIntakeStatusHistoryEntry } from './leadIntake';
+export type { LeadSourceChannel } from './leadSourceChannel.js';
+export type { LeadCompletenessSnapshot, LeadCompletenessRequirementPurpose } from './leadCompleteness.js';
+export type { LeadIntakeStatus, LeadIntakeStatusHistoryEntry } from './leadIntake.js';
 
 export type ValueType = 'text' | 'number' | 'date' | 'duration';
 export type MetricRole = 'revenue' | 'expense' | 'neutral';

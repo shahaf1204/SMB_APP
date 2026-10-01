@@ -1,11 +1,11 @@
-import type { LeadCompletenessSnapshot } from '../../../types/leadCompleteness';
-import type { LeadIntakeStatus, LeadIntakeStatusHistoryEntry } from '../../../types/leadIntake';
-import type { OperatingModel } from '../../../types/operatingModel';
+import type { LeadCompletenessSnapshot } from '../../../types/leadCompleteness.js';
+import type { LeadIntakeStatus, LeadIntakeStatusHistoryEntry } from '../../../types/leadIntake.js';
+import type { OperatingModel } from '../../../types/operatingModel.js';
 import {
   evaluateLeadCompleteness,
   intakeStatusFromCompleteness,
   type LeadCompletenessInput,
-} from '../../../lib/crm/leadCompleteness';
+} from '../../../lib/crm/leadCompleteness.js';
 
 export function buildInitialIntakeDbFields(
   leadLike: LeadCompletenessInput,

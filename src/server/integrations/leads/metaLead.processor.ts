@@ -4,16 +4,16 @@ import {
   claimExternalEventForProcessing,
   markExternalEventFailed,
   markExternalEventProcessed,
-} from '../externalEvents';
-import { decryptMetaAccessToken } from '../../core/integrationSecrets.server';
-import { touchMetaConnectionLastLeadReceived } from './metaConnectionTimestamps.server';
+} from '../externalEvents/index.js';
+import { decryptMetaAccessToken } from '../../core/integrationSecrets.server.js';
+import { touchMetaConnectionLastLeadReceived } from './metaConnectionTimestamps.server.js';
 import {
   createLeadFromExternalSourceDb,
   fetchMetaLead,
   findMetaConnectionByPageId,
-} from './metaLead.service';
-import { normalizeMetaLeadFromGraph } from './normalizedMetaLead';
-import type { MetaLeadgenWebhookChange } from './metaWebhook.parse';
+} from './metaLead.service.js';
+import { normalizeMetaLeadFromGraph } from './normalizedMetaLead.js';
+import type { MetaLeadgenWebhookChange } from './metaWebhook.parse.js';
 
 export type MetaLeadProcessingKind = 'success' | 'skipped' | 'non_retryable' | 'retryable';
 

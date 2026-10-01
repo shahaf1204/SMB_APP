@@ -1,6 +1,6 @@
-import { sortCategories } from '../../categories';
-import type { Category, Event } from '../../../types/models';
-import type { LeadConversionDraft, LeadConversionTargetModel } from './types';
+import { sortCategories } from '../../categories.js';
+import type { Category, Event } from '../../../types/models.js';
+import type { LeadConversionDraft, LeadConversionTargetModel } from './types.js';
 
 const CLIENT_CATEGORY_NAMES = ['שם לקוח', 'לקוח', 'שם מטופל', 'שם תלמיד'];
 

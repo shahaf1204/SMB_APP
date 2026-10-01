@@ -1,9 +1,9 @@
-import { getSupabase, isSupabaseConfigured } from '../supabase';
+import { getSupabase, isSupabaseConfigured } from '../supabase.js';
 import type {
   MetaOAuthAttemptPagesResponse,
   MetaOAuthSelectPageResponse,
-} from '../../types/metaOAuth.client';
-import { mapMetaOAuthErrorToUserMessage } from './metaOAuthUserMessages';
+} from '../../types/metaOAuth.client.js';
+import { mapMetaOAuthErrorToUserMessage } from './metaOAuthUserMessages.js';
 
 export class MetaOAuthClientError extends Error {
   readonly code: string;

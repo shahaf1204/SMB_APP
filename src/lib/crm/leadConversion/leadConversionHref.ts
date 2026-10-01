@@ -1,4 +1,4 @@
-import type { Lead } from '../../../types/models';
+import type { Lead } from '../../../types/models.js';
 
 export function resolveLeadActivityHref(lead: Lead): string | undefined {
   if (lead.convertedToEventId) return `/events/${lead.convertedToEventId}/edit`;

@@ -1,5 +1,5 @@
-import type { ExternalEventRecord } from './externalEvent.types';
-import { EXTERNAL_EVENT_STALE_PROCESSING_MS } from './externalEvent.constants';
+import type { ExternalEventRecord } from './externalEvent.types.js';
+import { EXTERNAL_EVENT_STALE_PROCESSING_MS } from './externalEvent.constants.js';
 
 /** ISO timestamp used to decide if a `processing` claim is stale (lease start). */
 export function externalEventProcessingClaimedAt(

@@ -1,7 +1,7 @@
-import { serverLog } from '../../core/logger.server';
-import type { StoredFormConnection, WebhookProcessResult } from './externalForms.types';
-import { extractSubmissionId, hashPayload, normalizeWebhookResponse } from './externalForms.mapper';
-import { getExternalFormsStore } from './externalForms.store';
+import { serverLog } from '../../core/logger.server.js';
+import type { StoredFormConnection, WebhookProcessResult } from './externalForms.types.js';
+import { extractSubmissionId, hashPayload, normalizeWebhookResponse } from './externalForms.mapper.js';
+import { getExternalFormsStore } from './externalForms.store.js';
 
 export async function registerFormConnection(conn: StoredFormConnection): Promise<void> {
   const store = getExternalFormsStore();

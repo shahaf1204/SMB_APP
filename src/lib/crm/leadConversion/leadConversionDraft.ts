@@ -1,5 +1,5 @@
-import type { Lead } from '../../../types/models';
-import type { LeadConversionDraft } from './types';
+import type { Lead } from '../../../types/models.js';
+import type { LeadConversionDraft } from './types.js';
 
 const DATE_PATTERNS = /תאריך|date|event date/i;
 const TIME_PATTERNS = /שעה|time|event time/i;

@@ -1,18 +1,18 @@
-import { deploymentUrlFromEnv } from '../../core/env.server';
+import { deploymentUrlFromEnv } from '../../core/env.server.js';
 import {
   getMetaOAuthRedirectUri,
-} from '../../core/meta.config.server';
+} from '../../core/meta.config.server.js';
 import {
   buildMetaOAuthAuthorizationUrl,
   exchangeMetaLongLivedUserToken,
   exchangeMetaOAuthCode,
   fetchMetaManagedPages,
   fetchMetaUserId,
-} from './metaGraph.client';
-import { MetaOAuthError, safeMetaOAuthUserMessage, sanitizeMetaPersistedError } from './metaOAuth.errors';
+} from './metaGraph.client.js';
+import { MetaOAuthError, safeMetaOAuthUserMessage, sanitizeMetaPersistedError } from './metaOAuth.errors.js';
 import {
   META_OAUTH_FRONTEND_RETURN_PATH,
-} from './metaOAuth.constants';
+} from './metaOAuth.constants.js';
 import {
   claimMetaOAuthAttemptForFinalization,
   createMetaOAuthAttempt,
@@ -20,18 +20,18 @@ import {
   consumeMetaOAuthState,
   finalizeMetaOAuthAttempt,
   loadMetaOAuthAttemptForUser,
-} from './metaOAuth.store';
+} from './metaOAuth.store.js';
 import {
   decryptMetaOAuthPagesPayload,
   encryptMetaOAuthPagesPayload,
   resolvePageAccessToken,
   toSafeMetaPageCandidates,
-} from './metaOAuth.pagesPayload';
+} from './metaOAuth.pagesPayload.js';
 import {
   assertAttemptNotStaleForConnection,
   finalizeMetaConnectionWithSubscription,
   readMetaConnectionBaseline,
-} from './metaConnection.service';
+} from './metaConnection.service.js';
 
 export function buildMetaOAuthFrontendRedirect(query: Record<string, string>): string {
   const base = deploymentUrlFromEnv() || '';

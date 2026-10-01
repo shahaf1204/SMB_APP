@@ -1,4 +1,4 @@
-import type { ExternalFormFieldMapping, ExternalFormProviderId } from './externalForms.types';
+import type { ExternalFormFieldMapping, ExternalFormProviderId } from './externalForms.types.js';
 
 export function flattenPayloadFields(payload: unknown, prefix = ''): Record<string, string> {
   const out: Record<string, string> = {};

@@ -3,15 +3,15 @@ import {
   createMockInvoice,
   createMockPaymentLink,
   isFinanceProvider,
-} from '../../../src/server/integrations/finance/integration.service';
+} from '../../../src/server/integrations/finance/integration.service.js';
 import {
   decryptApiKey,
   getCredentials,
-} from '../../../src/server/integrations/finance/integrationCredentials.store';
+} from '../../../src/server/integrations/finance/integrationCredentials.store.js';
 import {
   createMorningInvoice,
   morningAuthFromStored,
-} from '../../../src/server/integrations/finance/morning.provider';
+} from '../../../src/server/integrations/finance/morning.provider.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   const action = String(req.query.action ?? '').trim();

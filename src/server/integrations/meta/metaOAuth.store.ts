@@ -1,10 +1,10 @@
 import { randomBytes } from 'crypto';
-import { getSupabaseAdminOptional } from '../../core/supabase.server';
+import { getSupabaseAdminOptional } from '../../core/supabase.server.js';
 import {
   META_OAUTH_ATTEMPT_TTL_MS,
   META_OAUTH_STATE_TTL_MS,
-} from './metaOAuth.constants';
-import { MetaOAuthError, sanitizeMetaPersistedError } from './metaOAuth.errors';
+} from './metaOAuth.constants.js';
+import { MetaOAuthError, sanitizeMetaPersistedError } from './metaOAuth.errors.js';
 
 export interface MetaOAuthStateRecord {
   id: string;

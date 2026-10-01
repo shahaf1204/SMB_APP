@@ -1,5 +1,5 @@
 import type { VercelRequest } from '@vercel/node';
-import { getSupabaseAdminOptional } from './supabase.server';
+import { getSupabaseAdminOptional } from './supabase.server.js';
 
 export class ApiAuthError extends Error {
   constructor(

@@ -1,5 +1,5 @@
-import type { MetaConnection, MetaConnectionStatus } from '../../types/crm';
-import { getSupabase, isSupabaseConfigured } from '../supabase';
+import type { MetaConnection, MetaConnectionStatus } from '../../types/crm.js';
+import { getSupabase, isSupabaseConfigured } from '../supabase.js';
 
 export function getMetaWebhookUrl(): string {
   if (typeof window === 'undefined') return '';

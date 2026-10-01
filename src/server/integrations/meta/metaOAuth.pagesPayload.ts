@@ -1,8 +1,8 @@
 import {
   decryptIntegrationSecret,
   encryptIntegrationSecret,
-} from '../../core/integrationSecrets.server';
-import type { MetaGraphPageAccount } from './metaGraph.client';
+} from '../../core/integrationSecrets.server.js';
+import type { MetaGraphPageAccount } from './metaGraph.client.js';
 
 export interface MetaOAuthPagesPayload {
   pages: Array<{ id: string; name: string; accessToken: string }>;

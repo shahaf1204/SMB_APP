@@ -1,4 +1,4 @@
-import { getSupabaseAdminOptional } from '../../core/supabase.server';
+import { getSupabaseAdminOptional } from '../../core/supabase.server.js';
 
 /** Updates last_lead_received_at for a Meta connection after successful lead ingestion. */
 export async function touchMetaConnectionLastLeadReceived(

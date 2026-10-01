@@ -1,5 +1,5 @@
-import { deploymentUrlFromEnv, getServerEnv } from './env.server';
-import { getMetaGraphVersion } from './supabase.server';
+import { deploymentUrlFromEnv, getServerEnv } from './env.server.js';
+import { getMetaGraphVersion } from './supabase.server.js';
 
 /**
  * Meta API surface — see docs/meta-api-contract.md.

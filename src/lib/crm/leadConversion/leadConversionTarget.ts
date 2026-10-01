@@ -1,12 +1,12 @@
-import type { Lead } from '../../../types/models';
-import type { Business } from '../../../types/models';
-import type { OperatingModel } from '../../../types/operatingModel';
-import { getEnabledCreationModels } from '../../workspace/creationModels';
+import type { Lead } from '../../../types/models.js';
+import type { Business } from '../../../types/models.js';
+import type { OperatingModel } from '../../../types/operatingModel.js';
+import { getEnabledCreationModels } from '../../workspace/creationModels.js';
 import type {
   LeadConversionConfidence,
   LeadConversionTargetModel,
   LeadConversionTargetResolution,
-} from './types';
+} from './types.js';
 
 const PACKAGE_SIGNAL =
   /חביל|כרטיס|מנוי|package|מספר מפגש|מספר שיעור|session pack/i;

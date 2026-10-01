@@ -3,14 +3,15 @@
     "target": "ES2022",
     "lib": ["ES2023"],
     "types": ["node"],
-    "module": "ESNext",
+    "module": "NodeNext",
     "skipLibCheck": true,
-    "moduleResolution": "bundler",
+    "moduleResolution": "NodeNext",
     "isolatedModules": true,
     "noEmit": true,
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true
   },
-  "include": ["api/**/*.ts", "api/lib/**/*.ts", "server/**/*.ts", "src/server/**/*.ts"]
+  "include": ["api/**/*.ts", "api/lib/**/*.ts", "server/**/*.ts", "src/server/**/*.ts"],
+  "exclude": ["**/*.test.ts"]
 }

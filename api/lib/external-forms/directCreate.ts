@@ -2,8 +2,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   extractFormsAppSubmissionId,
   parseFormsAppPayload,
-} from './formsAppParser';
-import { getFormConnection } from './store';
+} from './formsAppParser.js';
+import { getFormConnection } from './store.js';
 
 export interface NormalizedFormFields {
   clientName?: string;

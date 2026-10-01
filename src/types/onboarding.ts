@@ -1,6 +1,6 @@
-import type { MetricRole, ValueType } from './models';
-import type { CapabilityKey } from './businessArchitecture';
-import type { OperatingModel } from './workspace';
+import type { MetricRole, ValueType } from './models.js';
+import type { CapabilityKey } from './businessArchitecture.js';
+import type { OperatingModel } from './workspace.js';
 
 /** Semantic source for category recommendation badges */
 export type CategoryTemplateSource =

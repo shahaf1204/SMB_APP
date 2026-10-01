@@ -4,7 +4,7 @@ import type {
   IntegrationConnection,
   IntegrationLog,
   WebhookParseResult,
-} from './financeProvider.interface';
+} from './financeProvider.interface.js';
 
 const FINANCE = new Set([
   'mock_finance',
@@ -237,4 +237,4 @@ function sanitizeForLog(value: unknown): string {
     .slice(0, 4000);
 }
 
-export { createMockInvoice, createMockPaymentLink } from './mockFinance.provider';
+export { createMockInvoice, createMockPaymentLink } from './mockFinance.provider.js';

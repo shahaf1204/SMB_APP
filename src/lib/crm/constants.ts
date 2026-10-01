@@ -1,4 +1,4 @@
-import type { LeadSourceChannel, LeadStatus } from '../../types/models';
+import type { LeadSourceChannel, LeadStatus } from '../../types/models.js';
 
 export type LeadFilter = 'all' | LeadStatus;
 

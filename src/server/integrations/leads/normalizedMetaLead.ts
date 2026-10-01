@@ -1,7 +1,7 @@
-import type { LeadSourceChannel } from '../../../types/leadSourceChannel';
-import type { MetaLeadData } from './metaLead.service';
-import { parseMetaLeadFields } from './metaLead.service';
-import type { MetaLeadgenWebhookChange } from './metaWebhook.parse';
+import type { LeadSourceChannel } from '../../../types/leadSourceChannel.js';
+import type { MetaLeadData } from './metaLead.service.js';
+import { parseMetaLeadFields } from './metaLead.service.js';
+import type { MetaLeadgenWebhookChange } from './metaWebhook.parse.js';
 
 export interface NormalizedMetaLead {
   externalProvider: 'meta';

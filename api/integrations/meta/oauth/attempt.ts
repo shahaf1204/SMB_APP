@@ -1,11 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { ApiAuthError, assertUserOwnsBusiness, requireApiUser } from '../../../../src/server/core/apiAuth.server';
+import { ApiAuthError, assertUserOwnsBusiness, requireApiUser } from '../../../../src/server/core/apiAuth.server.js';
 import {
   assertNoSecretsInClientPayload,
   getSafeMetaOAuthPageCandidates,
   metaOAuthErrorToClient,
-} from '../../../../src/server/integrations/meta/metaOAuth.service';
-import { MetaOAuthError } from '../../../../src/server/integrations/meta/metaOAuth.errors';
+} from '../../../../src/server/integrations/meta/metaOAuth.service.js';
+import { MetaOAuthError } from '../../../../src/server/integrations/meta/metaOAuth.errors.js';
 
 function queryParam(value: string | string[] | undefined): string | undefined {
   if (Array.isArray(value)) return value[0];

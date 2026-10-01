@@ -1,7 +1,7 @@
-import type { Lead } from '../../../types/models';
-import { appendIntakeHistory } from '../leadIntake';
-import { buildLeadConversionLinkPatch } from './leadConversionProvenance';
-import type { LeadConversionTargetModel } from './types';
+import type { Lead } from '../../../types/models.js';
+import { appendIntakeHistory } from '../leadIntake.js';
+import { buildLeadConversionLinkPatch } from './leadConversionProvenance.js';
+import type { LeadConversionTargetModel } from './types.js';
 
 /** Pure lead state after successful conversion finalization (local store). */
 export function buildFinalizedLeadAfterConversion(

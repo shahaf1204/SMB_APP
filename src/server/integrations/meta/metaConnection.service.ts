@@ -1,8 +1,8 @@
-import { encryptIntegrationSecret } from '../../core/integrationSecrets.server';
-import { getSupabaseAdminOptional } from '../../core/supabase.server';
-import { MetaOAuthError, sanitizeMetaPersistedError } from './metaOAuth.errors';
-import { subscribeMetaPageToLeadgen } from './metaGraph.client';
-import { assertMetaConnectionInvariants } from './metaConnection.invariants';
+import { encryptIntegrationSecret } from '../../core/integrationSecrets.server.js';
+import { getSupabaseAdminOptional } from '../../core/supabase.server.js';
+import { MetaOAuthError, sanitizeMetaPersistedError } from './metaOAuth.errors.js';
+import { subscribeMetaPageToLeadgen } from './metaGraph.client.js';
+import { assertMetaConnectionInvariants } from './metaConnection.invariants.js';
 
 export interface MetaConnectionBaseline {
   updatedAt: string | null;

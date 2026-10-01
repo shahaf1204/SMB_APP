@@ -1,10 +1,10 @@
-import type { ExternalFormFieldMapping } from './externalForms.types';
+import type { ExternalFormFieldMapping } from './externalForms.types.js';
 import {
   applyFieldMapping,
   extractFormsAppFields,
   extractSubmissionId,
   flattenPayloadFields,
-} from './externalForms.mapper';
+} from './externalForms.mapper.js';
 
 function pickSubmittedAt(payload: unknown): string | undefined {
   if (!payload || typeof payload !== 'object') return undefined;

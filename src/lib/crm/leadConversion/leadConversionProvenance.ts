@@ -1,5 +1,5 @@
-import type { Engagement, EngagementKind, Event, Lead } from '../../../types/models';
-import type { LeadConversionTargetModel } from './types';
+import type { Engagement, EngagementKind, Event, Lead } from '../../../types/models.js';
+import type { LeadConversionTargetModel } from './types.js';
 
 export const LEAD_CONVERSION_CREATION_SOURCE = 'lead_conversion' as const;
 

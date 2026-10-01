@@ -4,16 +4,16 @@ import {
   isFinanceProvider,
   isKnownProvider,
   parseWebhook,
-} from '../../src/server/integrations/finance/integration.service';
+} from '../../src/server/integrations/finance/integration.service.js';
 import {
   appendIntegrationLog,
   markWebhookProcessed,
   webhookEventLog,
-} from '../../src/server/integrations/finance/integrationCredentials.store';
+} from '../../src/server/integrations/finance/integrationCredentials.store.js';
 import {
   META_LEADGEN_LEGACY_POST_ERROR,
   META_LEADGEN_LEGACY_POST_STATUS,
-} from '../../src/server/integrations/leads/metaWebhook.routing';
+} from '../../src/server/integrations/leads/metaWebhook.routing.js';
 function slugParts(req: VercelRequest): string[] {
   const slug = req.query.slug;
   if (!slug) return [];

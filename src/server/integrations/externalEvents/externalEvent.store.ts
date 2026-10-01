@@ -1,12 +1,12 @@
-import { getSupabaseAdminOptional } from '../../core/supabase.server';
-import { isExternalEventProcessingStale } from './externalEventProcessing.policy';
+import { getSupabaseAdminOptional } from '../../core/supabase.server.js';
+import { isExternalEventProcessingStale } from './externalEventProcessing.policy.js';
 import type {
   ExternalEventProcessingClaim,
   ExternalEventProcessingStatus,
   ExternalEventRecord,
   ReceiveExternalEventInput,
   ReceiveExternalEventResult,
-} from './externalEvent.types';
+} from './externalEvent.types.js';
 
 interface ExternalEventRow {
   id: string;

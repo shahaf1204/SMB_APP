@@ -3,12 +3,12 @@ export {
   META_LEADGEN_EVENT_TYPE,
   META_LEAD_PROVIDER,
   metaLeadExternalEventId,
-} from './externalEvent.constants';
+} from './externalEvent.constants.js';
 
 export {
   externalEventProcessingClaimedAt,
   isExternalEventProcessingStale,
-} from './externalEventProcessing.policy';
+} from './externalEventProcessing.policy.js';
 
 export type {
   ExternalEventProcessingClaim,
@@ -17,7 +17,7 @@ export type {
   ExternalEventRecord,
   ReceiveExternalEventInput,
   ReceiveExternalEventResult,
-} from './externalEvent.types';
+} from './externalEvent.types.js';
 
 export {
   claimExternalEventForProcessing,
@@ -28,4 +28,4 @@ export {
   receiveExternalEvent,
   resetExternalEventMemoryStoreForTests,
   setExternalEventProcessingClaimedAtForTests,
-} from './externalEvent.store';
+} from './externalEvent.store.js';

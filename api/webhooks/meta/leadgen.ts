@@ -1,12 +1,12 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { processMetaLeadgenWebhookBatch } from '../../../src/server/integrations/leads/metaLead.processor';
-import { parseMetaLeadgenChanges } from '../../../src/server/integrations/leads/metaWebhook.parse';
-import { readRawRequestBody } from '../../../src/server/integrations/leads/metaWebhook.rawBody';
+import { processMetaLeadgenWebhookBatch } from '../../../src/server/integrations/leads/metaLead.processor.js';
+import { parseMetaLeadgenChanges } from '../../../src/server/integrations/leads/metaWebhook.parse.js';
+import { readRawRequestBody } from '../../../src/server/integrations/leads/metaWebhook.rawBody.js';
 import {
   MetaWebhookSignatureError,
   verifyMetaWebhookSignature,
-} from '../../../src/server/integrations/leads/metaWebhook.signature';
-import { getMetaVerifyToken } from '../../../src/server/core/supabase.server';
+} from '../../../src/server/integrations/leads/metaWebhook.signature.js';
+import { getMetaVerifyToken } from '../../../src/server/core/supabase.server.js';
 
 export const config = {
   api: {

@@ -1,7 +1,7 @@
-import type { Lead, LeadFormAnswer, LeadSourceChannel, LeadStatus } from '../../types/models';
-import { createLeadFromExternalSource } from './createLeadFromExternalSource';
-import { normalizeLeadStatus } from './leadNormalize';
-import { getSupabase, isSupabaseConfigured } from '../supabase';
+import type { Lead, LeadFormAnswer, LeadSourceChannel, LeadStatus } from '../../types/models.js';
+import { createLeadFromExternalSource } from './createLeadFromExternalSource.js';
+import { normalizeLeadStatus } from './leadNormalize.js';
+import { getSupabase, isSupabaseConfigured } from '../supabase.js';
 
 interface CrmLeadRow {
   id: string;

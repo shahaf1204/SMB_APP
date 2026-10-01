@@ -1,11 +1,11 @@
-import { getMetaAppSecret } from '../../core/supabase.server';
+import { getMetaAppSecret } from '../../core/supabase.server.js';
 import {
   getMetaAppId,
   metaFacebookOAuthDialogUrl,
   metaGraphApiBaseUrl,
   metaLeadgenWebhookFields,
   metaOAuthScopeString,
-} from '../../core/meta.config.server';
+} from '../../core/meta.config.server.js';
 
 export interface MetaOAuthTokenResponse {
   access_token: string;

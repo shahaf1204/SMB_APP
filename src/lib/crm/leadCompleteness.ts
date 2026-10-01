@@ -1,8 +1,8 @@
 import type {
   LeadCompletenessRequirementPurpose,
   LeadCompletenessSnapshot,
-} from '../../types/leadCompleteness';
-import type { OperatingModel } from '../../types/operatingModel';
+} from '../../types/leadCompleteness.js';
+import type { OperatingModel } from '../../types/operatingModel.js';
 
 /** Minimal lead fields for completeness — avoids importing full models (workspace/UI graph). */
 export interface LeadCompletenessInput {

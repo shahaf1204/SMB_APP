@@ -1,10 +1,10 @@
-import type { Business, Category } from '../../../types/models';
-import type { LeadConversionDraft } from './types';
-import type { LeadConversionTargetModel } from './types';
+import type { Business, Category } from '../../../types/models.js';
+import type { LeadConversionDraft } from './types.js';
+import type { LeadConversionTargetModel } from './types.js';
 import {
   draftValuePresent,
   resolveConversionRequirements,
-} from './resolveConversionRequirements';
+} from './resolveConversionRequirements.js';
 
 export type ConversionFieldKey =
   | 'client_name'

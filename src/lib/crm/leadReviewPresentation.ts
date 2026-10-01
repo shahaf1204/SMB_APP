@@ -1,5 +1,5 @@
-import type { Lead } from '../../types/models';
-import { CRM_SOURCE_LABELS } from './constants';
+import type { Lead } from '../../types/models.js';
+import { CRM_SOURCE_LABELS } from './constants.js';
 
 const FORBIDDEN_DISPLAY =
   /access_token|EAA[A-Za-z0-9]{10,}|oauth|webhook|leadgen|graph\.facebook|"field_data"/i;

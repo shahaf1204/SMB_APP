@@ -1,5 +1,5 @@
-import type { Lead } from '../../../types/models';
-import { participatesInIntakeWorkflow } from '../leadIntake';
+import type { Lead } from '../../../types/models.js';
+import { participatesInIntakeWorkflow } from '../leadIntake.js';
 
 export function hasLeadActivityLink(lead: Lead): boolean {
   return Boolean(

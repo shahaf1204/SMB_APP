@@ -1,6 +1,6 @@
 /** Morning (Green Invoice) API — server-side only */
 
-import type { FinanceInvoiceInput } from './financeProvider.interface';
+import type { FinanceInvoiceInput } from './financeProvider.interface.js';
 
 export const MORNING_SANDBOX_BASE = 'https://sandbox.d.greeninvoice.co.il/api/v1';
 export const MORNING_PRODUCTION_BASE = 'https://api.greeninvoice.co.il/api/v1';
