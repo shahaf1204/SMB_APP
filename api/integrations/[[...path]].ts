@@ -1,7 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { vercelPathSegments } from '../../src/server/core/vercelPathParams.js';
 import {
   createConnection,
   createIntegrationLog,
+  createMockInvoice,
+  createMockPaymentLink,
   isFinanceProvider,
   isKnownProvider,
   simulateWebhook,
@@ -17,13 +20,50 @@ import {
   storeCredentials,
 } from '../../src/server/integrations/finance/integrationCredentials.store.js';
 import {
+  createMorningInvoice,
   morningAuthFromStored,
   resolveMorningAuth,
   testMorningAuth,
 } from '../../src/server/integrations/finance/morning.provider.js';
 
+function integrationParts(req: VercelRequest): string[] {
+  return vercelPathSegments(
+    req.query as Record<string, string | string[] | undefined>,
+    'path',
+    'action',
+  );
+}
+
+/** Finance integrations + invoice actions — preserves /api/integrations/:action and /invoice/:action URLs */
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
-  const action = String(req.query.action ?? '').trim();
+  const parts = integrationParts(req);
+
+  if (parts[0] === 'invoice') {
+    const invoiceAction = parts[1] ?? '';
+    if (!invoiceAction) {
+      res.status(400).json({ error: 'Missing invoice action' });
+      return;
+    }
+    if (req.method !== 'POST') {
+      res.status(405).json({ error: 'Method not allowed' });
+      return;
+    }
+    try {
+      switch (invoiceAction) {
+        case 'push':
+          return handleInvoicePush(req, res);
+        case 'payment-link':
+          return handleInvoicePaymentLink(req, res);
+        default:
+          res.status(404).json({ error: `Unknown invoice action: ${invoiceAction}` });
+      }
+    } catch (e) {
+      res.status(500).json({ error: e instanceof Error ? e.message : 'Invoice request failed' });
+    }
+    return;
+  }
+
+  const action = parts[0] ?? '';
   if (!action) {
     res.status(400).json({ error: 'Missing action' });
     return;
@@ -241,4 +281,73 @@ async function handleSimulate(req: VercelRequest, res: VercelResponse): Promise<
   }
 
   res.status(200).json({ ...result, providerId: body.providerId, amount: body.amount });
+}
+
+async function handleInvoicePush(req: VercelRequest, res: VercelResponse): Promise<void> {
+  const { provider, connectionId, invoice } = req.body as {
+    provider?: string;
+    connectionId?: string;
+    invoice?: {
+      clientName: string;
+      clientEmail?: string;
+      amount: number;
+      dueDate: string;
+      notes?: string;
+    };
+  };
+
+  if (!provider || !invoice) {
+    res.status(400).json({ error: 'Missing fields' });
+    return;
+  }
+
+  if (!isFinanceProvider(provider)) {
+    res.status(400).json({ error: 'Not a finance provider' });
+    return;
+  }
+
+  if (provider === 'morning' && connectionId) {
+    const stored = getCredentials(connectionId);
+    if (stored?.apiKeyEncrypted) {
+      const auth = morningAuthFromStored(decryptApiKey(stored.apiKeyEncrypted), stored.apiBaseUrl);
+      const doc = await createMorningInvoice(auth, invoice);
+      res.status(200).json({
+        ...doc,
+        paymentLink: doc.paymentLink ?? doc.paymentUrl,
+        paymentUrl: doc.paymentUrl ?? doc.paymentLink,
+      });
+      return;
+    }
+    res.status(400).json({ error: 'חסרים פרטי חיבור Morning — התחברי מחדש עם מפתח API' });
+    return;
+  }
+
+  if (provider !== 'mock_finance' && provider !== 'mock') {
+    res.status(400).json({
+      error: 'הפקת חשבונית לספק זה עדיין לא זמינה — השתמשי ב-Morning או בספק בדיקות',
+    });
+    return;
+  }
+
+  res.status(200).json(createMockInvoice(provider, invoice));
+}
+
+async function handleInvoicePaymentLink(req: VercelRequest, res: VercelResponse): Promise<void> {
+  const { provider, providerDocumentId, amount } = req.body as {
+    provider?: string;
+    providerDocumentId?: string;
+    amount?: number;
+  };
+
+  if (!provider || !providerDocumentId || typeof amount !== 'number') {
+    res.status(400).json({ error: 'Missing fields' });
+    return;
+  }
+
+  if (!isFinanceProvider(provider)) {
+    res.status(400).json({ error: 'Not a finance provider' });
+    return;
+  }
+
+  res.status(200).json(createMockPaymentLink(providerDocumentId, amount));
 }

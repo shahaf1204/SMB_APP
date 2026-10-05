@@ -1,7 +1,15 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { vercelPathSegments } from '../../src/server/core/vercelPathParams.js';
 
-/** Self-contained register — no local imports (Vercel-safe). */
-export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
+function externalFormsAction(req: VercelRequest): string {
+  const parts = vercelPathSegments(
+    req.query as Record<string, string | string[] | undefined>,
+    'action',
+  );
+  return parts[0] ?? '';
+}
+
+async function handleRegister(req: VercelRequest, res: VercelResponse): Promise<void> {
   try {
     if (req.method !== 'POST') {
       res.status(405).json({ error: 'Method not allowed' });
@@ -68,5 +76,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     res.status(200).json({ ok: true });
   } catch (e) {
     res.status(500).json({ error: e instanceof Error ? e.message : 'Register failed' });
+  }
+}
+
+async function handlePoll(req: VercelRequest, res: VercelResponse): Promise<void> {
+  if (req.method === 'GET') {
+    res.status(200).json({
+      submissions: [],
+      debug: {
+        storage: 'supabase',
+        storageReason: 'direct webhook — no queue polling',
+        pendingCount: 0,
+        lastWebhookAt: null,
+        lastWebhookPreview: null,
+      },
+    });
+    return;
+  }
+  if (req.method === 'POST') {
+    res.status(200).json({ ok: true });
+    return;
+  }
+  res.status(405).json({ error: 'Method not allowed' });
+}
+
+/** External forms API — preserves /register and /poll URLs */
+export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
+  switch (externalFormsAction(req)) {
+    case 'register':
+      return handleRegister(req, res);
+    case 'poll':
+      return handlePoll(req, res);
+    default:
+      res.status(404).json({ error: 'Unknown external-forms action' });
   }
 }
