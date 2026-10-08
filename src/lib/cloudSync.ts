@@ -1,5 +1,16 @@
 import { findAccountSnapshot } from './accountArchive';
+import { AsyncTimeoutError, withTimeout } from './asyncTimeout';
+import {
+  abandonPushToken,
+  beginHydration,
+  beginPush,
+  canApplyHydration,
+  canExecutePush,
+  invalidateCloudOperations,
+  type OperationToken,
+} from './cloudOperationGuard';
 import { getAppSnapshot } from './appSnapshot';
+import { recordBootstrapOutcome, setBootstrapPhase } from './bootstrapDiagnostics';
 import { buildFormActivityNotificationFromEvent } from './externalForms/formActivityNotification';
 import { getClientName } from './events';
 import { createId } from './ids';
@@ -7,6 +18,8 @@ import { EXTERNAL_FORM_PROVIDER_LABELS } from '../types/externalForms';
 import { getSupabase, isSupabaseConfigured } from './supabase';
 import { useAppStore } from '../store/useAppStore';
 import type { AppState } from '../types/models';
+
+const CLOUD_IO_TIMEOUT_MS = 25_000;
 
 export type CloudSyncStatus = 'idle' | 'syncing' | 'synced' | 'error' | 'offline';
 
@@ -45,7 +58,7 @@ export interface CloudSnapshotRow {
   display_name: string;
 }
 
-export async function pullCloudSnapshot(userId: string): Promise<CloudSnapshotRow | null> {
+async function pullCloudSnapshotOnce(userId: string): Promise<CloudSnapshotRow | null> {
   if (!isSupabaseConfigured()) return null;
   const supabase = getSupabase();
   const { data, error } = await supabase
@@ -62,24 +75,78 @@ export async function pullCloudSnapshot(userId: string): Promise<CloudSnapshotRo
   return data as CloudSnapshotRow;
 }
 
-export async function pushCloudSnapshot(
-  userId: string,
+export async function pullCloudSnapshot(userId: string): Promise<CloudSnapshotRow | null> {
+  setBootstrapPhase('cloud_pull');
+  return withTimeout(pullCloudSnapshotOnce(userId), CLOUD_IO_TIMEOUT_MS, 'cloud_pull');
+}
+
+async function pushCloudSnapshotOnce(
+  token: OperationToken,
   displayName: string,
   snapshot?: AppState,
 ): Promise<void> {
   if (!isSupabaseConfigured()) return;
+
+  const activeBefore = useAppStore.getState().user?.id ?? null;
+  if (!canExecutePush(token, activeBefore)) {
+    console.warn('[cloud] skipped stale push (pre-flight)');
+    return;
+  }
+
   const supabase = getSupabase();
-  const payload = snapshot ?? getAppSnapshot();
+
+  const activeAfter = useAppStore.getState().user?.id ?? null;
+  if (!canExecutePush(token, activeAfter)) {
+    console.warn('[cloud] skipped stale push (pre-upsert)');
+    return;
+  }
+
+  const freshPayload = snapshot ?? getAppSnapshot();
+
   const { error } = await supabase.from('app_snapshots').upsert({
-    user_id: userId,
+    user_id: token.userId,
     display_name: displayName,
-    snapshot: payload,
+    snapshot: freshPayload,
     updated_at: new Date().toISOString(),
   });
 
   if (error) {
     console.error('cloud push failed', error);
     throw new Error('לא הצלחנו לשמור בענן');
+  }
+}
+
+export async function pushCloudSnapshot(
+  userId: string,
+  displayName: string,
+  snapshot?: AppState,
+): Promise<void> {
+  setBootstrapPhase('cloud_push');
+  const token = beginPush(userId);
+  try {
+    await withTimeout(
+      pushCloudSnapshotOnce(token, displayName, snapshot),
+      CLOUD_IO_TIMEOUT_MS,
+      'cloud_push',
+    );
+  } catch (e) {
+    if (e instanceof AsyncTimeoutError) {
+      abandonPushToken(token);
+    }
+    throw e;
+  }
+}
+
+async function pushCloudSnapshotBestEffort(
+  userId: string,
+  displayName: string,
+  snapshot?: AppState,
+): Promise<void> {
+  try {
+    await pushCloudSnapshot(userId, displayName, snapshot);
+  } catch (e) {
+    console.error('cloud push deferred after bootstrap', e);
+    scheduleCloudPush();
   }
 }
 
@@ -93,6 +160,121 @@ function snapshotHasData(state: AppState): boolean {
   );
 }
 
+function applyLocalFallbackAfterCloudFailure(
+  token: OperationToken,
+  userId: string,
+  email: string,
+  displayName: string,
+  cause: unknown,
+): 'migrated' | 'new' {
+  const activeUserId = useAppStore.getState().user?.id ?? null;
+  if (!canApplyHydration(token, activeUserId, true)) {
+    recordBootstrapOutcome('hydrate_stale_fallback_skipped');
+    return 'new';
+  }
+  const message =
+    cause instanceof AsyncTimeoutError
+      ? 'סנכרון הענן לא הסתיים בזמן — ממשיכים עם הנתונים במכשיר'
+      : cause instanceof Error
+        ? cause.message
+        : 'שגיאת סנכרון';
+  setSyncStatus('error', message);
+  recordBootstrapOutcome(
+    cause instanceof AsyncTimeoutError ? 'cloud_timeout_use_local' : 'cloud_error_use_local',
+  );
+
+  const local = getAppSnapshot();
+  if (snapshotHasData(local) && local.user?.email?.toLowerCase() === email.toLowerCase()) {
+    useAppStore.setState({ user: { id: userId, displayName, email } });
+    return 'migrated';
+  }
+
+  useAppStore.setState({ user: { id: userId, displayName, email } });
+  return 'new';
+}
+
+const hydrateByUser = new Map<string, Promise<'cloud' | 'migrated' | 'new'>>();
+
+function guardHydrationApply(token: OperationToken): boolean {
+  const activeUserId = useAppStore.getState().user?.id ?? null;
+  return canApplyHydration(token, activeUserId, true);
+}
+
+async function hydrateUserFromCloudOnce(
+  token: OperationToken,
+  userId: string,
+  email: string,
+  displayName: string,
+): Promise<'cloud' | 'migrated' | 'new'> {
+  setBootstrapPhase('cloud_hydrate');
+  setSyncStatus('syncing');
+  try {
+    const cloud = await pullCloudSnapshot(userId);
+
+    if (!guardHydrationApply(token)) {
+      recordBootstrapOutcome('hydrate_stale_pull_skipped');
+      return 'new';
+    }
+
+    if (cloud?.snapshot && snapshotHasData(cloud.snapshot)) {
+      useAppStore.getState().restoreAppState({
+        ...cloud.snapshot,
+        user: { id: userId, displayName, email },
+      });
+      setSyncStatus('synced');
+      recordBootstrapOutcome('cloud_snapshot_restored');
+      return 'cloud';
+    }
+
+    const archived = findAccountSnapshot(displayName, email);
+    if (archived && snapshotHasData(archived as AppState)) {
+      if (!guardHydrationApply(token)) {
+        recordBootstrapOutcome('hydrate_stale_archive_skipped');
+        return 'new';
+      }
+      useAppStore.getState().restoreAppState({
+        ...archived,
+        user: { id: userId, displayName, email },
+      });
+      await pushCloudSnapshotBestEffort(userId, displayName);
+      setSyncStatus('synced');
+      recordBootstrapOutcome('archived_migrated_to_cloud');
+      return 'migrated';
+    }
+
+    const local = getAppSnapshot();
+    if (snapshotHasData(local) && local.user?.email?.toLowerCase() === email.toLowerCase()) {
+      if (!guardHydrationApply(token)) {
+        recordBootstrapOutcome('hydrate_stale_local_skipped');
+        return 'new';
+      }
+      useAppStore.setState({ user: { id: userId, displayName, email } });
+      await pushCloudSnapshotBestEffort(userId, displayName);
+      setSyncStatus('synced');
+      recordBootstrapOutcome('local_pushed_to_cloud');
+      return 'migrated';
+    }
+
+    if (!guardHydrationApply(token)) {
+      recordBootstrapOutcome('hydrate_stale_new_user_skipped');
+      return 'new';
+    }
+    useAppStore.setState({
+      user: { id: userId, displayName, email },
+    });
+    await pushCloudSnapshotBestEffort(userId, displayName, {
+      ...useAppStore.getState(),
+      user: { id: userId, displayName, email },
+    });
+    setSyncStatus('synced');
+    recordBootstrapOutcome('new_cloud_snapshot');
+    return 'new';
+  } catch (e) {
+    console.error('cloud hydrate failed — continuing with local state', e);
+    return applyLocalFallbackAfterCloudFailure(token, userId, email, displayName, e);
+  }
+}
+
 /** טעינה מהענן אחרי התחברות — עם העלאת נתונים מקומיים ישנים אם הענן ריק */
 export async function hydrateUserFromCloud(
   userId: string,
@@ -101,52 +283,20 @@ export async function hydrateUserFromCloud(
 ): Promise<'cloud' | 'migrated' | 'new'> {
   if (!isSupabaseConfigured()) return 'new';
 
-  setSyncStatus('syncing');
-  try {
-    const cloud = await pullCloudSnapshot(userId);
+  const inFlight = hydrateByUser.get(userId);
+  if (inFlight) return inFlight;
 
-    if (cloud?.snapshot && snapshotHasData(cloud.snapshot)) {
-      useAppStore.getState().restoreAppState({
-        ...cloud.snapshot,
-        user: { id: userId, displayName, email },
-      });
-      setSyncStatus('synced');
-      return 'cloud';
+  const token = beginHydration(userId);
+  const work = hydrateUserFromCloudOnce(token, userId, email, displayName).finally(() => {
+    if (hydrateByUser.get(userId) === work) {
+      hydrateByUser.delete(userId);
     }
-
-    const archived = findAccountSnapshot(displayName, email);
-    if (archived && snapshotHasData(archived as AppState)) {
-      useAppStore.getState().restoreAppState({
-        ...archived,
-        user: { id: userId, displayName, email },
-      });
-      await pushCloudSnapshot(userId, displayName);
-      setSyncStatus('synced');
-      return 'migrated';
-    }
-
-    const local = getAppSnapshot();
-    if (snapshotHasData(local) && local.user?.email?.toLowerCase() === email.toLowerCase()) {
-      useAppStore.setState({ user: { id: userId, displayName, email } });
-      await pushCloudSnapshot(userId, displayName);
-      setSyncStatus('synced');
-      return 'migrated';
-    }
-
-    useAppStore.setState({
-      user: { id: userId, displayName, email },
-    });
-    await pushCloudSnapshot(userId, displayName, {
-      ...useAppStore.getState(),
-      user: { id: userId, displayName, email },
-    });
-    setSyncStatus('synced');
-    return 'new';
-  } catch (e) {
-    setSyncStatus('error', e instanceof Error ? e.message : 'שגיאת סנכרון');
-    throw e;
-  }
+  });
+  hydrateByUser.set(userId, work);
+  return work;
 }
+
+export { invalidateCloudOperations };
 
 let pushTimer: ReturnType<typeof setTimeout> | undefined;
 let pushInFlight = false;
@@ -270,6 +420,7 @@ export async function refreshFromCloudIfNewer(): Promise<boolean> {
 }
 
 export async function cloudSignOut(): Promise<void> {
+  invalidateCloudOperations();
   if (!isSupabaseConfigured()) return;
   await getSupabase().auth.signOut();
   setSyncStatus('idle');

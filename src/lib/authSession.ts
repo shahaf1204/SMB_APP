@@ -13,12 +13,15 @@ function sessionDisplayName(email: string, metadata?: Record<string, unknown>): 
 }
 
 /** Apply recovery session from URL so updateUser({ password }) works — stay on /auth. */
-export async function tryApplyPasswordRecoverySession(): Promise<boolean> {
+export async function tryApplyPasswordRecoverySession(
+  isAlive: () => boolean = () => true,
+): Promise<boolean> {
   if (!isSupabaseConfigured() || !isPasswordRecoveryPending()) return false;
 
   markPasswordRecoveryPending();
   const supabase = getSupabase();
   const { data } = await supabase.auth.getSession();
+  if (!isAlive()) return false;
   const sessionUser = data.session?.user;
   if (!sessionUser?.email) return false;
 
@@ -29,21 +32,26 @@ export async function tryApplyPasswordRecoverySession(): Promise<boolean> {
     return true;
   }
 
+  if (!isAlive()) return false;
   await hydrateUserFromCloud(sessionUser.id, email, displayName);
   return true;
 }
 
 /** Restore Supabase auth session into the app store (stay signed in). */
-export async function tryRestoreSupabaseSession(): Promise<boolean> {
+export async function tryRestoreSupabaseSession(
+  isAlive: () => boolean = () => true,
+): Promise<boolean> {
   if (!isSupabaseConfigured() || isPasswordRecoveryPending()) return false;
 
   const supabase = getSupabase();
   let session = (await supabase.auth.getSession()).data.session;
+  if (!isAlive()) return false;
 
   if (!session) {
     const refreshed = await supabase.auth.refreshSession();
     session = refreshed.data.session;
   }
+  if (!isAlive()) return false;
 
   const sessionUser = session?.user;
   if (!sessionUser?.email) return false;
@@ -56,8 +64,9 @@ export async function tryRestoreSupabaseSession(): Promise<boolean> {
     return true;
   }
 
+  if (!isAlive()) return false;
   await hydrateUserFromCloud(sessionUser.id, email, displayName);
-  return true;
+  return isAlive();
 }
 
 let authListenerRegistered = false;
@@ -87,7 +96,12 @@ export function registerSupabaseAuthListener(): void {
       const current = useAppStore.getState().user;
       if (current?.email?.toLowerCase() !== email || current.id !== session.user.id) {
         try {
-          await hydrateUserFromCloud(session.user.id, email, displayName);
+          const sessionUserId = session.user.id;
+          await hydrateUserFromCloud(sessionUserId, email, displayName);
+          const after = useAppStore.getState().user;
+          if (after?.id !== sessionUserId) {
+            console.warn('[auth] ignored late hydrate after account change');
+          }
         } catch (e) {
           console.error('auth listener hydrate failed', e);
         }

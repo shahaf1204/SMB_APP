@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 import { ensureAuthBootstrap } from '../lib/authBootstrap';
+import { recordBootstrapOutcome } from '../lib/bootstrapDiagnostics';
 import { useStoreHydration } from './useStoreHydration';
+
+/** Never block the shell longer than this — auth/cloud may still finish in background. */
+const BOOTSTRAP_UI_FAILSAFE_MS = 30_000;
 
 /** Auto login — Supabase session or «זכור אותי» מקומי */
 export function useAutoLoginFromRememberMe(): boolean {
@@ -12,12 +16,23 @@ export function useAutoLoginFromRememberMe(): boolean {
 
     let cancelled = false;
 
-    void ensureAuthBootstrap().finally(() => {
+    const markReady = () => {
       if (!cancelled) setReady(true);
+    };
+
+    const failsafe = window.setTimeout(() => {
+      recordBootstrapOutcome('ui_bootstrap_failsafe');
+      markReady();
+    }, BOOTSTRAP_UI_FAILSAFE_MS);
+
+    void ensureAuthBootstrap().finally(() => {
+      window.clearTimeout(failsafe);
+      markReady();
     });
 
     return () => {
       cancelled = true;
+      window.clearTimeout(failsafe);
     };
   }, [hydrated]);
 

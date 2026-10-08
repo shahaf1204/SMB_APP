@@ -9,7 +9,7 @@ import {
 } from '../lib/accountsRegistry';
 import { suggestWorkModelsFromPreset, normalizeBusiness } from '../lib/workModel';
 import { buildWorkspaceConfig, normalizeBusinessWorkspace, syncWorkModelsFromWorkspace } from '../lib/workspace';
-import { cloudSignOut } from '../lib/cloudSync';
+import { cloudSignOut, invalidateCloudOperations } from '../lib/cloudSync';
 import { normalizeLeads } from '../lib/crm/leadNormalize';
 import { pushLeadCreateToCloud, pushLeadPatchToCloud, pushLeadStatusToCloud } from '../lib/crm/leadsSync';
 import {
@@ -513,6 +513,7 @@ export const useAppStore = create<Store>()(
 
       logout: () => {
         const state = get();
+        invalidateCloudOperations();
         if (state.user && !isSupabaseConfigured()) {
           flushAccountSnapshot(state);
         }
