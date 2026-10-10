@@ -102,9 +102,9 @@ export function InvoicesPage() {
           <EmptyState
             icon={Plug}
             title="חברו ספק חשבוניות"
-            message="חברו Morning, Grow או ספק אחר כדי להפיק חשבוניות מס רשמיות וקישורי תשלום"
-            actionLabel="חיבור ספק"
-            actionTo="/settings/connections"
+            message="חברו Morning או ספק חשבוניות נתמך כדי להפיק חשבוניות מס רשמיות וקישורי תשלום"
+            actionLabel="חיבור ספק חשבוניות"
+            actionTo="/settings/connections?scope=invoicing"
           />
           {invoices.length > 0 && (
             <>

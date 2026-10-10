@@ -1,229 +1,39 @@
-import type { ProviderCatalogEntry } from '../types/integrations';
+import type { ProviderCatalogEntry, ProviderId } from '../types/integrations';
+import {
+  getRegistryEntry,
+  listHubIntegrations,
+  listRegistryEntries,
+  registryToCatalogCategory,
+  type IntegrationRegistryEntry,
+} from './integrationRegistry';
 
-export const INTEGRATION_CATALOG: ProviderCatalogEntry[] = [
-  // Finance
-  {
-    id: 'morning',
-    category: 'finance',
-    name: 'Morning',
-    nameHe: 'Morning (Green Invoice)',
-    description: 'חשבוניות מס, קבלות וקישורי תשלום',
-    authMethod: 'api_key',
-    logoEmoji: '🌿',
-    brandColor: '#22c55e',
-    available: true,
-    credentialFields: 'dual',
-    connectSteps: [
-      'בחשבון חינמי (Production) אין מפתח API — לבדיקות השתמשי ב-Sandbox',
-      'הירשמי (חינם): lp.sandbox.d.greeninvoice.co.il/join',
-      'היכנסי מהדפדפן: app.sandbox.d.greeninvoice.co.il',
-      'הגדרות → מתקדם → מפתחים → «צור מפתח API»',
-      'העתיקי API Key ID + Secret (Secret מוצג פעם אחת)',
-      'הדביקי למטה ולחצי «חבר ספק» — המערכת תזהה Sandbox אוטומטית',
-    ],
-  },
-  {
-    id: 'icount',
-    category: 'finance',
-    name: 'iCount',
-    nameHe: 'iCount',
-    description: 'הנהלת חשבונות וחשבוניות מס',
-    authMethod: 'api_key',
-    logoEmoji: '📊',
-    brandColor: '#3b82f6',
-    available: true,
-  },
-  {
-    id: 'grow',
-    category: 'finance',
-    name: 'Grow',
-    nameHe: 'Grow',
-    description: 'סליקה וקישורי תשלום מהירים',
-    authMethod: 'api_key',
-    logoEmoji: '💳',
-    brandColor: '#6366f1',
-    available: true,
-  },
-  {
-    id: 'cardcom',
-    category: 'finance',
-    name: 'Cardcom',
-    nameHe: 'Cardcom',
-    description: 'סליקת אשראי ותשלומים',
-    authMethod: 'api_key',
-    logoEmoji: '💳',
-    brandColor: '#0ea5e9',
-    available: true,
-  },
-  {
-    id: 'meshulam',
-    category: 'finance',
-    name: 'Meshulam',
-    nameHe: 'משולם',
-    description: 'Bit, אשראי וקישורי תשלום',
-    authMethod: 'api_key',
-    logoEmoji: '🔗',
-    brandColor: '#8b5cf6',
-    available: true,
-  },
-  {
-    id: 'tranzila',
-    category: 'finance',
-    name: 'Tranzila',
-    nameHe: 'Tranzila',
-    description: 'סליקה ישראלית',
-    authMethod: 'api_key',
-    logoEmoji: '🏦',
-    brandColor: '#64748b',
-    available: true,
-  },
-  {
-    id: 'pelecard',
-    category: 'finance',
-    name: 'Pelecard',
-    nameHe: 'Pelecard',
-    description: 'סליקת אשראי',
-    authMethod: 'api_key',
-    logoEmoji: '💳',
-    brandColor: '#ef4444',
-    available: true,
-  },
-  {
-    id: 'mock_finance',
-    category: 'finance',
-    name: 'Mock Finance',
-    nameHe: 'ספק בדיקות',
-    description: 'סימולציה מלאה — חשבוניות, PDF וקישורי תשלום',
-    authMethod: 'api_key',
-    logoEmoji: '🧪',
-    brandColor: '#6366f1',
-    available: true,
-    mockConnect: true,
-    connectSteps: [
-      'לחצו «חיבור ספק בדיקות» — אין צורך במפתח API',
-      'לאחר החיבור תוכלו להפיק חשבונית רשמית (דמו)',
-      'ניתן ליצור קישור תשלום ולסמulate תשלום מוצלח',
-    ],
-  },
-  // Calendar
-  {
-    id: 'google_calendar',
-    category: 'calendar',
-    name: 'Google Calendar',
-    nameHe: 'Google Calendar',
-    description: 'סנכרון אירועים ופגישות',
-    authMethod: 'oauth',
-    logoEmoji: '📅',
-    brandColor: '#4285f4',
-    available: true,
-    connectSteps: [
-      'לחצו «חבר ספק» — החיבור הראשוני יופעל',
-      'בגרסה הבאה: חלון «התחברות עם Google» יבקש הרשאות ליומן',
-      'לאחר אישור — אירועים מהיומן יסונכרנו אוטומטית ל«פעילויות»',
-    ],
-  },
-  {
-    id: 'outlook_calendar',
-    category: 'calendar',
-    name: 'Outlook Calendar',
-    nameHe: 'Outlook Calendar',
-    description: 'סנכרון יומן Microsoft',
-    authMethod: 'oauth',
-    logoEmoji: '📆',
-    brandColor: '#0078d4',
-    available: true,
-  },
-  {
-    id: 'apple_calendar',
-    category: 'calendar',
-    name: 'Apple Calendar',
-    nameHe: 'Apple Calendar',
-    description: 'ייצוא וסנכרון iCloud',
-    authMethod: 'oauth',
-    logoEmoji: '🍎',
-    brandColor: '#1d1d1f',
-    available: true,
-  },
-  // Marketing
-  {
-    id: 'meta_leads',
-    category: 'leads',
-    name: 'Meta Lead Ads',
-    nameHe: 'Meta Leads',
-    description: 'ייבוא לידים מפייסבוק ואינסטagram',
-    authMethod: 'oauth',
-    logoEmoji: '📣',
-    brandColor: '#1877f2',
-    available: true,
-  },
-  {
-    id: 'instagram',
-    category: 'marketing',
-    name: 'Instagram',
-    nameHe: 'Instagram',
-    description: 'לידים והודעות',
-    authMethod: 'oauth',
-    logoEmoji: '📸',
-    brandColor: '#e4405f',
-    available: true,
-  },
-  {
-    id: 'google_forms',
-    category: 'marketing',
-    name: 'Google Forms',
-    nameHe: 'Google Forms',
-    description: 'ייבוא תשובות טופס כלידים',
-    authMethod: 'oauth',
-    logoEmoji: '📝',
-    brandColor: '#673ab7',
-    available: true,
-  },
-  {
-    id: 'typeform',
-    category: 'marketing',
-    name: 'Typeform',
-    nameHe: 'Typeform',
-    description: 'ייבוא לידים מטפסים',
-    authMethod: 'api_key',
-    logoEmoji: '📋',
-    brandColor: '#262627',
-    available: true,
-  },
-  // Communication
-  {
-    id: 'whatsapp_business',
-    category: 'communication',
-    name: 'WhatsApp Business',
-    nameHe: 'WhatsApp Business',
-    description: 'שליחת חשבוניות, תזכורות וקישורי תשלום',
-    authMethod: 'oauth',
-    logoEmoji: '💬',
-    brandColor: '#25d366',
-    available: true,
-  },
-  {
-    id: 'gmail',
-    category: 'communication',
-    name: 'Gmail',
-    nameHe: 'Gmail',
-    description: 'שליחת חשבוניות ומיילים ללקוחות',
-    authMethod: 'oauth',
-    logoEmoji: '✉️',
-    brandColor: '#ea4335',
-    available: true,
-  },
-  {
-    id: 'outlook_mail',
-    category: 'communication',
-    name: 'Outlook Mail',
-    nameHe: 'Outlook Mail',
-    description: 'שליחת מיילים מ-Microsoft',
-    authMethod: 'oauth',
-    logoEmoji: '📧',
-    brandColor: '#0078d4',
-    available: true,
-  },
-];
+function entryToCatalog(entry: IntegrationRegistryEntry): ProviderCatalogEntry {
+  const comingSoon = entry.lifecycleStatus === 'coming_soon';
+  const available =
+    entry.lifecycleStatus === 'live' ||
+    (entry.lifecycleStatus === 'beta' && entry.hubConnectMode === 'api');
+  return {
+    id: entry.id as ProviderId,
+    category: registryToCatalogCategory(entry),
+    name: entry.displayName,
+    nameHe: entry.nameHe,
+    description: entry.description,
+    authMethod: entry.authType,
+    logoEmoji: entry.logoEmoji,
+    brandColor: entry.brandColor,
+    available: available && entry.hubConnectMode !== 'none',
+    comingSoon,
+    connectSteps: entry.connectSteps,
+    credentialFields: entry.credentialFields,
+    mockConnect: entry.id === 'mock_finance',
+    registry: entry,
+  };
+}
+
+/** @deprecated Prefer `getRegistryEntry` / `listHubIntegrations` — kept for invoice labels & legacy callers. */
+export const INTEGRATION_CATALOG: ProviderCatalogEntry[] = listRegistryEntries()
+  .filter((e) => e.lifecycleStatus !== 'hidden')
+  .map(entryToCatalog);
 
 export const CATEGORY_LABELS: Record<string, string> = {
   finance: 'כספים — חשבוניות וסליקה',
@@ -234,8 +44,10 @@ export const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export function getCatalogEntry(providerId: string): ProviderCatalogEntry | undefined {
-  if (providerId === 'mock') return INTEGRATION_CATALOG.find((p) => p.id === 'mock_finance');
-  return INTEGRATION_CATALOG.find((p) => p.id === providerId);
+  if (providerId === 'mock') return getCatalogEntry('mock_finance');
+  const reg = getRegistryEntry(providerId);
+  if (!reg || reg.lifecycleStatus === 'hidden') return undefined;
+  return entryToCatalog(reg);
 }
 
 export function catalogByCategory(category: string): ProviderCatalogEntry[] {
@@ -247,12 +59,10 @@ export function catalogByCategory(category: string): ProviderCatalogEntry[] {
 
 /** Featured providers for integrations hub */
 export const FEATURED_PROVIDER_IDS = [
-  'mock_finance',
   'morning',
-  'icount',
-  'grow',
-  'cardcom',
   'meta_leads',
+  'forms_app',
   'google_calendar',
-  'whatsapp_business',
 ] as const;
+
+export { entryToCatalog, listHubIntegrations };

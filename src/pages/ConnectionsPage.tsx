@@ -1,11 +1,16 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Plug } from 'lucide-react';
 import { BottomNav } from '../components/BottomNav';
 import { IntegrationDevPanel } from '../components/integrations/IntegrationDevPanel';
 import { ProviderCard } from '../components/integrations/ProviderCard';
-import { CATEGORY_LABELS, catalogByCategory } from '../integrations/catalog';
-import type { IntegrationCategory } from '../types/integrations';
+import {
+  HUB_CATEGORY_LABELS,
+  HUB_CATEGORY_ORDER,
+  hubEntriesByCategory,
+  type ConnectionsScope,
+} from '../integrations/integrationRegistry';
+import type { ProviderId } from '../types/integrations';
 import { normalizeIntegrationConnection } from '../types/integrations';
 import {
   connectProvider,
@@ -15,12 +20,19 @@ import {
 import { getActiveFinanceConnection } from '../lib/integrations/service';
 import { useAppStore } from '../store/useAppStore';
 
-const CATEGORIES: IntegrationCategory[] = ['finance', 'leads', 'calendar', 'communication'];
+function parseScope(raw: string | null): ConnectionsScope | undefined {
+  if (raw === 'invoicing' || raw === 'payments') return raw;
+  return undefined;
+}
 
 export function ConnectionsPage() {
+  const [searchParams] = useSearchParams();
+  const scope = parseScope(searchParams.get('scope'));
+
   const business = useAppStore((s) => s.business)!;
   const user = useAppStore((s) => s.user)!;
   const connections = useAppStore((s) => s.integrationConnections);
+  const externalFormConnections = useAppStore((s) => s.externalFormConnections);
   const upsertIntegrationConnection = useAppStore((s) => s.upsertIntegrationConnection);
   const removeIntegrationConnection = useAppStore((s) => s.removeIntegrationConnection);
   const updateIntegrationSync = useAppStore((s) => s.updateIntegrationSync);
@@ -44,6 +56,25 @@ export function ConnectionsPage() {
 
   const financeConn = getActiveFinanceConnection(connections, business.id);
 
+  const categories = useMemo(() => hubEntriesByCategory(scope), [scope]);
+
+  const formsAppConnected = useMemo(
+    () =>
+      externalFormConnections.some(
+        (c) => c.businessId === business.id && c.provider === 'forms_app' && c.isActive,
+      ),
+    [externalFormConnections, business.id],
+  );
+
+  const pageTitle =
+    scope === 'invoicing'
+      ? 'חיבור ספק חשבוניות'
+      : scope === 'payments'
+        ? 'חיבור סליקה'
+        : 'חיבורים';
+
+  const backTo = scope === 'invoicing' ? '/invoices' : '/settings';
+
   const handleConnect = async (provider: string, apiKey: string, accountLabel?: string) => {
     setBusyId(provider);
     setGlobalError(null);
@@ -51,13 +82,14 @@ export function ConnectionsPage() {
       const connection = await connectProvider({
         businessId: business.id,
         userId: user.id,
-        provider: provider as never,
+        provider: provider as ProviderId,
         apiKey,
         accountLabel,
       });
       upsertIntegrationConnection(connection);
     } catch (e) {
       setGlobalError(e instanceof Error ? e.message : 'שגיאת חיבור');
+      throw e;
     } finally {
       setBusyId(null);
     }
@@ -66,7 +98,7 @@ export function ConnectionsPage() {
   const handleDisconnect = async (connectionId: string, provider: string) => {
     setBusyId(provider);
     try {
-      await disconnectProvider({ connectionId, businessId: business.id, provider: provider as never });
+      await disconnectProvider({ connectionId, businessId: business.id, provider: provider as ProviderId });
       removeIntegrationConnection(connectionId);
     } finally {
       setBusyId(null);
@@ -80,7 +112,7 @@ export function ConnectionsPage() {
       const result = await syncProvider({
         connectionId,
         businessId: business.id,
-        provider: provider as never,
+        provider: provider as ProviderId,
       });
       updateIntegrationSync(connectionId, {
         syncStatus: result.ok ? 'success' : 'error',
@@ -99,45 +131,73 @@ export function ConnectionsPage() {
     }
   };
 
+  const visibleCategories = scope
+    ? HUB_CATEGORY_ORDER.filter((cat) => categories.has(cat))
+    : HUB_CATEGORY_ORDER;
+
   return (
     <div className="app-shell">
       <div className="page">
-        <Link to="/settings" className="back-link">
-          ← הגדרות
+        <Link to={backTo} className="back-link">
+          {scope === 'invoicing' ? '← חשבוניות' : '← הגדרות'}
         </Link>
         <div className="page-top-row">
-          <h1 className="page-title">חיבורים</h1>
+          <h1 className="page-title">{pageTitle}</h1>
           <Plug size={22} className="text-muted" aria-hidden />
         </div>
         <p className="page-subtitle">
-          מרכז האינטגרציות — חברו את הכלים שכבר בשימוש ונהלו הכל ממקום אחד
+          {scope === 'invoicing'
+            ? 'בחרו ספק חשבוניות להפקת מסמכים רשמיים — לא מוצגים כאן מקורות לידים, יומן או תקשורת.'
+            : scope === 'payments'
+              ? 'ספקי סליקה ותשלומים — נפרד מספקי חשבוניות.'
+              : 'מרכז האינטגרציות — חברו את הכלים שכבר בשימוש ונהלו הכל ממקום אחד'}
         </p>
 
         {globalError && <p className="import-feedback">{globalError}</p>}
 
-        {CATEGORIES.map((cat) => (
-          <section key={cat} className="connections-category">
-            <h2 className="section-title-sm">{CATEGORY_LABELS[cat]}</h2>
-            <div className="provider-card-grid">
-              {catalogByCategory(cat).map((entry) => {
-                const conn = byProvider.get(entry.id);
-                return (
-                  <ProviderCard
-                    key={entry.id}
-                    entry={entry}
-                    connection={conn}
-                    busy={busyId === entry.id}
-                    onConnect={(key, label) => handleConnect(entry.id, key, label)}
-                    onDisconnect={() =>
-                      conn ? handleDisconnect(conn.id, entry.id) : Promise.resolve()
-                    }
-                    onSync={() => (conn ? handleSync(conn.id, entry.id) : Promise.resolve())}
-                  />
-                );
-              })}
-            </div>
-          </section>
-        ))}
+        {visibleCategories.map((cat) => {
+          const entries = categories.get(cat);
+          if (!entries?.length) return null;
+          return (
+            <section key={cat} className="connections-category">
+              <h2 className="section-title-sm">{HUB_CATEGORY_LABELS[cat] ?? cat}</h2>
+              <div className="provider-card-grid">
+                {entries.map((entry) => {
+                  const conn = byProvider.get(entry.id as string);
+                  const routeConnected =
+                    entry.id === 'forms_app'
+                      ? formsAppConnected
+                      : entry.id === 'meta_leads'
+                        ? false
+                        : undefined;
+                  return (
+                    <ProviderCard
+                      key={entry.id}
+                      entry={entry}
+                      connection={conn}
+                      routeConnected={routeConnected}
+                      busy={busyId === entry.id}
+                      onConnect={(key, label) => handleConnect(entry.id as string, key, label)}
+                      onDisconnect={() =>
+                        conn ? handleDisconnect(conn.id, entry.id as string) : Promise.resolve()
+                      }
+                      onSync={() =>
+                        conn ? handleSync(conn.id, entry.id as string) : Promise.resolve()
+                      }
+                    />
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })}
+
+        {!scope && (
+          <p className="field-hint" style={{ marginTop: '1rem' }}>
+            Meta Leads ו-forms.app מנוהלים גם תחת{' '}
+            <Link to="/sources">מקורות כניסה</Link>.
+          </p>
+        )}
 
         <IntegrationDevPanel businessId={business.id} financeConnection={financeConn} />
       </div>

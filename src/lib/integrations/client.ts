@@ -15,6 +15,7 @@ import {
   createLocalMockInvoice,
   createLocalPaymentLink,
 } from './localConnect';
+import { assertCanConnectProvider, shouldUseLocalConnectFallback } from './connectPolicy';
 
 const API = '/api/integrations';
 
@@ -54,12 +55,16 @@ export async function connectProvider(params: {
   apiKey?: string;
   accountLabel?: string;
 }): Promise<IntegrationConnection> {
+  assertCanConnectProvider(params.provider);
   try {
     const data = await post<{ connection: IntegrationConnection }>('/connect', params);
     if (!data.connection?.id) throw new Error('Invalid connection response');
     return normalizeConnection(data.connection);
-  } catch {
-    return createLocalConnection(params);
+  } catch (err) {
+    if (shouldUseLocalConnectFallback(params.provider, true)) {
+      return createLocalConnection(params);
+    }
+    throw err instanceof Error ? err : new Error('שגיאת חיבור');
   }
 }
 
@@ -80,15 +85,7 @@ export async function syncProvider(params: {
   businessId: string;
   provider: ProviderId;
 }): Promise<SyncResult> {
-  try {
-    return await post('/sync', params);
-  } catch {
-    return {
-      ok: true,
-      syncedAt: new Date().toISOString(),
-      message: 'סנכרון הושלם',
-    };
-  }
+  return post('/sync', params);
 }
 
 export async function testConnectionProvider(params: {
@@ -96,11 +93,7 @@ export async function testConnectionProvider(params: {
   businessId: string;
   provider: ProviderId;
 }): Promise<{ ok: boolean; message?: string; latencyMs?: number }> {
-  try {
-    return await post('/test-connection', params);
-  } catch {
-    return { ok: true, message: 'החיבור תקין (מקומי)' };
-  }
+  return post('/test-connection', params);
 }
 
 export async function pushInvoiceToProvider(params: {
@@ -124,8 +117,11 @@ export async function pushInvoiceToProvider(params: {
       externalPdfUrl: result.externalPdfUrl ?? result.officialPdfUrl,
       paymentLink: result.paymentLink ?? result.paymentUrl,
     };
-  } catch {
-    return createLocalMockInvoice(params.provider, params.invoice);
+  } catch (err) {
+    if (shouldUseLocalConnectFallback(params.provider as ProviderId, true)) {
+      return createLocalMockInvoice(params.provider, params.invoice);
+    }
+    throw err instanceof Error ? err : new Error('הפקת חשבונית נכשלה');
   }
 }
 

@@ -1,5 +1,6 @@
 import { getFinanceProvider } from '../../integrations/core/registry';
 import { getCatalogEntry } from '../../integrations/catalog';
+import { isInvoicingProviderId } from '../../integrations/integrationRegistry';
 import { createId } from '../ids';
 import type {
   FinanceDocumentResult,
@@ -33,6 +34,7 @@ export function getActiveFinanceConnection(
       (c) =>
         c.businessId === businessId &&
         c.category === 'finance' &&
+        isInvoicingProviderId(c.providerId) &&
         (c.status === 'connected' || c.status === 'mock' || c.status === 'sandbox'),
     );
 }

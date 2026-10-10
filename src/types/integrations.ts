@@ -35,6 +35,8 @@ export type CalendarProviderId = 'google_calendar' | 'outlook_calendar' | 'apple
 
 export type CommunicationProviderId = 'whatsapp_business' | 'gmail' | 'outlook_mail';
 
+export type ExternalFormCatalogProviderId = 'forms_app' | 'jotform' | 'tally' | 'custom';
+
 export type ProviderId =
   | FinanceProviderId
   | LeadsProviderId
@@ -42,7 +44,8 @@ export type ProviderId =
   | CommunicationProviderId
   | 'instagram'
   | 'google_forms'
-  | 'typeform';
+  | 'typeform'
+  | ExternalFormCatalogProviderId;
 
 export type AuthMethod = 'oauth' | 'api_key' | 'webhook_only';
 
@@ -61,6 +64,8 @@ export interface ProviderCatalogEntry {
   credentialFields?: 'single' | 'dual';
   /** Only this provider can be connected without real credentials */
   mockConnect?: boolean;
+  /** Canonical registry row when built from integrationRegistry */
+  registry?: import('../integrations/integrationRegistry').IntegrationRegistryEntry;
 }
 
 export interface IntegrationConnection {

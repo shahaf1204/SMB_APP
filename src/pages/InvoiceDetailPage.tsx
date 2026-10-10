@@ -208,8 +208,12 @@ export function InvoiceDetailPage() {
           {!financeConn ? (
             <>
               <p className="field-hint">חברי ספק חשבוניות כדי להפיק מסמך רשמי</p>
-              <Link to="/settings/connections" className="btn btn-primary" style={{ width: '100%' }}>
-                חיבור ספק
+              <Link
+                to="/settings/connections?scope=invoicing"
+                className="btn btn-primary"
+                style={{ width: '100%' }}
+              >
+                חיבור ספק חשבוניות
               </Link>
             </>
           ) : (

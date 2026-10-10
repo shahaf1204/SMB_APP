@@ -1,9 +1,10 @@
-import { getCatalogEntry } from '../../integrations/catalog';
+import { getRegistryEntry } from '../../integrations/integrationRegistry';
 import { createId } from '../ids';
 import type { IntegrationConnection, ProviderId } from '../../types/integrations';
 import { normalizeIntegrationConnection } from '../../types/integrations';
+import { assertCanConnectProvider, shouldUseLocalConnectFallback } from './connectPolicy';
 
-/** Client-side connection when API is unavailable */
+/** Client-side connection when API is unavailable — mock/demo only. */
 export function createLocalConnection(params: {
   businessId: string;
   userId: string;
@@ -11,7 +12,11 @@ export function createLocalConnection(params: {
   apiKey?: string;
   accountLabel?: string;
 }): IntegrationConnection {
-  const entry = getCatalogEntry(params.provider);
+  if (!shouldUseLocalConnectFallback(params.provider, true)) {
+    assertCanConnectProvider(params.provider);
+    throw new Error('חיבור מקומי אינו נתמך לספק זה');
+  }
+  const entry = getRegistryEntry(params.provider);
   const now = new Date().toISOString();
   const hasKey = Boolean(params.apiKey?.trim());
   const isMock = params.provider === 'mock_finance' || params.provider === 'mock';
@@ -22,10 +27,15 @@ export function createLocalConnection(params: {
     ownerId: params.userId,
     providerId: isMock ? 'mock_finance' : params.provider,
     providerName: entry?.nameHe ?? params.provider,
-    category: entry?.category === 'marketing' ? 'leads' : (entry?.category ?? 'finance'),
+    category:
+      entry?.category === 'leads_forms' || entry?.category === 'marketing'
+        ? 'leads'
+        : entry?.category === 'leads'
+          ? 'leads'
+          : (entry?.category ?? 'finance'),
     status: 'connected',
     mode: isMock ? 'mock' : 'production',
-    authMethod: hasKey ? 'api_key' : (entry?.authMethod ?? 'oauth'),
+    authMethod: hasKey ? 'api_key' : (entry?.authType ?? 'oauth'),
     syncStatus: 'idle',
     connectedAt: now,
     createdAt: now,

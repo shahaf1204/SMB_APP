@@ -6,6 +6,8 @@ import type {
   WebhookParseResult,
 } from './financeProvider.interface.js';
 
+/** Server execution allowlist — independent of client `src/integrations/integrationRegistry.ts` (product/UI truth). */
+
 const FINANCE = new Set([
   'mock_finance',
   'mock',

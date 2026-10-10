@@ -1,33 +1,26 @@
 import { useState } from 'react';
-import type { IntegrationConnection, ProviderCatalogEntry } from '../../types/integrations';
+import { Link } from 'react-router-dom';
+import type { IntegrationConnection } from '../../types/integrations';
 import { normalizeIntegrationConnection } from '../../types/integrations';
+import {
+  canInitiateHubApiConnect,
+  connectionCountsAsHubConnected,
+  hubStatusLabel,
+  type IntegrationRegistryEntry,
+} from '../../integrations/integrationRegistry';
 import { formatLastSync, testConnectionProvider } from '../../lib/integrations/client';
 import { Modal } from '../ui/Modal';
 
 interface ProviderCardProps {
-  entry: ProviderCatalogEntry;
+  entry: IntegrationRegistryEntry;
   connection?: IntegrationConnection;
+  /** Route-mode integrations (Meta, forms.app list). */
+  routeConnected?: boolean;
   onConnect: (apiKey: string, accountLabel?: string) => Promise<void>;
   onDisconnect: () => Promise<void>;
   onSync: () => Promise<void>;
   onTest?: () => Promise<void>;
   busy?: boolean;
-}
-
-function statusLabel(status?: IntegrationConnection['status']): string {
-  switch (status) {
-    case 'connected':
-      return 'מחובר';
-    case 'mock':
-    case 'sandbox':
-      return 'בדיקות';
-    case 'error':
-      return 'שגיאה';
-    case 'syncing':
-      return 'מסנכרן…';
-    default:
-      return 'לא מחובר';
-  }
 }
 
 function modeLabel(mode?: IntegrationConnection['mode']): string {
@@ -46,6 +39,7 @@ function modeLabel(mode?: IntegrationConnection['mode']): string {
 export function ProviderCard({
   entry,
   connection,
+  routeConnected,
   onConnect,
   onDisconnect,
   onSync,
@@ -63,11 +57,28 @@ export function ProviderCard({
   const conn = connection
     ? normalizeIntegrationConnection(connection as IntegrationConnection & { provider?: string })
     : undefined;
-  const connected = conn?.status === 'connected' || conn?.status === 'mock' || conn?.status === 'sandbox';
-  const hasError = conn?.status === 'error';
-  const isOAuth = entry.authMethod === 'oauth';
+
+  const apiConnected = connectionCountsAsHubConnected(entry, conn);
+  const staleLegacy =
+    Boolean(conn) &&
+    !apiConnected &&
+    entry.hubConnectMode === 'api' &&
+    (conn?.status === 'connected' || conn?.status === 'mock' || conn?.status === 'sandbox');
+
+  const connected =
+    entry.hubConnectMode === 'route' ? Boolean(routeConnected) : apiConnected;
+  const hasError = conn?.status === 'error' && !staleLegacy;
+  const comingSoon = entry.lifecycleStatus === 'coming_soon';
   const isDualKey = entry.credentialFields === 'dual';
-  const mockOnly = entry.mockConnect === true;
+  const mockOnly = entry.id === 'mock_finance';
+  const canConnectApi = canInitiateHubApiConnect(entry);
+  const routeMode = entry.hubConnectMode === 'route' && entry.managementRoute;
+
+  const statusText = hubStatusLabel(entry, {
+    apiConnected,
+    routeConnected,
+    staleLegacyConnection: staleLegacy,
+  });
 
   const handleConnect = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,7 +95,7 @@ export function ProviderCard({
     const credential = isDualKey
       ? `${apiKeyId.trim()}:${apiKeySecret.trim()}`
       : apiKey.trim();
-    if (!isOAuth && !isDualKey && !credential) {
+    if (!isDualKey && !credential) {
       setError('נדרש מפתח API');
       return;
     }
@@ -108,7 +119,7 @@ export function ProviderCard({
       await onTest();
       return;
     }
-    if (!conn) return;
+    if (!conn || !apiConnected) return;
     setTestMsg(null);
     const result = await testConnectionProvider({
       connectionId: conn.id,
@@ -118,10 +129,20 @@ export function ProviderCard({
     setTestMsg(result.message ?? (result.ok ? 'החיבור תקין' : 'שגיאה'));
   };
 
+  const cardClass = [
+    'provider-card',
+    connected ? 'provider-card--connected' : '',
+    hasError ? 'provider-card--error' : '',
+    comingSoon ? 'provider-card--soon' : '',
+    staleLegacy ? 'provider-card--stale' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
     <>
       <article
-        className={`provider-card ${connected ? 'provider-card--connected' : ''} ${hasError ? 'provider-card--error' : ''}`}
+        className={cardClass}
         style={{ '--provider-color': entry.brandColor } as React.CSSProperties}
       >
         <div className="provider-card-head">
@@ -131,35 +152,58 @@ export function ProviderCard({
           <div className="provider-card-info">
             <strong>{entry.nameHe}</strong>
             <p>{entry.description}</p>
-            <span className="provider-category-chip">{entry.category}</span>
           </div>
           <div className="provider-chip-col">
             <span
-              className={`provider-status ${connected ? 'provider-status--on' : hasError ? 'provider-status--err' : ''}`}
+              className={`provider-status ${connected ? 'provider-status--on' : comingSoon ? 'provider-status--soon' : hasError ? 'provider-status--err' : ''}`}
             >
-              {statusLabel(conn?.status)}
+              {statusText}
             </span>
-            {conn && (
+            {conn && apiConnected && (
               <span className="provider-mode-chip">{modeLabel(conn.mode)}</span>
             )}
           </div>
         </div>
 
-        {entry.comingSoon && !connected && (
+        {comingSoon && (
           <p className="provider-coming-soon">בקרוב — עדיין לא ניתן להתחבר</p>
         )}
 
-        {conn && (
+        {staleLegacy && (
+          <p className="provider-coming-soon">
+            נמצא חיבור ישן שלא נתמך — נתקו כדי להמשיך.
+          </p>
+        )}
+
+        {conn && (apiConnected || staleLegacy) && (
           <div className="provider-card-meta">
-            <span>סנכרון אחרון: {formatLastSync(conn.lastSyncAt ?? conn.lastSync)}</span>
-            {conn.accountLabel && <span> · {conn.accountLabel}</span>}
+            {apiConnected && (
+              <span>סנכרון אחרון: {formatLastSync(conn.lastSyncAt ?? conn.lastSync)}</span>
+            )}
+            {conn.accountLabel && apiConnected && <span> · {conn.accountLabel}</span>}
             {conn.lastError && <p className="provider-card-error">{conn.lastError}</p>}
             {testMsg && <p className="field-hint">{testMsg}</p>}
           </div>
         )}
 
         <div className="provider-card-actions">
-          {connected ? (
+          {routeMode ? (
+            <Link
+              to={entry.managementRoute!}
+              className={`btn btn-sm ${connected ? 'btn-ghost' : 'btn-primary'}`}
+            >
+              {connected ? 'ניהול חיבור' : entry.connectCtaLabel}
+            </Link>
+          ) : staleLegacy ? (
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              disabled={busy}
+              onClick={() => void onDisconnect()}
+            >
+              ניתוק חיבור ישן
+            </button>
+          ) : connected && apiConnected ? (
             <>
               <button type="button" className="btn btn-ghost btn-sm" disabled={busy} onClick={() => void onSync()}>
                 סנכרון
@@ -171,97 +215,99 @@ export function ProviderCard({
                 ניתוק
               </button>
             </>
+          ) : comingSoon || !canConnectApi ? (
+            <span className="provider-unavailable-hint">לא זמין כרגע</span>
           ) : (
             <button
               type="button"
               className="btn btn-primary btn-sm"
-              disabled={busy || !entry.available}
+              disabled={busy}
               onClick={() => setShowConnect(true)}
             >
-              {mockOnly ? 'חיבור ספק בדיקות' : 'חיבור ספק'}
+              {entry.connectCtaLabel}
             </button>
           )}
         </div>
       </article>
 
-      <Modal
-        open={showConnect}
-        onClose={() => setShowConnect(false)}
-        title={mockOnly ? 'חיבור ספק בדיקות' : `חיבור ${entry.nameHe}`}
-      >
-        <form onSubmit={(e) => void handleConnect(e)} className="connect-provider-form">
-          {entry.connectSteps && entry.connectSteps.length > 0 && (
-            <ol className="connect-steps">
-              {entry.connectSteps.map((step) => (
-                <li key={step}>{step}</li>
-              ))}
-            </ol>
-          )}
-          {mockOnly ? (
-            <p className="field-hint">
-              אין צורך במפתח API. החיבור יאפשר להפיק חשבוניות דמו, קישורי תשלום וסימולציית webhook.
-            </p>
-          ) : isOAuth ? (
-            <p className="field-hint">חיבור OAuth יושק בגרסה הבאה.</p>
-          ) : (
-            <p className="field-hint">מפתחות API נשמרים מוצפנים בשרת — לא בדפדפן.</p>
-          )}
-          {!mockOnly && isDualKey && (
-            <>
+      {canConnectApi && (
+        <Modal
+          open={showConnect}
+          onClose={() => setShowConnect(false)}
+          title={mockOnly ? entry.connectCtaLabel : `חיבור ${entry.nameHe}`}
+        >
+          <form onSubmit={(e) => void handleConnect(e)} className="connect-provider-form">
+            {entry.connectSteps && entry.connectSteps.length > 0 && (
+              <ol className="connect-steps">
+                {entry.connectSteps.map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ol>
+            )}
+            {mockOnly ? (
+              <p className="field-hint">
+                אין צורך במפתח API. החיבור יאפשר להפיק חשבוניות דמו, קישורי תשלום וסימולציית webhook.
+              </p>
+            ) : (
+              <p className="field-hint">מפתחות API נשמרים מוצפנים בשרת — לא בדפדפן.</p>
+            )}
+            {!mockOnly && isDualKey && (
+              <>
+                <div className="field">
+                  <label htmlFor={`key-id-${entry.id}`}>API Key ID</label>
+                  <input
+                    id={`key-id-${entry.id}`}
+                    type="text"
+                    value={apiKeyId}
+                    onChange={(e) => setApiKeyId(e.target.value)}
+                    autoComplete="off"
+                    required
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor={`key-secret-${entry.id}`}>API Key Secret</label>
+                  <input
+                    id={`key-secret-${entry.id}`}
+                    type="password"
+                    value={apiKeySecret}
+                    onChange={(e) => setApiKeySecret(e.target.value)}
+                    autoComplete="off"
+                    required
+                  />
+                </div>
+              </>
+            )}
+            {!mockOnly && !isDualKey && (
               <div className="field">
-                <label htmlFor={`key-id-${entry.id}`}>API Key ID</label>
+                <label htmlFor={`key-${entry.id}`}>מפתח API</label>
                 <input
-                  id={`key-id-${entry.id}`}
-                  type="text"
-                  value={apiKeyId}
-                  onChange={(e) => setApiKeyId(e.target.value)}
-                  autoComplete="off"
-                  required
-                />
-              </div>
-              <div className="field">
-                <label htmlFor={`key-secret-${entry.id}`}>API Key Secret</label>
-                <input
-                  id={`key-secret-${entry.id}`}
+                  id={`key-${entry.id}`}
                   type="password"
-                  value={apiKeySecret}
-                  onChange={(e) => setApiKeySecret(e.target.value)}
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
                   autoComplete="off"
                   required
                 />
               </div>
-            </>
-          )}
-          {!mockOnly && !isDualKey && !isOAuth && (
-            <div className="field">
-              <label htmlFor={`key-${entry.id}`}>מפתח API</label>
-              <input
-                id={`key-${entry.id}`}
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                autoComplete="off"
-                required
-              />
-            </div>
-          )}
-          {!mockOnly && (
-            <div className="field">
-              <label htmlFor={`label-${entry.id}`}>שם חשבון (אופציונלי)</label>
-              <input
-                id={`label-${entry.id}`}
-                value={accountLabel}
-                onChange={(e) => setAccountLabel(e.target.value)}
-                placeholder={entry.nameHe}
-              />
-            </div>
-          )}
-          {error && <p className="import-feedback">{error}</p>}
-          <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={busy}>
-            {mockOnly ? 'חיבור ספק בדיקות' : 'חבר ספק'}
-          </button>
-        </form>
-      </Modal>
+            )}
+            {!mockOnly && (
+              <div className="field">
+                <label htmlFor={`label-${entry.id}`}>שם חשבון (אופציונלי)</label>
+                <input
+                  id={`label-${entry.id}`}
+                  value={accountLabel}
+                  onChange={(e) => setAccountLabel(e.target.value)}
+                  placeholder={entry.nameHe}
+                />
+              </div>
+            )}
+            {error && <p className="import-feedback">{error}</p>}
+            <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={busy}>
+              {entry.connectCtaLabel}
+            </button>
+          </form>
+        </Modal>
+      )}
     </>
   );
 }
